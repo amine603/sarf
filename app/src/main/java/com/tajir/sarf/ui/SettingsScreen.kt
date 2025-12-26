@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +20,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.Surface
@@ -27,8 +31,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
@@ -103,21 +109,117 @@ fun SettingsScreen(
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                         )
 
-                        val options = listOf("EUR", "USD", "GBP", "CAD")
-                        options.forEach { code ->
+                        // Popular tourist currencies (for conversion reference only)
+                        val currencyOptions = listOf(
+                            "MAD" to "Morocco (MAD)",
+                            "EUR" to "Euro (EUR)",
+                            "SAR" to "Saudi Arabia (SAR)",
+                            "USD" to "United States (USD)",
+                            "GBP" to "United Kingdom (GBP)",
+                            "JPY" to "Japan (JPY)",
+                            "CNY" to "China (CNY)",
+                            "INR" to "India (INR)",
+                            "AUD" to "Australia (AUD)",
+                            "CAD" to "Canada (CAD)",
+                            "CHF" to "Switzerland (CHF)",
+                            "AED" to "UAE (AED)",
+                            "THB" to "Thailand (THB)",
+                            "SGD" to "Singapore (SGD)",
+                            "MYR" to "Malaysia (MYR)",
+                            "IDR" to "Indonesia (IDR)",
+                            "PHP" to "Philippines (PHP)",
+                            "VND" to "Vietnam (VND)",
+                            "KRW" to "South Korea (KRW)",
+                            "TRY" to "Turkey (TRY)",
+                            "EGP" to "Egypt (EGP)",
+                            "ZAR" to "South Africa (ZAR)",
+                            "BRL" to "Brazil (BRL)",
+                            "MXN" to "Mexico (MXN)",
+                            "NZD" to "New Zealand (NZD)"
+                        )
+                        
+                        var showCurrencyDialog by remember { mutableStateOf(false) }
+                        val selectedLabel = currencyOptions.firstOrNull { it.first == homeCurrency }?.second ?: "Select currency"
+                        
+                        OutlinedButton(
+                            onClick = { showCurrencyDialog = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        scope.launch { settings.setHomeCurrency(code) }
-                                    },
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                RadioButton(
-                                    selected = homeCurrency == code,
-                                    onClick = { scope.launch { settings.setHomeCurrency(code) } }
+                                Text(
+                                    text = selectedLabel,
+                                    style = MaterialTheme.typography.bodyLarge
                                 )
-                                Text(text = code, style = MaterialTheme.typography.bodyLarge)
+                                Icon(
+                                    Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                        
+                        if (showCurrencyDialog) {
+                            BasicAlertDialog(onDismissRequest = { showCurrencyDialog = false }) {
+                                val dialogShape = MaterialTheme.shapes.large
+                                Surface(
+                                    shape = dialogShape,
+                                    color = MaterialTheme.colorScheme.surface,
+                                    tonalElevation = 0.dp,
+                                    shadowElevation = 2.dp,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(18.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.settings_home_currency),
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        
+                                        LazyColumn(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(400.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            items(currencyOptions) { (code, label) ->
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        scope.launch { settings.setHomeCurrency(code) }
+                                                        showCurrencyDialog = false
+                                                    },
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                                                        contentColor = if (homeCurrency == code) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                                    ),
+                                                    border = androidx.compose.foundation.BorderStroke(
+                                                        1.dp,
+                                                        if (homeCurrency == code) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                                                    )
+                                                ) {
+                                                    Text(
+                                                        text = label,
+                                                        style = MaterialTheme.typography.bodyLarge,
+                                                        fontWeight = if (homeCurrency == code) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

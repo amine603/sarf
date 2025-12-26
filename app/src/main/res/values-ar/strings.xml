@@ -26,7 +26,7 @@
     <string name="settings_home_currency">عملة بلدك</string>
     <string name="settings_refresh_rates">تحديث أسعار الصرف</string>
 
-    <string name="share_text">جرّب تطبيق سرف: %1$s</string>
+    <string name="share_text">جرّب تطبيق Cash Guide: %1$s</string>
 
     <string name="price_label">الثمن</string>
     <string name="paid_label">المؤدى</string>
