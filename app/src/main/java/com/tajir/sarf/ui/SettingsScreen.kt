@@ -52,7 +52,7 @@ import com.tajir.sarf.settings.AppSettings
 import com.tajir.sarf.settings.ThemeMode
 import kotlinx.coroutines.launch
 
-private const val PRIVACY_POLICY_URL = "https://example.com/privacy"
+private const val PRIVACY_POLICY_URL = "https://sites.google.com/view/cashguide-/accueil"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

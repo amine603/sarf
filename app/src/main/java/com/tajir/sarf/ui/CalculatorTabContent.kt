@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -431,7 +433,8 @@ private fun CalcKey(
     cornerHint: String? = null,
     onLongPress: (() -> Unit)? = null
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    // More rounded corners for better appearance
+    val shape = RoundedCornerShape(24.dp)
     val outline = if (isDark) Color.White.copy(alpha = 0.22f) else MaterialTheme.colorScheme.outline
     val containerColor = if (isDark) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
     val borderColor = when (style) {
@@ -448,17 +451,21 @@ private fun CalcKey(
         else -> if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
     }
 
+    val interactionSource = remember { MutableInteractionSource() }
+
     Surface(
         modifier = modifier
+            .clip(shape)
             .combinedClickable(
+                interactionSource = interactionSource,
                 onClick = { onPress(label) },
                 onLongClick = onLongPress
             ),
         shape = shape,
         color = containerColor,
-        shadowElevation = 0.dp,
-        tonalElevation = 0.dp,
-        border = BorderStroke(1.dp, borderColor)
+        shadowElevation = 2.dp,
+        tonalElevation = 1.dp,
+        border = BorderStroke(1.5.dp, borderColor)
     ) {
         Box(Modifier.fillMaxSize()) {
             if (cornerHint != null) {
