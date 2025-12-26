@@ -1,0 +1,112 @@
+<resources>
+    <string name="app_name">Sarf</string>
+
+    <string name="tab_calculator">Calculadora</string>
+    <string name="tab_sarf">Cambio</string>
+    <string name="tab_home">Inicio</string>
+
+    <string name="settings">Ajustes</string>
+    <string name="back">Atrás</string>
+
+    <string name="settings_language">Idioma</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_system">Sistema</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Oscuro</string>
+    <string name="settings_language_system">Sistema</string>
+    <string name="settings_language_fr">Francés</string>
+    <string name="settings_language_ar">Árabe</string>
+    <string name="settings_language_en">Inglés</string>
+    <string name="settings_language_es">Español</string>
+    <string name="settings_language_pt">Portugués</string>
+
+    <string name="settings_share">Compartir app</string>
+    <string name="settings_rate">Valorar app</string>
+    <string name="settings_privacy">Política de privacidad</string>
+    <string name="settings_home_currency">Tu moneda</string>
+    <string name="settings_refresh_rates">Actualizar tipos</string>
+
+    <string name="share_text">Prueba Sarf: %1$s</string>
+
+    <string name="price_label">Precio</string>
+    <string name="paid_label">Pagado</string>
+    <string name="calculate">Calcular</string>
+    <string name="clear">Borrar</string>
+    <string name="reset">Restablecer</string>
+    <string name="edit">Editar</string>
+
+    <string name="error_invalid_price">Introduce un precio válido</string>
+    <string name="error_invalid_paid">Introduce un importe pagado válido</string>
+
+    <string name="currency_dhs">DHS</string>
+    <string name="currency_dirham">درهم</string>
+    <string name="send_to_sarf">Enviar a Cambio →</string>
+    <string name="no_image">Sin imagen</string>
+    <string name="toast_last_coin">Esta es la última moneda que puedes quitar.</string>
+    <string name="toast_cannot_remove_denom">No puedes quitar esta denominación (no hay cambio exacto).</string>
+
+    <string name="refresh">Actualizar</string>
+    <string name="last_updated">Última actualización: %1$s</string>
+    <string name="using_last_saved_rate">Usando el último tipo guardado.</string>
+    <string name="examples_are_approximate">Los ejemplos son aproximados.</string>
+    <string name="change_country">Cambiar país</string>
+
+    <string name="home_currency_guide_title">Guía de moneda</string>
+    <string name="home_currency_guide_subtitle">Toca un billete o moneda para ver detalles y calcular el cambio.</string>
+    <string name="home_breakdown_amount">Descomponer un monto</string>
+
+    <string name="details_title">Detalles</string>
+    <string name="conversion_title">Conversión</string>
+    <string name="about_title">Información</string>
+    <string name="examples_title">Ejemplos</string>
+    <string name="no_details_available">No hay detalles disponibles.</string>
+    <string name="select_home_currency_settings">Selecciona tu moneda en Ajustes</string>
+    <string name="rate_unavailable">Tipo no disponible</string>
+    <string name="loading">Cargando…</string>
+
+    <string name="home_currency_picker_title">Selecciona tu moneda</string>
+    <string name="home_currency_picker_subtitle">Se usa para mostrar conversiones rápidas.</string>
+
+    <string name="currency_select_prompt">≈ Seleccionar moneda</string>
+    <string name="tap_to_convert_prompt">≈ Toca ↔ para convertir</string>
+    <string name="convert">Convertir</string>
+
+    <string name="onboarding_choose_language_title">Elige tu idioma</string>
+    <string name="onboarding_choose_language_subtitle">Primero selecciona el idioma de la app.</string>
+    <string name="onboarding_choose_country_title">Elige tu país</string>
+    <string name="onboarding_choose_country_subtitle">Luego verás la guía de la moneda local.</string>
+    <string name="continue_button">Continuar</string>
+    <string name="start">Empezar</string>
+    <string name="available">Disponible</string>
+    <string name="coming_soon">Próximamente</string>
+
+    <string name="breakdown_title">Desglose del monto</string>
+    <string name="breakdown_subtitle">Introduce un monto para ver cuántos billetes/monedas contiene.</string>
+    <string name="amount_label">Monto</string>
+    <string name="show">Mostrar</string>
+    <string name="invalid_amount">Monto inválido</string>
+    <string name="enter_positive_amount">Introduce un monto positivo</string>
+    <string name="result_title">Resultado</string>
+
+    <!-- Países -->
+    <string name="country_ma">Marruecos</string>
+    <string name="country_es">España</string>
+    <string name="country_pt">Portugal</string>
+    <string name="country_fr">Francia</string>
+    <string name="country_de">Alemania</string>
+    <string name="country_it">Italia</string>
+    <string name="country_nl">Países Bajos</string>
+    <string name="country_be">Bélgica</string>
+    <string name="country_at">Austria</string>
+    <string name="country_ie">Irlanda</string>
+    <string name="country_gr">Grecia</string>
+    <string name="country_sa">Arabia Saudí</string>
+    <string name="country_us">Estados Unidos</string>
+    <string name="country_gb">Reino Unido</string>
+
+    <string name="exit_title">Salir</string>
+    <string name="exit_message">¿Quieres salir?</string>
+    <string name="exit_confirm">Salir</string>
+    <string name="exit_cancel">Cancelar</string>
+</resources>
+

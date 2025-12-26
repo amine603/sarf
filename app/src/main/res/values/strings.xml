@@ -1,0 +1,117 @@
+<resources>
+    <string name="app_name">Sarf</string>
+
+    <string name="tab_calculator">Calculator</string>
+    <string name="tab_sarf">Change</string>
+    <string name="tab_home">Home</string>
+
+    <string name="settings">Settings</string>
+    <string name="back">Back</string>
+
+    <string name="settings_language">Language</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_language_fr">French</string>
+    <string name="settings_language_ar">Arabic</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_es">Spanish</string>
+    <string name="settings_language_pt">Portuguese</string>
+
+    <string name="settings_share">Share app</string>
+    <string name="settings_rate">Rate app</string>
+    <string name="settings_privacy">Privacy policy</string>
+    <string name="settings_home_currency">Home currency</string>
+    <string name="settings_refresh_rates">Refresh rates</string>
+
+    <string name="share_text">Try Sarf: %1$s</string>
+
+    <string name="price_label">Price</string>
+    <string name="paid_label">Paid</string>
+    <string name="calculate">Calculate</string>
+    <string name="clear">Clear</string>
+    <string name="reset">Reset</string>
+    <string name="edit">Edit</string>
+
+    <string name="error_invalid_price">Please enter a valid price</string>
+    <string name="error_invalid_paid">Please enter a valid paid amount</string>
+
+    <string name="currency_dhs">DHS</string>
+    <string name="currency_dirham">درهم</string>
+    <string name="send_to_sarf">Send to Change →</string>
+    <string name="no_image">No image</string>
+    <string name="toast_last_coin">This is the last coin denomination you can remove.</string>
+    <string name="toast_cannot_remove_denom">You can’t remove this denomination (no exact change possible).</string>
+
+    <string name="refresh">Refresh</string>
+    <string name="last_updated">Last updated: %1$s</string>
+    <string name="using_last_saved_rate">Using last saved rate.</string>
+    <string name="examples_are_approximate">Examples are approximate.</string>
+    <string name="change_country">Change country</string>
+
+    <!-- Home / Guide -->
+    <string name="home_currency_guide_title">Currency guide</string>
+    <string name="home_currency_guide_subtitle">Tap a banknote or coin to see details and calculate change.</string>
+    <string name="home_breakdown_amount">Break down an amount</string>
+
+    <!-- Detail screen -->
+    <string name="details_title">Details</string>
+    <string name="conversion_title">Conversion</string>
+    <string name="about_title">About</string>
+    <string name="examples_title">Value examples</string>
+    <string name="no_details_available">No details available.</string>
+    <string name="select_home_currency_settings">Select your home currency in Settings</string>
+    <string name="rate_unavailable">Rate unavailable</string>
+    <string name="loading">Loading…</string>
+
+    <!-- Home currency picker -->
+    <string name="home_currency_picker_title">Select your home currency</string>
+    <string name="home_currency_picker_subtitle">Used to show quick conversions on each card.</string>
+
+    <!-- Convert / inline hints -->
+    <string name="currency_select_prompt">≈ Select currency</string>
+    <string name="tap_to_convert_prompt">≈ Tap ↔ to convert</string>
+    <string name="convert">Convert</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_choose_language_title">Choose your language</string>
+    <string name="onboarding_choose_language_subtitle">Select the app language first.</string>
+    <string name="onboarding_choose_country_title">Choose your country</string>
+    <string name="onboarding_choose_country_subtitle">Then you will see the local currency guide.</string>
+    <string name="continue_button">Continue</string>
+    <string name="start">Start</string>
+    <string name="available">Available</string>
+    <string name="coming_soon">Coming soon</string>
+
+    <!-- Amount breakdown -->
+    <string name="breakdown_title">Amount breakdown</string>
+    <string name="breakdown_subtitle">Type an amount to see how many banknotes/coins it contains.</string>
+    <string name="amount_label">Amount</string>
+    <string name="show">Show</string>
+    <string name="invalid_amount">Invalid amount</string>
+    <string name="enter_positive_amount">Enter a positive amount</string>
+    <string name="result_title">Result</string>
+
+    <!-- Countries -->
+    <string name="country_ma">Morocco</string>
+    <string name="country_es">Spain</string>
+    <string name="country_pt">Portugal</string>
+    <string name="country_fr">France</string>
+    <string name="country_de">Germany</string>
+    <string name="country_it">Italy</string>
+    <string name="country_nl">Netherlands</string>
+    <string name="country_be">Belgium</string>
+    <string name="country_at">Austria</string>
+    <string name="country_ie">Ireland</string>
+    <string name="country_gr">Greece</string>
+    <string name="country_sa">Saudi Arabia</string>
+    <string name="country_us">United States</string>
+    <string name="country_gb">United Kingdom</string>
+
+    <string name="exit_title">Exit</string>
+    <string name="exit_message">Do you really want to exit?</string>
+    <string name="exit_confirm">Exit</string>
+    <string name="exit_cancel">Cancel</string>
+</resources>

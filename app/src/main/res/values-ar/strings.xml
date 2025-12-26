@@ -1,0 +1,119 @@
+<resources>
+    <string name="app_name">سرف</string>
+
+    <string name="tab_calculator">آلة حاسبة</string>
+    <string name="tab_sarf">صرف</string>
+    <string name="tab_home">الدليل</string>
+
+    <string name="settings">الإعدادات</string>
+    <string name="back">رجوع</string>
+
+    <string name="settings_language">اللغة</string>
+    <string name="settings_theme">المظهر</string>
+    <string name="settings_theme_system">النظام</string>
+    <string name="settings_theme_light">فاتح</string>
+    <string name="settings_theme_dark">داكن</string>
+    <string name="settings_language_system">النظام</string>
+    <string name="settings_language_fr">الفرنسية</string>
+    <string name="settings_language_ar">العربية</string>
+    <string name="settings_language_en">الإنجليزية</string>
+    <string name="settings_language_es">الإسبانية</string>
+    <string name="settings_language_pt">البرتغالية</string>
+
+    <string name="settings_share">مشاركة التطبيق</string>
+    <string name="settings_rate">تقييم التطبيق</string>
+    <string name="settings_privacy">سياسة الخصوصية</string>
+    <string name="settings_home_currency">عملة بلدك</string>
+    <string name="settings_refresh_rates">تحديث أسعار الصرف</string>
+
+    <string name="share_text">جرّب تطبيق سرف: %1$s</string>
+
+    <string name="price_label">الثمن</string>
+    <string name="paid_label">المؤدى</string>
+    <string name="calculate">احسب</string>
+    <string name="clear">مسح</string>
+    <string name="reset">إعادة ضبط</string>
+    <string name="edit">تعديل</string>
+
+    <string name="error_invalid_price">المرجو إدخال ثمن صحيح</string>
+    <string name="error_invalid_paid">المرجو إدخال مبلغ مؤدى صحيح</string>
+
+    <string name="currency_dhs">DHS</string>
+    <string name="currency_dirham">درهم</string>
+    <string name="send_to_sarf">إرسال إلى صرف ←</string>
+    <string name="no_image">لا توجد صورة</string>
+    <string name="toast_last_coin">هذه آخر قطعة يمكنك حذفها.</string>
+    <string name="toast_cannot_remove_denom">لا يمكنك حذف هذه الفئة (لا يمكن إعطاء الباقي بدقة).</string>
+
+    <string name="refresh">تحديث</string>
+    <string name="last_updated">آخر تحديث: %1$s</string>
+    <string name="using_last_saved_rate">يتم استخدام آخر سعر محفوظ.</string>
+    <string name="examples_are_approximate">الأمثلة تقريبية.</string>
+    <string name="change_country">تغيير البلد</string>
+
+    <!-- الصفحة الرئيسية / الدليل -->
+    <string name="home_currency_guide_title">دليل العملات</string>
+    <string name="home_currency_guide_subtitle">اضغط على ورقة نقدية أو قطعة لرؤية التفاصيل وحساب الباقي.</string>
+    <string name="home_breakdown_amount">تفكيك مبلغ</string>
+
+    <!-- التفاصيل -->
+    <string name="details_title">التفاصيل</string>
+    <string name="conversion_title">التحويل</string>
+    <string name="about_title">حول</string>
+    <string name="examples_title">أمثلة على القيمة</string>
+    <string name="no_details_available">لا توجد تفاصيل.</string>
+    <string name="select_home_currency_settings">اختر عملتك في الإعدادات</string>
+    <string name="rate_unavailable">سعر الصرف غير متوفر</string>
+    <string name="loading">جارٍ التحميل…</string>
+
+    <!-- اختيار العملة -->
+    <string name="home_currency_picker_title">اختر عملتك</string>
+    <string name="home_currency_picker_subtitle">تُستخدم لعرض تحويلات سريعة.</string>
+
+    <!-- التحويل / تلميحات -->
+    <string name="currency_select_prompt">≈ اختر العملة</string>
+    <string name="tap_to_convert_prompt">≈ اضغط ↔ للتحويل</string>
+    <string name="convert">تحويل</string>
+
+    <!-- الإعداد الأولي -->
+    <string name="onboarding_choose_language_title">اختر لغتك</string>
+    <string name="onboarding_choose_language_subtitle">اختر لغة التطبيق أولاً.</string>
+    <string name="onboarding_choose_country_title">اختر بلدك</string>
+    <string name="onboarding_choose_country_subtitle">بعد ذلك سترى دليل العملة المحلية.</string>
+    <string name="continue_button">متابعة</string>
+    <string name="start">ابدأ</string>
+    <string name="available">متاح</string>
+    <string name="coming_soon">قريباً</string>
+
+    <!-- تفكيك مبلغ -->
+    <string name="breakdown_title">تفكيك مبلغ</string>
+    <string name="breakdown_subtitle">أدخل مبلغاً لمعرفة عدد الأوراق/العملات التي يحتويها.</string>
+    <string name="amount_label">المبلغ</string>
+    <string name="show">عرض</string>
+    <string name="invalid_amount">مبلغ غير صالح</string>
+    <string name="enter_positive_amount">أدخل مبلغاً موجباً</string>
+    <string name="result_title">النتيجة</string>
+
+    <!-- الدول -->
+    <string name="country_ma">المغرب</string>
+    <string name="country_es">إسبانيا</string>
+    <string name="country_pt">البرتغال</string>
+    <string name="country_fr">فرنسا</string>
+    <string name="country_de">ألمانيا</string>
+    <string name="country_it">إيطاليا</string>
+    <string name="country_nl">هولندا</string>
+    <string name="country_be">بلجيكا</string>
+    <string name="country_at">النمسا</string>
+    <string name="country_ie">إيرلندا</string>
+    <string name="country_gr">اليونان</string>
+    <string name="country_sa">المملكة العربية السعودية</string>
+    <string name="country_us">الولايات المتحدة</string>
+    <string name="country_gb">المملكة المتحدة</string>
+
+    <string name="exit_title">الخروج</string>
+    <string name="exit_message">هل تريد الخروج من التطبيق؟</string>
+    <string name="exit_confirm">خروج</string>
+    <string name="exit_cancel">إلغاء</string>
+</resources>
+
+
