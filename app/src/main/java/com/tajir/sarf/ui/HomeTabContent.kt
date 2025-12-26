@@ -1,5 +1,6 @@
 package com.tajir.sarf.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -63,6 +65,7 @@ import com.tajir.sarf.domain.ChangeCalculator
 import com.tajir.sarf.domain.ChangeResult
 import com.tajir.sarf.ui.components.CurrencyMoneyGridCard
 import com.tajir.sarf.ui.components.DenominationCard
+import com.tajir.sarf.ui.components.rememberAssetImage
 import com.tajir.sarf.ui.components.rememberIsOnline
 import com.tajir.sarf.ui.theme.SarfLineAlt
 import com.tajir.sarf.utils.MoneyInputParser
@@ -273,17 +276,37 @@ fun CurrencyCardDetailScreen(
 
         if (card != null) {
             item {
-                DenominationCard(
-                    label = card.denomination.displayLabel,
-                    count = 1,
-                    assetPath = card.denomination.assetPath,
-                    isCoin = card.denomination.isCoin,
-                    showLabel = false,
-                    showCountWhenOne = false,
+                // Fixed size container for coins to ensure consistent sizing across all currencies
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(if (card.denomination.isCoin) 220.dp else 160.dp)
-                )
+                        .height(if (card.denomination.isCoin) 180.dp else 160.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (card.denomination.isCoin) {
+                        // For coins: use fixed size so all coins appear the same size
+                        val image = rememberAssetImage(card.denomination.assetPath, trimTransparentPadding = false)
+                        image?.let {
+                            Image(
+                                bitmap = it,
+                                contentDescription = card.denomination.displayLabel,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.size(140.dp)
+                            )
+                        }
+                    } else {
+                        // For banknotes: use DenominationCard as before
+                        DenominationCard(
+                            label = card.denomination.displayLabel,
+                            count = 1,
+                            assetPath = card.denomination.assetPath,
+                            isCoin = false,
+                            showLabel = false,
+                            showCountWhenOne = false,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
             }
 
             item {
