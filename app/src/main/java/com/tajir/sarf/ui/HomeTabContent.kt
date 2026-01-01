@@ -207,20 +207,20 @@ fun HomeTabContent(
         Spacer(Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedButton(
                 onClick = { showAmountBreakdown.value = true },
-                modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text(stringResource(R.string.home_breakdown_amount), fontWeight = FontWeight.Bold)
             }
+            Spacer(modifier = Modifier.width(10.dp))
             OutlinedButton(
                 onClick = { onViewValueExamples() },
-                modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
