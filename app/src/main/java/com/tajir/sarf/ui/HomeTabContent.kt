@@ -523,7 +523,7 @@ private fun HomeCurrencyPickerDialog(
     onPick: (String) -> Unit
 ) {
     // Only currencies that are actually supported in the app (have denominations)
-    val currencies = listOf("MAD", "EUR", "SAR")
+    val currencies = listOf("MAD", "EUR", "SAR", "USD", "GBP")
 
     BasicAlertDialog(onDismissRequest = onDismiss) {
         val shape = MaterialTheme.shapes.large

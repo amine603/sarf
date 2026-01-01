@@ -27,6 +27,8 @@ object CurrencyGuide {
         return when (code) {
             "EUR" -> buildEuroCards(denoms)
             "SAR" -> buildSaudiCards(denoms)
+            "USD" -> buildUSDCards(denoms)
+            "GBP" -> buildGBPCards(denoms)
             else -> buildMoroccoCards(denoms)
         }
     }
@@ -367,6 +369,284 @@ object CurrencyGuide {
                     detailTitle = "0.01 ر.س",
                     detailDescription = "Used for exact change.",
                     examplePrices = listOf("Exact change", "Rounding", "Small change")
+                )
+                else -> null
+            }
+        }
+    }
+
+    private fun buildUSDCards(denoms: List<Denominations.DenominationSpec>): List<ValueCard> {
+        return denoms.mapNotNull { spec ->
+            when (spec.valueCents) {
+                10000 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Very high value",
+                    detailTitle = "$100",
+                    detailDescription = "A very high-value note. Rare in daily use. Many places may refuse it.",
+                    examplePrices = listOf(
+                        "Hotel deposit",
+                        "Large purchase",
+                        "Long-distance travel",
+                        "Electronics (part)",
+                        "Multi-day expenses",
+                        "Not always accepted"
+                    )
+                )
+                5000 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "High value",
+                    detailTitle = "$50",
+                    detailDescription = "High-value note. Not always accepted in small shops.",
+                    examplePrices = listOf(
+                        "Shopping",
+                        "Nice dinner for two",
+                        "Hotel night (budget)",
+                        "Intercity transport",
+                        "Grocery run (big)",
+                        "Not always accepted"
+                    )
+                )
+                2000 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Common for shopping",
+                    detailTitle = "$20",
+                    detailDescription = "One of the most used notes. Great for daily expenses and shopping.",
+                    examplePrices = listOf(
+                        "Lunch",
+                        "Local transport day pass",
+                        "Coffee + snack",
+                        "Museum ticket",
+                        "SIM / data top‑up",
+                        "Groceries (small)"
+                    )
+                )
+                1000 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Small note",
+                    detailTitle = "$10",
+                    detailDescription = "Very common for quick purchases and small expenses.",
+                    examplePrices = listOf(
+                        "Coffee + snack",
+                        "Bakery items",
+                        "Short metro tickets",
+                        "Small souvenirs",
+                        "Water + snack",
+                        "Quick takeaway"
+                    )
+                )
+                500 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Small purchases",
+                    detailTitle = "$5",
+                    detailDescription = "Great for small purchases and change.",
+                    examplePrices = listOf(
+                        "Coffee",
+                        "Bakery item",
+                        "Snack",
+                        "Bottle of water",
+                        "Small ticket (sometimes)"
+                    )
+                )
+                200 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Rare note",
+                    detailTitle = "$2",
+                    detailDescription = "A rare banknote. Not commonly used in daily transactions.",
+                    examplePrices = listOf(
+                        "Small purchases",
+                        "Exact change",
+                        "Rarely seen"
+                    )
+                )
+                100 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Common note",
+                    detailTitle = "$1",
+                    detailDescription = "The most common banknote. Used everywhere for small purchases.",
+                    examplePrices = listOf(
+                        "Coffee",
+                        "Snack",
+                        "Bottle of water",
+                        "Small ticket",
+                        "Tips"
+                    )
+                )
+                25 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Common coin",
+                    detailTitle = "$0.25",
+                    detailDescription = "A very common coin (quarter). Used everywhere for exact change.",
+                    examplePrices = listOf(
+                        "Exact change",
+                        "Parking meter",
+                        "Vending machine",
+                        "Small tip",
+                        "Rounding"
+                    )
+                )
+                10 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Common coin",
+                    detailTitle = "$0.10",
+                    detailDescription = "A common coin (dime). Used for exact change.",
+                    examplePrices = listOf(
+                        "Exact change",
+                        "Vending machine",
+                        "Rounding",
+                        "Small change"
+                    )
+                )
+                5 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Small change",
+                    detailTitle = "$0.05",
+                    detailDescription = "A small coin (nickel). Used for exact change.",
+                    examplePrices = listOf(
+                        "Exact change",
+                        "Rounding",
+                        "Small change"
+                    )
+                )
+                1 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Smallest change",
+                    detailTitle = "$0.01",
+                    detailDescription = "The smallest coin (penny). Used for exact change.",
+                    examplePrices = listOf(
+                        "Exact change",
+                        "Rounding",
+                        "Smallest change"
+                    )
+                )
+                else -> null
+            }
+        }
+    }
+
+    private fun buildGBPCards(denoms: List<Denominations.DenominationSpec>): List<ValueCard> {
+        return denoms.mapNotNull { spec ->
+            when (spec.valueCents) {
+                5000 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Very high value",
+                    detailTitle = "£50",
+                    detailDescription = "A very high-value note. Rare in daily use. Many places may refuse it.",
+                    examplePrices = listOf(
+                        "Hotel deposit",
+                        "Large purchase",
+                        "Long-distance travel",
+                        "Electronics (part)",
+                        "Multi-day expenses",
+                        "Not always accepted"
+                    )
+                )
+                2000 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Common for shopping",
+                    detailTitle = "£20",
+                    detailDescription = "One of the most used notes. Great for daily expenses and shopping.",
+                    examplePrices = listOf(
+                        "Lunch",
+                        "Local transport day pass",
+                        "Coffee + snack",
+                        "Museum ticket",
+                        "SIM / data top‑up",
+                        "Groceries (small)"
+                    )
+                )
+                1000 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Small note",
+                    detailTitle = "£10",
+                    detailDescription = "Very common for quick purchases and small expenses.",
+                    examplePrices = listOf(
+                        "Coffee + snack",
+                        "Bakery items",
+                        "Short metro tickets",
+                        "Small souvenirs",
+                        "Water + snack",
+                        "Quick takeaway"
+                    )
+                )
+                500 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Small purchases",
+                    detailTitle = "£5",
+                    detailDescription = "Great for small purchases and change.",
+                    examplePrices = listOf(
+                        "Coffee",
+                        "Bakery item",
+                        "Snack",
+                        "Bottle of water",
+                        "Small ticket (sometimes)"
+                    )
+                )
+                200 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Common coin",
+                    detailTitle = "£2",
+                    detailDescription = "A common coin used everywhere.",
+                    examplePrices = listOf(
+                        "Small snack",
+                        "Water (sometimes)",
+                        "Coffee (sometimes)",
+                        "Bus ticket (sometimes)",
+                        "Extra change"
+                    )
+                )
+                100 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Common coin",
+                    detailTitle = "£1",
+                    detailDescription = "A common coin used everywhere.",
+                    examplePrices = listOf(
+                        "Small snack (sometimes)",
+                        "Extra change",
+                        "Rounding",
+                        "Small tip (sometimes)"
+                    )
+                )
+                50 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Coins / change",
+                    detailTitle = "50p",
+                    detailDescription = "Used for exact change and small purchases.",
+                    examplePrices = listOf("Exact change", "Rounding", "Small change")
+                )
+                20 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Coins / change",
+                    detailTitle = "20p",
+                    detailDescription = "Used for exact change.",
+                    examplePrices = listOf("Exact change", "Rounding", "Small change")
+                )
+                10 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Coins / change",
+                    detailTitle = "10p",
+                    detailDescription = "Used for exact change.",
+                    examplePrices = listOf("Exact change", "Rounding", "Small change")
+                )
+                5 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Small change",
+                    detailTitle = "5p",
+                    detailDescription = "Used for exact change.",
+                    examplePrices = listOf("Exact change", "Rounding", "Small change")
+                )
+                2 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Small change",
+                    detailTitle = "2p",
+                    detailDescription = "Used for exact change.",
+                    examplePrices = listOf("Exact change", "Rounding", "Small change")
+                )
+                1 -> ValueCard(
+                    denomination = spec,
+                    shortHint = "Smallest change",
+                    detailTitle = "1p",
+                    detailDescription = "The smallest coin. Used for exact change.",
+                    examplePrices = listOf("Exact change", "Rounding", "Smallest change")
                 )
                 else -> null
             }

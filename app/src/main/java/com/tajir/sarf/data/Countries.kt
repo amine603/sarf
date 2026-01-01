@@ -31,8 +31,8 @@ object Countries {
         CountrySpec(code = "GR", nameResId = R.string.country_gr, localCurrencyCode = "EUR", assetsAvailable = true),
         // Saudi Arabia (SAR) — uses assets in app/src/main/assets/saudipic/
         CountrySpec(code = "SA", nameResId = R.string.country_sa, localCurrencyCode = "SAR", assetsAvailable = true),
-        CountrySpec(code = "US", nameResId = R.string.country_us, localCurrencyCode = "USD", assetsAvailable = false),
-        CountrySpec(code = "GB", nameResId = R.string.country_gb, localCurrencyCode = "GBP", assetsAvailable = false),
+        CountrySpec(code = "US", nameResId = R.string.country_us, localCurrencyCode = "USD", assetsAvailable = true),
+        CountrySpec(code = "GB", nameResId = R.string.country_gb, localCurrencyCode = "GBP", assetsAvailable = true),
     )
 
     fun byCode(code: String?): CountrySpec? =

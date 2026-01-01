@@ -85,6 +85,47 @@ object Denominations {
     )
 
     /**
+     * US Dollar denominations (USD), in descending order (largest first).
+     *
+     * Asset paths must match files in: app/src/main/assets/dollarpic/
+     * Supports both .png and .jpg formats.
+     */
+    val USD: List<DenominationSpec> = listOf(
+        DenominationSpec(valueCents = 10000, assetPath = "dollarpic/100.jpg", displayLabel = "$100", isCoin = false),
+        DenominationSpec(valueCents = 5000, assetPath = "dollarpic/50.jpg", displayLabel = "$50", isCoin = false),
+        DenominationSpec(valueCents = 2000, assetPath = "dollarpic/20.jpg", displayLabel = "$20", isCoin = false),
+        DenominationSpec(valueCents = 1000, assetPath = "dollarpic/10.jpg", displayLabel = "$10", isCoin = false),
+        DenominationSpec(valueCents = 500, assetPath = "dollarpic/5.jpg", displayLabel = "$5", isCoin = false),
+        DenominationSpec(valueCents = 200, assetPath = "dollarpic/2.jpg", displayLabel = "$2", isCoin = false),
+        DenominationSpec(valueCents = 100, assetPath = "dollarpic/1.jpg", displayLabel = "$1", isCoin = false),
+        DenominationSpec(valueCents = 25, assetPath = "dollarpic/25 cents.png", displayLabel = "$0.25", isCoin = true),
+        DenominationSpec(valueCents = 10, assetPath = "dollarpic/10 cents.png", displayLabel = "$0.10", isCoin = true),
+        DenominationSpec(valueCents = 5, assetPath = "dollarpic/5 cents.png", displayLabel = "$0.05", isCoin = true),
+        DenominationSpec(valueCents = 1, assetPath = "dollarpic/1 cent.png", displayLabel = "$0.01", isCoin = true),
+    )
+
+    /**
+     * British Pound denominations (GBP), in descending order (largest first).
+     *
+     * Asset paths must match files in: app/src/main/assets/ukpic/
+     * Supports both .png formats.
+     */
+    val GBP: List<DenominationSpec> = listOf(
+        DenominationSpec(valueCents = 5000, assetPath = "ukpic/50.png", displayLabel = "£50", isCoin = false),
+        DenominationSpec(valueCents = 2000, assetPath = "ukpic/20.png", displayLabel = "£20", isCoin = false),
+        DenominationSpec(valueCents = 1000, assetPath = "ukpic/10.png", displayLabel = "£10", isCoin = false),
+        DenominationSpec(valueCents = 500, assetPath = "ukpic/5.png", displayLabel = "£5", isCoin = false),
+        DenominationSpec(valueCents = 200, assetPath = "ukpic/2pound.png", displayLabel = "£2", isCoin = true),
+        DenominationSpec(valueCents = 100, assetPath = "ukpic/1pound.png", displayLabel = "£1", isCoin = true),
+        DenominationSpec(valueCents = 50, assetPath = "ukpic/50p.png", displayLabel = "50p", isCoin = true),
+        DenominationSpec(valueCents = 20, assetPath = "ukpic/20p.png", displayLabel = "20p", isCoin = true),
+        DenominationSpec(valueCents = 10, assetPath = "ukpic/10p.png", displayLabel = "10p", isCoin = true),
+        DenominationSpec(valueCents = 5, assetPath = "ukpic/5p.png", displayLabel = "5p", isCoin = true),
+        DenominationSpec(valueCents = 2, assetPath = "ukpic/2p.png", displayLabel = "2p", isCoin = true),
+        DenominationSpec(valueCents = 1, assetPath = "ukpic/1p.png", displayLabel = "1p", isCoin = true),
+    )
+
+    /**
      * Backwards-compatible alias: historically the app was MAD-only.
      */
     val ALL: List<DenominationSpec> = MAD
@@ -94,6 +135,8 @@ object Denominations {
             "EUR" -> EUR
             "MAD" -> MAD
             "SAR" -> SAR
+            "USD" -> USD
+            "GBP" -> GBP
             else -> MAD
         }
     }
