@@ -43,6 +43,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.StarRate
+import android.content.Intent
+import android.net.Uri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.res.stringResource
 import com.tajir.sarf.R
@@ -52,6 +55,7 @@ import android.app.Activity
 import com.tajir.sarf.data.Countries
 import com.tajir.sarf.settings.AppSettings
 import com.tajir.sarf.ui.theme.SarfLineAlt
+import com.tajir.sarf.ui.ValueExamplesScreen
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
@@ -67,6 +71,7 @@ fun MainScreen() {
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showExitDialog by rememberSaveable { mutableStateOf(false) }
     var homeDetailValueCents by rememberSaveable { mutableStateOf<Int?>(null) }
+    var showValueExamples by rememberSaveable { mutableStateOf(false) }
 
     val context = LocalContext.current
     val ratesVm: RatesViewModel = viewModel()
@@ -102,7 +107,7 @@ fun MainScreen() {
     var sarfResult by remember { mutableStateOf<ChangeResult?>(null) }
     var sarfError by remember { mutableStateOf<String?>(null) }
 
-    val isHome = !showSettings && selectedTab == 0 && homeDetailValueCents == null
+    val isHome = !showSettings && selectedTab == 0 && homeDetailValueCents == null && !showValueExamples
 
     BackHandler(enabled = true) {
         when {
@@ -112,6 +117,9 @@ fun MainScreen() {
             }
             showSettings -> {
                 showSettings = false
+            }
+            showValueExamples -> {
+                showValueExamples = false
             }
             homeDetailValueCents != null -> {
                 homeDetailValueCents = null
@@ -169,13 +177,22 @@ fun MainScreen() {
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f)
                         )
 
-                        Row(
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            // Rate button
                             OutlinedButton(
-                                onClick = { showExitDialog = false },
-                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    showExitDialog = false
+                                    val market = android.net.Uri.parse("market://details?id=${context.packageName}")
+                                    val web = android.net.Uri.parse("https://play.google.com/store/apps/details?id=${context.packageName}")
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, market).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    runCatching { context.startActivity(intent) }.getOrElse {
+                                        context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, web).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
                                 shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                                 border = androidx.compose.foundation.BorderStroke(
                                     width = 1.dp,
@@ -185,31 +202,60 @@ fun MainScreen() {
                                     contentColor = MaterialTheme.colorScheme.primary
                                 )
                             ) {
+                                androidx.compose.material3.Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Outlined.StarRate,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
                                 Text(
-                                    text = stringResource(R.string.exit_cancel),
+                                    text = stringResource(R.string.settings_rate),
                                     fontWeight = FontWeight.Bold
                                 )
                             }
 
-                            OutlinedButton(
-                                onClick = {
-                                    showExitDialog = false
-                                    (context as? Activity)?.finish()
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                                colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.primary
-                                ),
-                                border = androidx.compose.foundation.BorderStroke(
-                                    width = 1.dp,
-                                    color = SarfLineAlt
-                                )
+                            // Cancel and Exit buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Text(
-                                    text = stringResource(R.string.exit_confirm),
-                                    fontWeight = FontWeight.Bold
-                                )
+                                OutlinedButton(
+                                    onClick = { showExitDialog = false },
+                                    modifier = Modifier.weight(1f),
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        width = 1.dp,
+                                        color = SarfLineAlt
+                                    ),
+                                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.exit_cancel),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        showExitDialog = false
+                                        (context as? Activity)?.finish()
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.primary
+                                    ),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        width = 1.dp,
+                                        color = SarfLineAlt
+                                    )
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.exit_confirm),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                     }
@@ -243,30 +289,40 @@ fun MainScreen() {
 
             when (selectedTab) {
                 0 -> {
-                    val detail = homeDetailValueCents
-                    if (detail != null) {
-                        CurrencyCardDetailScreen(
-                            valueCents = detail,
-                            onBack = { homeDetailValueCents = null },
-                            ratesState = ratesState,
-                            onEnsureRate = { base, force -> ratesVm.ensureRateLoaded(baseCurrency = base, forceRefresh = force) },
-                            onEnsureUsdRate = { base -> ratesVm.ensureUsdRateLoaded(baseCurrency = base, forceRefresh = false) },
-                            localCurrencyCode = localCurrencyCode,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        HomeTabContent(
-                            onOpenCard = { homeDetailValueCents = it },
-                            onCalculateChange = { selectedTab = 2 },
-                            ratesState = ratesState,
-                            onPickHomeCurrency = { code -> ratesVm.setHomeCurrency(code) },
-                            localCurrencyCode = localCurrencyCode,
-                            selectedCountryCode = selectedCountryCodeNonNull,
-                            onChangeCountry = { code ->
-                                scope.launch { settings.setSelectedCountryCode(code) }
-                            },
-                            modifier = Modifier.fillMaxSize()
-                        )
+                    when {
+                        showValueExamples -> {
+                            ValueExamplesScreen(
+                                currencyCode = localCurrencyCode,
+                                onBack = { showValueExamples = false },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        homeDetailValueCents != null -> {
+                            CurrencyCardDetailScreen(
+                                valueCents = homeDetailValueCents!!,
+                                onBack = { homeDetailValueCents = null },
+                                ratesState = ratesState,
+                                onEnsureRate = { base, force -> ratesVm.ensureRateLoaded(baseCurrency = base, forceRefresh = force) },
+                                onEnsureUsdRate = { base -> ratesVm.ensureUsdRateLoaded(baseCurrency = base, forceRefresh = false) },
+                                localCurrencyCode = localCurrencyCode,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        else -> {
+                            HomeTabContent(
+                                onOpenCard = { homeDetailValueCents = it },
+                                onCalculateChange = { selectedTab = 2 },
+                                ratesState = ratesState,
+                                onPickHomeCurrency = { code -> ratesVm.setHomeCurrency(code) },
+                                localCurrencyCode = localCurrencyCode,
+                                selectedCountryCode = selectedCountryCodeNonNull,
+                                onChangeCountry = { code ->
+                                    scope.launch { settings.setSelectedCountryCode(code) }
+                                },
+                                onViewValueExamples = { showValueExamples = true },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
                 }
 

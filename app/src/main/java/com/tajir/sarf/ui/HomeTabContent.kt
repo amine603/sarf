@@ -48,6 +48,31 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Attractions
+import androidx.compose.material.icons.outlined.BakeryDining
+import androidx.compose.material.icons.outlined.CarRental
+import androidx.compose.material.icons.outlined.Coffee
+import androidx.compose.material.icons.outlined.DirectionsBus
+import androidx.compose.material.icons.outlined.DirectionsSubway
+import androidx.compose.material.icons.outlined.DinnerDining
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.Fastfood
+import androidx.compose.material.icons.outlined.Hotel
+import androidx.compose.material.icons.outlined.LocalLaundryService
+import androidx.compose.material.icons.outlined.LocalPharmacy
+import androidx.compose.material.icons.outlined.Museum
+import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.SimCard
+import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.material.icons.outlined.Spa
+import androidx.compose.material.icons.outlined.StarRate
+import androidx.compose.material.icons.outlined.TaxiAlert
+import androidx.compose.material.icons.outlined.Train
+import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material.icons.outlined.AirplaneTicket
+import androidx.compose.material.icons.outlined.Tour
+import com.tajir.sarf.data.ValueExamples
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.foundation.layout.PaddingValues
@@ -83,6 +108,7 @@ fun HomeTabContent(
     localCurrencyCode: String,
     selectedCountryCode: String,
     onChangeCountry: (String) -> Unit,
+    onViewValueExamples: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Design rule: clean white background for the tourist "guide" screen.
@@ -179,14 +205,28 @@ fun HomeTabContent(
         )
 
         Spacer(Modifier.height(12.dp))
-        OutlinedButton(
-            onClick = { showAmountBreakdown.value = true },
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(stringResource(R.string.home_breakdown_amount), fontWeight = FontWeight.Bold)
+            OutlinedButton(
+                onClick = { showAmountBreakdown.value = true },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text(stringResource(R.string.home_breakdown_amount), fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(
+                onClick = { onViewValueExamples() },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text(stringResource(R.string.view_value_examples), fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(Modifier.height(14.dp))
@@ -437,16 +477,26 @@ fun CurrencyCardDetailScreen(
                 }
             }
 
-            if (card.examplePrices.isNotEmpty()) {
-                item {
-                    val boxShape = MaterialTheme.shapes.large
+            // Value Examples from ValueExamples data - filtered by denomination value
+            item {
+                val boxShape = MaterialTheme.shapes.large
+                // Get all value examples for this currency
+                val allExamples = ValueExamples.examplesForCurrency(localCurrencyCode).values.flatten()
+                // Filter examples that match the denomination value (within the price range)
+                val denominationValueCents = card.denomination.valueCents
+                val relevantExamples = allExamples.filter { example ->
+                    // Show examples where the denomination value falls within the example's price range
+                    denominationValueCents >= example.minValueCents && denominationValueCents <= example.maxValueCents
+                }
+                
+                if (relevantExamples.isNotEmpty()) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .border(1.dp, MaterialTheme.colorScheme.outline, boxShape)
                             .background(MaterialTheme.colorScheme.surface, boxShape)
                             .padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
                             text = stringResource(R.string.examples_title),
@@ -454,10 +504,32 @@ fun CurrencyCardDetailScreen(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        ExampleChips(
-                            examples = card.examplePrices.map { CurrencyGuide.localize(context, it) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        // Use a regular Column with Rows to create a 2-column grid
+                        // This avoids the LazyVerticalGrid constraint issue inside LazyColumn
+                        val rows = relevantExamples.chunked(2)
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            rows.forEach { row ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    row.forEach { example ->
+                                        ValueExampleGridItem(
+                                            example = example,
+                                            currencyCode = localCurrencyCode,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                    // Add spacer if odd number of items
+                                    if (row.size == 1) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -476,43 +548,77 @@ fun CurrencyCardDetailScreen(
 }
 
 @Composable
-private fun ExampleChips(
-    examples: List<String>,
+private fun ValueExampleGridItem(
+    example: ValueExamples.ValueExample,
+    currencyCode: String,
     modifier: Modifier = Modifier
 ) {
-    val rows = examples.chunked(2)
+    val icon = getIconForValueExample(example.iconName)
+    val iconColor = example.category.iconColor
+    
     Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        rows.forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                row.forEach { text ->
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(999.dp),
-                        color = Color.Transparent,
-                        tonalElevation = 0.dp,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt)
-                    ) {
-                        Text(
-                            text = text,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-                if (row.size == 1) {
-                    Spacer(Modifier.weight(1f))
-                }
-            }
+        // Icon with colored background - larger size to save space
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .background(
+                    color = iconColor.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(16.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = example.title,
+                tint = iconColor,
+                modifier = Modifier.size(40.dp)
+            )
         }
+        
+        // Text below icon
+        Text(
+            text = example.title,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun getIconForValueExample(iconName: String): androidx.compose.ui.graphics.vector.ImageVector {
+    return when (iconName) {
+        "water" -> Icons.Outlined.WaterDrop
+        "coffee" -> Icons.Outlined.Coffee
+        "bakery" -> Icons.Outlined.BakeryDining
+        "fastfood" -> Icons.Outlined.Fastfood
+        "restaurant" -> Icons.Outlined.Restaurant
+        "dinner" -> Icons.Outlined.DinnerDining
+        "bus" -> Icons.Outlined.DirectionsBus
+        "metro" -> Icons.Outlined.DirectionsSubway
+        "taxi" -> Icons.Outlined.TaxiAlert
+        "airport" -> Icons.Outlined.AirplaneTicket
+        "train" -> Icons.Outlined.Train
+        "cinema" -> Icons.Outlined.Event
+        "museum" -> Icons.Outlined.Museum
+        "attraction" -> Icons.Outlined.Attractions
+        "tour" -> Icons.Outlined.Tour
+        "event" -> Icons.Outlined.Event
+        "hostel", "hotel" -> Icons.Outlined.Hotel
+        "airbnb" -> Icons.Outlined.Hotel
+        "car" -> Icons.Outlined.CarRental
+        "sim" -> Icons.Outlined.SimCard
+        "data", "topup" -> Icons.Outlined.PhoneAndroid
+        "toiletries" -> Icons.Outlined.LocalPharmacy
+        "laundry" -> Icons.Outlined.LocalLaundryService
+        else -> Icons.Outlined.Attractions
     }
 }
 

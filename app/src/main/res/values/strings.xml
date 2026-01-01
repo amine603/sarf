@@ -55,6 +55,8 @@
     <string name="home_currency_guide_title">Currency guide</string>
     <string name="home_currency_guide_subtitle">Tap a banknote or coin to see details and calculate change.</string>
     <string name="home_breakdown_amount">Break down an amount</string>
+    <string name="value_examples_title">Value Examples</string>
+    <string name="view_value_examples">View value examples</string>
 
     <!-- Detail screen -->
     <string name="details_title">Details</string>

@@ -22,10 +22,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +42,7 @@ import com.tajir.sarf.settings.AppSettings
 import com.tajir.sarf.ui.theme.SarfLineAlt
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.ui.res.stringResource
 import com.tajir.sarf.R
@@ -49,10 +53,20 @@ fun OnboardingScreen(
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var step by remember { mutableStateOf(0) } // 0 = language, 1 = country
+    // Check if language is already set, if so start at country selection step
+    val currentLanguage by settings.language.collectAsState(initial = AppLanguage.SYSTEM)
+    
+    var step by rememberSaveable { mutableStateOf(0) } // 0 = language, 1 = country
     var selectedLang by remember { mutableStateOf<AppLanguage?>(null) }
     var selectedCountry by remember { mutableStateOf<Countries.CountrySpec?>(null) }
     val scope = rememberCoroutineScope()
+    
+    // Automatically move to country selection step when language is set
+    LaunchedEffect(currentLanguage) {
+        if (currentLanguage != AppLanguage.SYSTEM && step == 0) {
+            step = 1
+        }
+    }
 
     data class LanguageOption(val label: String, val value: AppLanguage)
     val languages = listOf(
@@ -140,26 +154,52 @@ fun OnboardingScreen(
                     )
                 }
             }
-            OutlinedButton(
-                onClick = {
-                    val country = selectedCountry ?: return@OutlinedButton
-                    scope.launch {
-                        settings.setSelectedCountryCode(country.code)
-                        settings.setOnboardingDone(true)
-                        onDone()
-                    }
-                },
-                enabled = selectedCountry != null,
-                shape = RoundedCornerShape(999.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                ),
-                border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(stringResource(R.string.start), fontWeight = FontWeight.ExtraBold)
+                OutlinedButton(
+                    onClick = {
+                        step = 0
+                        selectedCountry = null
+                    },
+                    shape = RoundedCornerShape(999.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(54.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = null,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(stringResource(R.string.back), fontWeight = FontWeight.ExtraBold)
+                }
+                OutlinedButton(
+                    onClick = {
+                        val country = selectedCountry ?: return@OutlinedButton
+                        scope.launch {
+                            settings.setSelectedCountryCode(country.code)
+                            settings.setOnboardingDone(true)
+                            onDone()
+                        }
+                    },
+                    enabled = selectedCountry != null,
+                    shape = RoundedCornerShape(999.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(54.dp)
+                ) {
+                    Text(stringResource(R.string.start), fontWeight = FontWeight.ExtraBold)
+                }
             }
         }
     }
