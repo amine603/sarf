@@ -55,6 +55,8 @@
     <string name="home_currency_guide_title">دليل العملات</string>
     <string name="home_currency_guide_subtitle">اضغط على ورقة نقدية أو قطعة لرؤية التفاصيل وحساب الباقي.</string>
     <string name="home_breakdown_amount">تفكيك مبلغ</string>
+    <string name="value_examples_title">أمثلة على القيمة</string>
+    <string name="view_value_examples">عرض أمثلة القيمة</string>
 
     <!-- التفاصيل -->
     <string name="details_title">التفاصيل</string>

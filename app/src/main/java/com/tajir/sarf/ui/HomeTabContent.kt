@@ -207,25 +207,34 @@ fun HomeTabContent(
         Spacer(Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedButton(
                 onClick = { showAmountBreakdown.value = true },
+                modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text(stringResource(R.string.home_breakdown_amount), fontWeight = FontWeight.Bold)
+                Text(
+                    text = stringResource(R.string.home_breakdown_amount),
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
             }
-            Spacer(modifier = Modifier.width(10.dp))
             OutlinedButton(
                 onClick = { onViewValueExamples() },
+                modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(16.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text(stringResource(R.string.view_value_examples), fontWeight = FontWeight.Bold)
+                Text(
+                    text = stringResource(R.string.view_value_examples),
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
             }
         }
 
@@ -236,7 +245,7 @@ fun HomeTabContent(
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp)
@@ -573,7 +582,7 @@ private fun ValueExampleGridItem(
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = example.title,
+                contentDescription = ValueExamples.localizeTitle(LocalContext.current, example.title),
                 tint = iconColor,
                 modifier = Modifier.size(40.dp)
             )
@@ -581,7 +590,7 @@ private fun ValueExampleGridItem(
         
         // Text below icon
         Text(
-            text = example.title,
+            text = ValueExamples.localizeTitle(LocalContext.current, example.title),
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,

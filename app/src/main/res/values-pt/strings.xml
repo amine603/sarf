@@ -54,6 +54,8 @@
     <string name="home_currency_guide_title">Guia de moeda</string>
     <string name="home_currency_guide_subtitle">Toque numa nota ou moeda para ver detalhes e calcular o troco.</string>
     <string name="home_breakdown_amount">Dividir um montante</string>
+    <string name="value_examples_title">Exemplos de valor</string>
+    <string name="view_value_examples">Ver exemplos de valor</string>
 
     <string name="details_title">Detalhes</string>
     <string name="conversion_title">Conversão</string>

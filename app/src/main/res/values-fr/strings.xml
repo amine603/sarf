@@ -55,6 +55,8 @@
     <string name="home_currency_guide_title">Guide des devises</string>
     <string name="home_currency_guide_subtitle">Touchez un billet ou une pièce pour voir les détails et calculer la monnaie.</string>
     <string name="home_breakdown_amount">Décomposer un montant</string>
+    <string name="value_examples_title">Exemples de valeur</string>
+    <string name="view_value_examples">Voir les exemples de valeur</string>
 
     <!-- Détails -->
     <string name="details_title">Détails</string>
