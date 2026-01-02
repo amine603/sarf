@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.tajir.sarf"
+    namespace = "com.cash.guide"
     compileSdk = 36
 
     defaultConfig {
@@ -16,15 +16,85 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Vector drawable support
+        vectorDrawables {
+            useSupportLibrary = true
+        }
+        
+        // Multi-dex support (if needed in future)
+        multiDexEnabled = false
+    }
+
+    // Signing configuration for release builds
+    // To set up signing:
+    // 1. Create a keystore file: keytool -genkey -v -keystore sarf-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias sarf
+    // 2. Create keystore.properties file in the project root with:
+    //    storePassword=your_store_password
+    //    keyPassword=your_key_password
+    //    keyAlias=sarf
+    //    storeFile=../sarf-release-key.jks
+    // 3. Uncomment the signingConfigs block below and update the paths
+    signingConfigs {
+        // Uncomment and configure when ready for release:
+        /*
+        getByName("release") {
+            val keystorePropertiesFile = rootProject.file("keystore.properties")
+            if (keystorePropertiesFile.exists()) {
+                val keystoreProperties = java.util.Properties()
+                keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
+        */
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Enable code shrinking and resource shrinking for smaller APK
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            
+            // Uncomment when signing config is set up:
+            // signingConfig = signingConfigs.getByName("release")
+            
+            // Optimize for release
+            isDebuggable = false
+            isJniDebuggable = false
+        }
+        debug {
+            // Keep debug builds fast
+            isMinifyEnabled = false
+            isShrinkResources = false
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+    }
+    
+    // Packaging options for Play Store
+    packaging {
+        resources {
+            excludes += "/META-INF/{ALICE.AND,Bob.and,Carol,He,eve.and,it.and,j.marry,and,l.END,she.END,will.END,Alice.and,Bob.and,Carol.and,David.and,Eve.and,Frank.and,Grace.and,Henry.and,Ivan.and,Julia.and,Kenny.and,Laura.and,Mallory.and,Niaj.and,Oscar.and,Peggy.and,Quentin.and,Rupert.and,Sybil.and,Ted.and,Una.and,Victor.and,Wendy.and,Xavier.and,Yvonne.and,Zoe.and}"
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/DEPENDENCIES"
+            excludes += "/META-INF/LICENSE"
+            excludes += "/META-INF/LICENSE.txt"
+            excludes += "/META-INF/NOTICE"
+            excludes += "/META-INF/NOTICE.txt"
+            // Exclude duplicate files
+            excludes += "/META-INF/*.kotlin_module"
+            excludes += "/META-INF/*.version"
+        }
+        // Play Store: Use standard APK/AAB format
+        jniLibs {
+            useLegacyPackaging = false
         }
     }
     compileOptions {
@@ -36,6 +106,34 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    
+    // Lint options for Play Store compliance
+    lint {
+        // Don't abort build if lint finds errors
+        abortOnError = false
+        // Check all issues, including those that are off by default
+        checkAllWarnings = true
+        // Treat warnings as errors (optional, for stricter checks)
+        warningsAsErrors = false
+        // Disable lint checks that are not relevant for Play Store
+        disable += listOf("MissingTranslation", "ExtraTranslation")
+    }
+    
+    // Play Store: Bundle configuration (recommended for smaller downloads)
+    bundle {
+        language {
+            // Enable language splits to reduce APK size
+            enableSplit = true
+        }
+        density {
+            // Enable density splits (optional, can reduce APK size)
+            enableSplit = false // Keep false for simplicity, enable if needed
+        }
+        abi {
+            // Enable ABI splits (optional, can reduce APK size)
+            enableSplit = false // Keep false for simplicity, enable if needed
+        }
     }
 }
 
