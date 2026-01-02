@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.border
@@ -68,6 +69,7 @@ import com.cash.guide.R
 import com.cash.guide.ui.theme.SarfLineAlt
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun SarfTabContent(
     priceText: String,
     onPriceTextChange: (String) -> Unit,

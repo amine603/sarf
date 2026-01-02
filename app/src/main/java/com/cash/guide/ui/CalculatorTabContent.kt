@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.draw.clip
@@ -426,6 +426,7 @@ private fun CalculatorKeypad(
 private enum class CalcKeyStyle { Number, Operator, Utility, Clear, Equals }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun CalcKey(
     label: String,
     onPress: (String) -> Unit,
@@ -453,13 +454,10 @@ private fun CalcKey(
         else -> if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
     }
 
-    val interactionSource = remember { MutableInteractionSource() }
-
     Surface(
         modifier = modifier
             .clip(shape)
             .combinedClickable(
-                interactionSource = interactionSource,
                 onClick = { onPress(label) },
                 onLongClick = onLongPress
             ),

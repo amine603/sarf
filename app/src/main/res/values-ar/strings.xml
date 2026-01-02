@@ -40,6 +40,41 @@
 
     <string name="currency_dhs">DHS</string>
     <string name="currency_dirham">درهم</string>
+    
+    <!-- أسماء العملات -->
+    <string name="currency_name_mad">الدرهم المغربي</string>
+    <string name="currency_name_eur">اليورو</string>
+    <string name="currency_name_usd">الدولار الأمريكي</string>
+    <string name="currency_name_gbp">الجنيه الإسترليني</string>
+    <string name="currency_name_sar">الريال السعودي</string>
+    
+    <!-- أسماء الوحدات الرئيسية (مفرد) -->
+    <string name="currency_main_usd_singular">دولار</string>
+    <string name="currency_main_eur_singular">يورو</string>
+    <string name="currency_main_mad_singular">درهم</string>
+    <string name="currency_main_gbp_singular">جنيه إسترليني</string>
+    <string name="currency_main_sar_singular">ريال سعودي</string>
+    
+    <!-- أسماء الوحدات الرئيسية (جمع) -->
+    <string name="currency_main_usd_plural">دولار</string>
+    <string name="currency_main_eur_plural">يورو</string>
+    <string name="currency_main_mad_plural">درهم</string>
+    <string name="currency_main_gbp_plural">جنيه إسترليني</string>
+    <string name="currency_main_sar_plural">ريال سعودي</string>
+    
+    <!-- أسماء الوحدات الفرعية (مفرد) -->
+    <string name="currency_subunit_usd_singular">سنت</string>
+    <string name="currency_subunit_eur_singular">سنت</string>
+    <string name="currency_subunit_mad_singular">سنتيم</string>
+    <string name="currency_subunit_gbp_singular">بنس</string>
+    <string name="currency_subunit_sar_singular">هللة</string>
+    
+    <!-- أسماء الوحدات الفرعية (جمع) -->
+    <string name="currency_subunit_usd_plural">سنتات</string>
+    <string name="currency_subunit_eur_plural">سنتات</string>
+    <string name="currency_subunit_mad_plural">سنتيمات</string>
+    <string name="currency_subunit_gbp_plural">بنسات</string>
+    <string name="currency_subunit_sar_plural">هللات</string>
     <string name="send_to_sarf">إرسال إلى صرف ←</string>
     <string name="no_image">لا توجد صورة</string>
     <string name="toast_last_coin">هذه آخر قطعة يمكنك حذفها.</string>
@@ -80,6 +115,8 @@
     <!-- الإعداد الأولي -->
     <string name="onboarding_choose_language_title">اختر لغتك</string>
     <string name="onboarding_choose_language_subtitle">اختر لغة التطبيق أولاً.</string>
+    <string name="onboarding_choose_currency_title">اختر عملتك</string>
+    <string name="onboarding_choose_currency_subtitle">اختر عملتك الأساسية (يورو، دولار، إلخ)</string>
     <string name="onboarding_choose_country_title">اختر بلدك</string>
     <string name="onboarding_choose_country_subtitle">بعد ذلك سترى دليل العملة المحلية.</string>
     <string name="continue_button">متابعة</string>

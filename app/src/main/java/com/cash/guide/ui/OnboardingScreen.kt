@@ -52,20 +52,11 @@ fun OnboardingScreen(
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Check if language is already set, if so start at country selection step
-    val currentLanguage by settings.language.collectAsState(initial = AppLanguage.SYSTEM)
-    
-    var step by rememberSaveable { mutableStateOf(0) } // 0 = language, 1 = country
-    var selectedLang by remember { mutableStateOf<AppLanguage?>(null) }
+    var step by rememberSaveable { mutableStateOf(0) } // 0 = language, 1 = currency, 2 = country
+    var selectedLang by remember { mutableStateOf<AppLanguage?>(AppLanguage.EN) } // Default to English
+    var selectedCurrency by remember { mutableStateOf<String?>(null) }
     var selectedCountry by remember { mutableStateOf<Countries.CountrySpec?>(null) }
     val scope = rememberCoroutineScope()
-    
-    // Automatically move to country selection step when language is set
-    LaunchedEffect(currentLanguage) {
-        if (currentLanguage != AppLanguage.SYSTEM && step == 0) {
-            step = 1
-        }
-    }
 
     data class LanguageOption(val label: String, val value: AppLanguage)
     val languages = listOf(
@@ -76,6 +67,20 @@ fun OnboardingScreen(
         LanguageOption(label = "Português", value = AppLanguage.PT),
     )
 
+    // Currency options
+    data class CurrencyOption(val code: String, val name: String)
+    val currencies = listOf(
+        CurrencyOption("EUR", "Euro (€)"),
+        CurrencyOption("USD", "US Dollar ($)"),
+        CurrencyOption("GBP", "British Pound (£)"),
+        CurrencyOption("MAD", "Moroccan Dirham (د.م.)"),
+        CurrencyOption("SAR", "Saudi Riyal (ر.س)"),
+    )
+
+    // Show all available countries (not filtered by currency)
+    // The selected currency is the user's home currency, not the destination country's currency
+    val availableCountries = Countries.ALL
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -85,119 +90,198 @@ fun OnboardingScreen(
     ) {
         Spacer(Modifier.height(6.dp))
         Text(
-            text = if (step == 0) stringResource(R.string.onboarding_choose_language_title) else stringResource(R.string.onboarding_choose_country_title),
+            text = when (step) {
+                0 -> stringResource(R.string.onboarding_choose_language_title)
+                1 -> stringResource(R.string.onboarding_choose_currency_title)
+                else -> stringResource(R.string.onboarding_choose_country_title)
+            },
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.ExtraBold,
             color = MaterialTheme.colorScheme.onBackground
         )
         Text(
-            text = if (step == 0) stringResource(R.string.onboarding_choose_language_subtitle) else stringResource(R.string.onboarding_choose_country_subtitle),
+            text = when (step) {
+                0 -> stringResource(R.string.onboarding_choose_language_subtitle)
+                1 -> stringResource(R.string.onboarding_choose_currency_subtitle)
+                else -> stringResource(R.string.onboarding_choose_country_subtitle)
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.70f)
         )
 
-        if (step == 0) {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(languages) { opt ->
-                    LanguageChoiceRow(
-                        label = opt.label,
-                        selected = selectedLang == opt.value,
-                        onClick = { selectedLang = opt.value }
-                    )
-                }
-            }
-            OutlinedButton(
-                onClick = {
-                    val lang = selectedLang ?: return@OutlinedButton
-                    scope.launch {
-                        settings.setLanguage(lang)
-                        val locales = when (lang) {
-                            AppLanguage.AR -> LocaleListCompat.forLanguageTags("ar")
-                            AppLanguage.FR -> LocaleListCompat.forLanguageTags("fr")
-                            AppLanguage.EN -> LocaleListCompat.forLanguageTags("en")
-                            AppLanguage.ES -> LocaleListCompat.forLanguageTags("es")
-                            AppLanguage.PT -> LocaleListCompat.forLanguageTags("pt")
-                            AppLanguage.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
+        when (step) {
+            0 -> {
+                Column {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(languages) { opt ->
+                            LanguageChoiceRow(
+                                label = opt.label,
+                                selected = selectedLang == opt.value,
+                                onClick = { selectedLang = opt.value }
+                            )
                         }
-                        AppCompatDelegate.setApplicationLocales(locales)
-                        step = 1
                     }
-                },
-                enabled = selectedLang != null,
-                shape = RoundedCornerShape(999.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                ),
-                border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp)
-            ) {
-                Text(stringResource(R.string.continue_button), fontWeight = FontWeight.ExtraBold)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(Countries.ALL) { c ->
-                    CountryChoiceRow(
-                        label = stringResource(c.nameResId),
-                        subtitle = if (c.assetsAvailable) stringResource(R.string.available) else stringResource(R.string.coming_soon),
-                        enabled = c.assetsAvailable,
-                        selected = selectedCountry?.code == c.code,
-                        onClick = { selectedCountry = c }
-                    )
+                    OutlinedButton(
+                        onClick = {
+                            val lang = selectedLang ?: AppLanguage.EN // Default to English if not selected
+                            scope.launch {
+                                settings.setLanguage(lang)
+                                val locales = when (lang) {
+                                    AppLanguage.AR -> LocaleListCompat.forLanguageTags("ar")
+                                    AppLanguage.FR -> LocaleListCompat.forLanguageTags("fr")
+                                    AppLanguage.EN -> LocaleListCompat.forLanguageTags("en")
+                                    AppLanguage.ES -> LocaleListCompat.forLanguageTags("es")
+                                    AppLanguage.PT -> LocaleListCompat.forLanguageTags("pt")
+                                    AppLanguage.SYSTEM -> LocaleListCompat.forLanguageTags("en")
+                                }
+                                AppCompatDelegate.setApplicationLocales(locales)
+                                step = 1
+                            }
+                        },
+                        enabled = true, // Always enabled, defaults to English
+                        shape = RoundedCornerShape(999.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp)
+                    ) {
+                        Text(stringResource(R.string.continue_button), fontWeight = FontWeight.ExtraBold)
+                    }
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = {
-                        step = 0
-                        selectedCountry = null
-                    },
-                    shape = RoundedCornerShape(999.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(54.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                    Text(stringResource(R.string.back), fontWeight = FontWeight.ExtraBold)
-                }
-                OutlinedButton(
-                    onClick = {
-                        val country = selectedCountry ?: return@OutlinedButton
-                        scope.launch {
-                            settings.setSelectedCountryCode(country.code)
-                            settings.setOnboardingDone(true)
-                            onDone()
+            1 -> {
+                // Currency selection
+                Column {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(currencies) { currency ->
+                            CurrencyChoiceRow(
+                                label = currency.name,
+                                selected = selectedCurrency == currency.code,
+                                onClick = { selectedCurrency = currency.code }
+                            )
                         }
-                    },
-                    enabled = selectedCountry != null,
-                    shape = RoundedCornerShape(999.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(54.dp)
+                    }
+                    Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(stringResource(R.string.start), fontWeight = FontWeight.ExtraBold)
+                    OutlinedButton(
+                        onClick = {
+                            step = 0
+                            selectedCurrency = null
+                        },
+                        shape = RoundedCornerShape(999.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(54.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(stringResource(R.string.back), fontWeight = FontWeight.ExtraBold)
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            val currency = selectedCurrency ?: return@OutlinedButton
+                            scope.launch {
+                                settings.setHomeCurrency(currency)
+                                step = 2
+                            }
+                        },
+                        enabled = selectedCurrency != null,
+                        shape = RoundedCornerShape(999.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(54.dp)
+                    ) {
+                        Text(stringResource(R.string.continue_button), fontWeight = FontWeight.ExtraBold)
+                    }
+                    }
+                }
+            }
+            else -> {
+                // Country selection (filtered by currency)
+                Column {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(availableCountries) { c ->
+                            CountryChoiceRow(
+                                label = stringResource(c.nameResId),
+                                subtitle = if (c.assetsAvailable) stringResource(R.string.available) else stringResource(R.string.coming_soon),
+                                enabled = c.assetsAvailable,
+                                selected = selectedCountry?.code == c.code,
+                                onClick = { selectedCountry = c }
+                            )
+                        }
+                    }
+                    Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            step = 1
+                            selectedCountry = null
+                        },
+                        shape = RoundedCornerShape(999.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(54.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(stringResource(R.string.back), fontWeight = FontWeight.ExtraBold)
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            val country = selectedCountry ?: return@OutlinedButton
+                            scope.launch {
+                                settings.setSelectedCountryCode(country.code)
+                                settings.setOnboardingDone(true)
+                                onDone()
+                            }
+                        },
+                        enabled = selectedCountry != null,
+                        shape = RoundedCornerShape(999.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SarfLineAlt),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(54.dp)
+                    ) {
+                        Text(stringResource(R.string.start), fontWeight = FontWeight.ExtraBold)
+                    }
+                    }
                 }
             }
         }
@@ -206,6 +290,49 @@ fun OnboardingScreen(
 
 @Composable
 private fun LanguageChoiceRow(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val shape = RoundedCornerShape(16.dp)
+    val borderWidth = if (selected) 2.dp else 1.dp
+    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            width = borderWidth,
+            color = borderColor
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Outlined.Check,
+                    contentDescription = "Selected",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CurrencyChoiceRow(
     label: String,
     selected: Boolean,
     onClick: () -> Unit

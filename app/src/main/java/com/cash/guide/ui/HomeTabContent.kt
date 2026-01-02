@@ -4,8 +4,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -237,24 +239,34 @@ fun HomeTabContent(
 
         Spacer(Modifier.height(14.dp))
 
-        // 2-column grid, cards show ONLY the money image.
+        // Responsive grid: adapts to screen size (2 columns for phones, 3-4 for tablets)
         val cards = CurrencyGuide.cardsForCurrency(localCurrencyCode)
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp)
-        ) {
-            items(cards) { card ->
-                CurrencyMoneyGridCard(
-                    card = card,
-                    onClick = { onOpenCard(card.denomination.valueCents) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(if (card.denomination.isCoin) 150.dp else 120.dp)
-                )
+        
+        BoxWithConstraints(modifier = Modifier.weight(1f)) {
+            // Calculate number of columns based on screen width
+            val columnCount = when {
+                maxWidth < 600.dp -> 2  // Phones (portrait)
+                maxWidth < 840.dp -> 3  // Tablets (small) or phones (landscape)
+                else -> 4  // Tablets (large) or landscape
+            }
+            
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(columnCount),
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp)
+            ) {
+                items(cards) { card ->
+                    CurrencyMoneyGridCard(
+                        card = card,
+                        currencyCode = localCurrencyCode,
+                        onClick = { onOpenCard(card.denomination.valueCents) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(if (card.denomination.isCoin) 180.dp else 160.dp)
+                    )
+                }
             }
         }
     }
@@ -770,6 +782,7 @@ private fun flagEmoji(countryCode: String): String {
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun AmountBreakdownScreen(
     localCurrencyCode: String,
     onBack: () -> Unit,

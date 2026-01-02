@@ -39,14 +39,14 @@ class AppSettings(private val context: Context) {
         context.dataStore.data.map { prefs ->
             val raw = prefs[SettingsKeys.LANGUAGE]
             val parsed = runCatching { AppLanguage.valueOf(raw ?: "") }.getOrNull()
-            // Treat missing/invalid/SYSTEM as FR (app default).
+            // Treat missing/invalid/SYSTEM as EN (app default).
             when (parsed ?: AppLanguage.SYSTEM) {
                 AppLanguage.AR -> AppLanguage.AR
                 AppLanguage.FR -> AppLanguage.FR
                 AppLanguage.EN -> AppLanguage.EN
                 AppLanguage.ES -> AppLanguage.ES
                 AppLanguage.PT -> AppLanguage.PT
-                AppLanguage.SYSTEM -> AppLanguage.FR
+                AppLanguage.SYSTEM -> AppLanguage.EN
             }
         }
 

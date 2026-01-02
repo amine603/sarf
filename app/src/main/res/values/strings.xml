@@ -40,6 +40,41 @@
 
     <string name="currency_dhs">DHS</string>
     <string name="currency_dirham">درهم</string>
+    
+    <!-- Currency names -->
+    <string name="currency_name_mad">Moroccan Dirham</string>
+    <string name="currency_name_eur">Euro</string>
+    <string name="currency_name_usd">US Dollar</string>
+    <string name="currency_name_gbp">British Pound</string>
+    <string name="currency_name_sar">Saudi Riyal</string>
+    
+    <!-- Currency main unit names (singular) -->
+    <string name="currency_main_usd_singular">dollar</string>
+    <string name="currency_main_eur_singular">euro</string>
+    <string name="currency_main_mad_singular">dirham</string>
+    <string name="currency_main_gbp_singular">pound</string>
+    <string name="currency_main_sar_singular">riyal</string>
+    
+    <!-- Currency main unit names (plural) -->
+    <string name="currency_main_usd_plural">dollars</string>
+    <string name="currency_main_eur_plural">euros</string>
+    <string name="currency_main_mad_plural">dirhams</string>
+    <string name="currency_main_gbp_plural">pounds</string>
+    <string name="currency_main_sar_plural">riyals</string>
+    
+    <!-- Currency subunit names (singular) -->
+    <string name="currency_subunit_usd_singular">cent</string>
+    <string name="currency_subunit_eur_singular">cent</string>
+    <string name="currency_subunit_mad_singular">centime</string>
+    <string name="currency_subunit_gbp_singular">penny</string>
+    <string name="currency_subunit_sar_singular">halala</string>
+    
+    <!-- Currency subunit names (plural) -->
+    <string name="currency_subunit_usd_plural">cents</string>
+    <string name="currency_subunit_eur_plural">cents</string>
+    <string name="currency_subunit_mad_plural">centimes</string>
+    <string name="currency_subunit_gbp_plural">pence</string>
+    <string name="currency_subunit_sar_plural">halalas</string>
     <string name="send_to_sarf">Send to Change →</string>
     <string name="no_image">No image</string>
     <string name="toast_last_coin">This is the last coin denomination you can remove.</string>
@@ -80,6 +115,8 @@
     <!-- Onboarding -->
     <string name="onboarding_choose_language_title">Choose your language</string>
     <string name="onboarding_choose_language_subtitle">Select the app language first.</string>
+    <string name="onboarding_choose_currency_title">Choose your currency</string>
+    <string name="onboarding_choose_currency_subtitle">Select your home currency (Euro, Dollar, etc.)</string>
     <string name="onboarding_choose_country_title">Choose your country</string>
     <string name="onboarding_choose_country_subtitle">Then you will see the local currency guide.</string>
     <string name="continue_button">Continue</string>

@@ -40,6 +40,41 @@
 
     <string name="currency_dhs">DHS</string>
     <string name="currency_dirham">درهم</string>
+    
+    <!-- Nombres de monedas -->
+    <string name="currency_name_mad">Dirham marroquí</string>
+    <string name="currency_name_eur">Euro</string>
+    <string name="currency_name_usd">Dólar estadounidense</string>
+    <string name="currency_name_gbp">Libra esterlina</string>
+    <string name="currency_name_sar">Riyal saudí</string>
+    
+    <!-- Nombres de unidades principales (singular) -->
+    <string name="currency_main_usd_singular">dólar</string>
+    <string name="currency_main_eur_singular">euro</string>
+    <string name="currency_main_mad_singular">dirham</string>
+    <string name="currency_main_gbp_singular">libra esterlina</string>
+    <string name="currency_main_sar_singular">riyal saudí</string>
+    
+    <!-- Nombres de unidades principales (plural) -->
+    <string name="currency_main_usd_plural">dólares</string>
+    <string name="currency_main_eur_plural">euros</string>
+    <string name="currency_main_mad_plural">dirhams</string>
+    <string name="currency_main_gbp_plural">libras esterlinas</string>
+    <string name="currency_main_sar_plural">riyales saudíes</string>
+    
+    <!-- Nombres de subunidades (singular) -->
+    <string name="currency_subunit_usd_singular">centavo</string>
+    <string name="currency_subunit_eur_singular">céntimo</string>
+    <string name="currency_subunit_mad_singular">céntimo</string>
+    <string name="currency_subunit_gbp_singular">penique</string>
+    <string name="currency_subunit_sar_singular">halala</string>
+    
+    <!-- Nombres de subunidades (plural) -->
+    <string name="currency_subunit_usd_plural">centavos</string>
+    <string name="currency_subunit_eur_plural">céntimos</string>
+    <string name="currency_subunit_mad_plural">céntimos</string>
+    <string name="currency_subunit_gbp_plural">peniques</string>
+    <string name="currency_subunit_sar_plural">halalas</string>
     <string name="send_to_sarf">Enviar a Cambio →</string>
     <string name="no_image">Sin imagen</string>
     <string name="toast_last_coin">Esta es la última moneda que puedes quitar.</string>
@@ -75,6 +110,8 @@
 
     <string name="onboarding_choose_language_title">Elige tu idioma</string>
     <string name="onboarding_choose_language_subtitle">Primero selecciona el idioma de la app.</string>
+    <string name="onboarding_choose_currency_title">Elige tu moneda</string>
+    <string name="onboarding_choose_currency_subtitle">Selecciona tu moneda base (Euro, Dólar, etc.)</string>
     <string name="onboarding_choose_country_title">Elige tu país</string>
     <string name="onboarding_choose_country_subtitle">Luego verás la guía de la moneda local.</string>
     <string name="continue_button">Continuar</string>

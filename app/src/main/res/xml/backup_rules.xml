@@ -12,6 +12,4 @@
     
     <!-- Exclude AdMob cache and temporary files -->
     <exclude domain="sharedpref" path="com.google.android.gms.ads.xml"/>
-    <exclude domain="cache" path="."/>
-    <exclude domain="external" path="."/>
 </full-backup-content>

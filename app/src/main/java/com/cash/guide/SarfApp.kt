@@ -21,7 +21,7 @@ class SarfApp : Application() {
                 AppLanguage.EN -> LocaleListCompat.forLanguageTags("en")
                 AppLanguage.ES -> LocaleListCompat.forLanguageTags("es")
                 AppLanguage.PT -> LocaleListCompat.forLanguageTags("pt")
-                AppLanguage.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
+                AppLanguage.SYSTEM -> LocaleListCompat.forLanguageTags("en") // Default to English
             }
             AppCompatDelegate.setApplicationLocales(locales)
         }
