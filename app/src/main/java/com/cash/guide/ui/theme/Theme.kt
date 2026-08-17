@@ -8,27 +8,23 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-
-val Ivory = Color(0xFFF3F0E8)
-val Paper = Color(0xFFFFFDFC)
-val Charcoal = Color(0xFF232321)
-val CharcoalRaised = Color(0xFF302F2C)
-val Copper = Color(0xFFC9783A)
-val CopperSoft = Color(0xFFE8C2A5)
-val Ink = Color(0xFF28251F)
-val MutedInk = Color(0xFF8A8378)
-val Hairline = Color(0xFFE0DAD0)
+import com.cash.guide.ui.notebook.Ink
+import com.cash.guide.ui.notebook.InkTone
+import com.cash.guide.ui.notebook.MutedInk
+import com.cash.guide.ui.notebook.Paper
+import com.cash.guide.ui.notebook.PaperWarm
+import com.cash.guide.ui.notebook.Rule
 
 private val HisabiColors = lightColorScheme(
-    primary = Copper,
+    primary = InkTone.Orange.color,
     onPrimary = Color.White,
-    background = Ivory,
+    background = Paper,
     onBackground = Ink,
     surface = Paper,
     onSurface = Ink,
-    surfaceVariant = Color(0xFFECE7DE),
+    surfaceVariant = PaperWarm,
     onSurfaceVariant = MutedInk,
-    outline = Hairline
+    outline = Rule
 )
 
 @Composable
@@ -40,7 +36,7 @@ fun HisabiTheme(content: @Composable () -> Unit) {
             if (window != null) {
                 val insetsController = WindowCompat.getInsetsController(window, view)
                 insetsController.isAppearanceLightStatusBars = true
-                insetsController.isAppearanceLightNavigationBars = false
+                insetsController.isAppearanceLightNavigationBars = true
             }
         }
     }

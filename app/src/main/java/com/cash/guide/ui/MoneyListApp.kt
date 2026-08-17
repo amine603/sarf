@@ -4,49 +4,39 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -63,22 +53,20 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -86,19 +74,62 @@ import androidx.compose.ui.unit.sp
 import com.cash.guide.domain.MoneyMath
 import com.cash.guide.domain.MoneyPiece
 import com.cash.guide.domain.MoneyUnit
-import com.cash.guide.ui.theme.Charcoal
-import com.cash.guide.ui.theme.CharcoalRaised
-import com.cash.guide.ui.theme.Copper
-import com.cash.guide.ui.theme.CopperSoft
-import com.cash.guide.ui.theme.Hairline
-import com.cash.guide.ui.theme.Ink
-import com.cash.guide.ui.theme.Ivory
-import com.cash.guide.ui.theme.MutedInk
-import com.cash.guide.ui.theme.Paper
+import com.cash.guide.ui.notebook.HisabiAddRowBand
+import com.cash.guide.ui.notebook.HisabiCalculatorDock
+import com.cash.guide.ui.notebook.HisabiMetrics
+import com.cash.guide.ui.notebook.HisabiNotebookRow
+import com.cash.guide.ui.notebook.HisabiSketchIcon
+import com.cash.guide.ui.notebook.HisabiSymbol
+import com.cash.guide.ui.notebook.HisabiTopBar
+import com.cash.guide.ui.notebook.HisabiTotalSection
+import com.cash.guide.ui.notebook.HisabiUnitTabs
+import com.cash.guide.ui.notebook.Ink
+import com.cash.guide.ui.notebook.InkTone
+import com.cash.guide.ui.notebook.ManropeFamily
+import com.cash.guide.ui.notebook.MutedInk
+import com.cash.guide.ui.notebook.Paper
+import com.cash.guide.ui.notebook.PaperWarm
+import com.cash.guide.ui.notebook.Rule
+import com.cash.guide.ui.notebook.RuledDocument
+import com.cash.guide.ui.notebook.RuledPaperBackground
+import com.cash.guide.ui.notebook.TajawalFamily
+import com.cash.guide.ui.notebook.WritingInk
+import com.cash.guide.ui.notebook.arabicWritingStyle
+import com.cash.guide.ui.notebook.baselineOnPaperRule
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.cash.guide.domain.JournalLedgerManager
+import com.cash.guide.ui.notebook.JournalCategoryHeader
+import com.cash.guide.ui.notebook.JournalCompactNumericDock
+import com.cash.guide.ui.notebook.JournalCalculatorPopup
+import com.cash.guide.ui.notebook.JournalEntryRow
+import com.cash.guide.ui.notebook.JournalPaper
+import com.cash.guide.ui.notebook.JournalRuledDocument
+import com.cash.guide.ui.notebook.JournalTotalResultBand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
+
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
+import com.cash.guide.ui.notebook.JournalAddRowButton
+import com.cash.guide.ui.notebook.JournalRuleSpacing
+
+enum class AppScreen {
+    HOME,
+    CALCULATOR
+}
+
+enum class ActiveField {
+    NONE,
+    TITLE,
+    AMOUNT
+}
 
 data class EntryRow(
     val id: Long,
@@ -118,7 +149,6 @@ private val EntryRowListSaver = listSaver<SnapshotStateList<EntryRow>, Any>(
             val expression = (flatList.getOrNull(i + 2) as? String).orEmpty()
             list.add(EntryRow(id, title, expression))
         }
-        if (list.isEmpty()) list.add(EntryRow(id = 1L))
         list
     }
 )
@@ -159,129 +189,154 @@ private fun rememberBanknoteImage(path: String?): ImageBitmap? {
 }
 
 @Composable
-private fun ChevronIcon(directionUp: Boolean, color: Color, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val strokeWidth = 2.dp.toPx()
-        val width = size.width
-        val height = size.height
-        val path = Path().apply {
-            if (directionUp) {
-                moveTo(width * 0.15f, height * 0.65f)
-                lineTo(width * 0.5f, height * 0.35f)
-                lineTo(width * 0.85f, height * 0.65f)
-            } else {
-                moveTo(width * 0.15f, height * 0.35f)
-                lineTo(width * 0.5f, height * 0.65f)
-                lineTo(width * 0.85f, height * 0.35f)
-            }
-        }
-        drawPath(
-            path = path,
-            color = color,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        )
-    }
-}
-
-@Composable
-private fun BackspaceIcon(color: Color, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val stroke = 2.dp.toPx()
-        val path = Path().apply {
-            moveTo(w * 0.16f, h * 0.5f)
-            lineTo(w * 0.44f, h * 0.18f)
-            lineTo(w * 0.88f, h * 0.18f)
-            lineTo(w * 0.88f, h * 0.82f)
-            lineTo(w * 0.44f, h * 0.82f)
-            close()
-        }
-        drawPath(
-            path = path,
-            color = color,
-            style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        )
-        // Cross lines inside
-        drawLine(
-            color = color,
-            start = Offset(w * 0.54f, h * 0.36f),
-            end = Offset(w * 0.78f, h * 0.64f),
-            strokeWidth = stroke,
-            cap = StrokeCap.Round
-        )
-        drawLine(
-            color = color,
-            start = Offset(w * 0.78f, h * 0.36f),
-            end = Offset(w * 0.54f, h * 0.64f),
-            strokeWidth = stroke,
-            cap = StrokeCap.Round
-        )
-    }
-}
-
-@Composable
 fun MoneyListApp() {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         val focusManager = LocalFocusManager.current
         val coroutineScope = rememberCoroutineScope()
         val listState = rememberLazyListState()
 
-        var nextId by rememberSaveable { mutableLongStateOf(2L) }
-        val rows = rememberSaveable(saver = EntryRowListSaver) {
-            mutableStateListOf(EntryRow(id = 1L))
-        }
+        var currentScreen by rememberSaveable { mutableStateOf(AppScreen.CALCULATOR) }
         var selectedUnit by rememberSaveable { mutableStateOf(MoneyUnit.RIAL) }
-        var activeRowId by rememberSaveable { mutableLongStateOf(1L) }
+        var categoryName by rememberSaveable { mutableStateOf("Flous l9or3a") }
+
+        var showCalculatorPopup by rememberSaveable { mutableStateOf(false) }
+        var popupExpression by rememberSaveable { mutableStateOf("") }
+        var popupResult by rememberSaveable { mutableStateOf("") }
+        var popupHasError by rememberSaveable { mutableStateOf(false) }
+        var popupIsEvaluated by rememberSaveable { mutableStateOf(false) }
+
+        var nextId by rememberSaveable { mutableLongStateOf(4L) }
+        val rows = rememberSaveable(saver = EntryRowListSaver) {
+            mutableStateListOf(
+                EntryRow(id = 1L, title = "Naïma", expression = "1200"),
+                EntryRow(id = 2L, title = "Nadia", expression = "5000"),
+                EntryRow(id = 3L, title = "Marché", expression = "2600")
+            )
+        }
+        var activeRowId by rememberSaveable { mutableStateOf<Long?>(3L) }
+        var activeField by rememberSaveable { mutableStateOf(ActiveField.AMOUNT) }
         var keyboardExpanded by rememberSaveable { mutableStateOf(true) }
+        var pendingFocusRowId by remember { mutableStateOf<Long?>(null) }
         var showBreakdown by rememberSaveable { mutableStateOf(false) }
-        var showMenu by remember { mutableStateOf(false) }
         var showResetConfirmDialog by remember { mutableStateOf(false) }
-        var isResultValue by rememberSaveable { mutableStateOf(false) }
+
+        val titleValueMap = remember { mutableStateMapOf<Long, TextFieldValue>() }
+        val amountValueMap = remember { mutableStateMapOf<Long, TextFieldValue>() }
+
+        fun getTitleValue(row: EntryRow): TextFieldValue {
+            val existing = titleValueMap[row.id]
+            return if (existing != null && existing.text == row.title) {
+                existing
+            } else {
+                TextFieldValue(text = row.title, selection = TextRange(row.title.length)).also {
+                    titleValueMap[row.id] = it
+                }
+            }
+        }
+
+        fun getAmountValue(row: EntryRow): TextFieldValue {
+            val existing = amountValueMap[row.id]
+            return if (existing != null && existing.text == row.expression) {
+                existing
+            } else {
+                TextFieldValue(text = row.expression, selection = TextRange(row.expression.length)).also {
+                    amountValueMap[row.id] = it
+                }
+            }
+        }
+
+        fun updateTitle(id: Long, value: TextFieldValue) {
+            titleValueMap[id] = value
+            val index = rows.indexOfFirst { it.id == id }
+            if (index >= 0) {
+                rows[index] = rows[index].copy(title = value.text)
+            }
+        }
+
+        fun updateAmount(id: Long, value: TextFieldValue) {
+            val filteredText = value.text.filter { it.isDigit() || it == '.' }
+            val sanitizedText = if (filteredText.count { it == '.' } > 1) {
+                val firstDot = filteredText.indexOf('.')
+                filteredText.filterIndexed { idx, ch -> ch != '.' || idx == firstDot }
+            } else {
+                filteredText
+            }
+            val sanitizedValue = if (sanitizedText != value.text) {
+                TextFieldValue(text = sanitizedText, selection = TextRange(sanitizedText.length.coerceAtMost(value.selection.start)))
+            } else {
+                value
+            }
+            amountValueMap[id] = sanitizedValue
+            val index = rows.indexOfFirst { it.id == id }
+            if (index >= 0) {
+                rows[index] = rows[index].copy(expression = sanitizedValue.text)
+            }
+        }
 
         val hasData = rows.any { it.title.isNotBlank() || it.expression.isNotBlank() }
-
-        fun updateRow(id: Long, transform: (EntryRow) -> EntryRow) {
-            val index = rows.indexOfFirst { it.id == id }
-            if (index >= 0) rows[index] = transform(rows[index])
-        }
 
         fun resetNewList() {
             focusManager.clearFocus()
             rows.clear()
+            titleValueMap.clear()
+            amountValueMap.clear()
             val initialRow = EntryRow(id = 1L)
             rows.add(initialRow)
             activeRowId = 1L
+            activeField = ActiveField.TITLE
             nextId = 2L
             keyboardExpanded = true
-            isResultValue = false
+            showCalculatorPopup = false
+            popupExpression = ""
+            popupResult = ""
+            popupHasError = false
+            popupIsEvaluated = false
         }
 
-        fun requestReset() {
-            if (hasData) {
+        fun handleBackPress() {
+            if (showCalculatorPopup) {
+                showCalculatorPopup = false
+                popupExpression = ""
+                popupResult = ""
+                popupHasError = false
+                popupIsEvaluated = false
+            } else if (hasData) {
                 showResetConfirmDialog = true
             } else {
-                resetNewList()
+                currentScreen = AppScreen.HOME
             }
         }
 
-        fun clearAllEntries() {
-            focusManager.clearFocus()
-            rows.indices.forEach { index ->
-                rows[index] = rows[index].copy(title = "", expression = "")
-            }
-            isResultValue = false
-        }
-
-        fun addRow() {
-            focusManager.clearFocus()
-            val row = EntryRow(id = nextId++)
-            rows += row
-            activeRowId = row.id
-            keyboardExpanded = true
-            isResultValue = false
+        fun addNewRow() {
+            val newId = nextId++
+            val newRow = EntryRow(id = newId)
+            rows.add(newRow)
+            activeRowId = newId
+            activeField = ActiveField.TITLE
+            pendingFocusRowId = newId
+            keyboardExpanded = false
             coroutineScope.launch {
                 listState.animateScrollToItem(rows.size)
+            }
+        }
+
+        fun confirmRowEdit(id: Long) {
+            focusManager.clearFocus()
+            activeRowId = null
+            activeField = ActiveField.NONE
+            keyboardExpanded = false
+        }
+
+        fun removeRow(id: Long) {
+            val indexToRemove = rows.indexOfFirst { it.id == id }
+            if (indexToRemove >= 0) {
+                rows.removeAt(indexToRemove)
+                titleValueMap.remove(id)
+                amountValueMap.remove(id)
+                if (activeRowId == id) {
+                    activeRowId = null
+                    activeField = ActiveField.NONE
+                }
             }
         }
 
@@ -289,89 +344,153 @@ fun MoneyListApp() {
             if (unit == selectedUnit) return
             rows.indices.forEach { index ->
                 val row = rows[index]
-                rows[index] = row.copy(
-                    expression = MoneyMath.convertExpression(row.expression, selectedUnit, unit)
-                )
+                val converted = MoneyMath.convertExpression(row.expression, selectedUnit, unit)
+                rows[index] = row.copy(expression = converted)
+                amountValueMap[row.id] = TextFieldValue(text = converted, selection = TextRange(converted.length))
             }
             selectedUnit = unit
-            isResultValue = false
         }
 
-        fun applyKey(key: String) {
-            val id = activeRowId.takeIf { active -> rows.any { it.id == active } }
-                ?: rows.lastOrNull()?.id
-                ?: return
+        fun openCalculatorPopup() {
+            focusManager.clearFocus()
+            showCalculatorPopup = true
+            popupExpression = ""
+            popupResult = ""
+            popupHasError = false
+            popupIsEvaluated = false
+        }
 
-            updateRow(id) { row ->
-                val current = row.expression
-                val operators = setOf('+', '−', '×', '÷')
+        fun closeCalculatorPopup() {
+            showCalculatorPopup = false
+            popupExpression = ""
+            popupResult = ""
+            popupHasError = false
+            popupIsEvaluated = false
+        }
 
-                val next: String
-                when (key) {
-                    "⌫" -> {
-                        isResultValue = false
-                        next = current.dropLast(1)
+        fun applyCompactKey(key: String) {
+            val targetId = activeRowId ?: return
+            val targetRow = rows.firstOrNull { it.id == targetId } ?: return
+            val currentVal = getAmountValue(targetRow)
+            val currentText = currentVal.text
+            val selStart = currentVal.selection.min.coerceIn(0, currentText.length)
+            val selEnd = currentVal.selection.max.coerceIn(0, currentText.length)
+
+            when (key) {
+                "⌫" -> {
+                    if (selStart != selEnd) {
+                        val newText = currentText.removeRange(selStart, selEnd)
+                        updateAmount(targetId, TextFieldValue(newText, TextRange(selStart)))
+                    } else if (selStart > 0) {
+                        val newText = currentText.removeRange(selStart - 1, selStart)
+                        updateAmount(targetId, TextFieldValue(newText, TextRange(selStart - 1)))
                     }
-                    "=" -> {
-                        val evaluated = MoneyMath.evaluate(current)?.stripTrailingZeros()?.toPlainString()
-                        if (evaluated != null) {
-                            isResultValue = true
-                            next = evaluated
-                        } else {
-                            next = current
-                        }
+                }
+                "." -> {
+                    val textWithoutSelection = currentText.removeRange(selStart, selEnd)
+                    if (!textWithoutSelection.contains('.')) {
+                        val newText = currentText.replaceRange(selStart, selEnd, ".")
+                        updateAmount(targetId, TextFieldValue(newText, TextRange(selStart + 1)))
                     }
-                    "." -> {
-                        if (isResultValue) {
-                            isResultValue = false
-                            next = "0."
-                        } else {
-                            val lastPart = current.split('+', '−', '×', '÷').lastOrNull().orEmpty()
-                            next = when {
-                                lastPart.contains('.') -> current
-                                lastPart.isEmpty() -> current + "0."
-                                else -> current + "."
-                            }
-                        }
+                }
+                else -> { // Digits 0-9
+                    if (currentText.length < 18) {
+                        val newText = currentText.replaceRange(selStart, selEnd, key)
+                        updateAmount(targetId, TextFieldValue(newText, TextRange(selStart + key.length)))
                     }
-                    "+", "−", "×", "÷" -> {
-                        isResultValue = false
-                        next = when {
-                            current.isBlank() -> current
-                            current.last() in operators -> current.dropLast(1) + key
-                            else -> current + key
-                        }
+                }
+            }
+        }
+
+        fun applyPopupKey(key: String) {
+            val operators = setOf('+', '−', '×', '÷')
+            when (key) {
+                "⌫" -> {
+                    popupHasError = false
+                    popupIsEvaluated = false
+                    popupResult = ""
+                    if (popupExpression.isNotEmpty()) {
+                        popupExpression = popupExpression.dropLast(1)
                     }
-                    "00" -> {
-                        if (isResultValue) {
-                            isResultValue = false
-                            next = "0"
-                        } else {
-                            val lastPart = current.split('+', '−', '×', '÷').lastOrNull().orEmpty()
-                            next = when {
-                                lastPart.isEmpty() || lastPart == "0" -> current
-                                current.length < 23 -> current + "00"
-                                else -> current
-                            }
-                        }
+                }
+                "=" -> {
+                    if (popupExpression.isBlank()) return
+                    val evaluated = MoneyMath.evaluate(popupExpression)?.stripTrailingZeros()?.toPlainString()
+                    if (evaluated != null && !evaluated.contains("NaN") && !evaluated.contains("Infinity")) {
+                        popupResult = evaluated
+                        popupIsEvaluated = true
+                        popupHasError = false
+                    } else {
+                        popupResult = ""
+                        popupIsEvaluated = false
+                        popupHasError = true
                     }
-                    else -> { // Digits 0-9
-                        if (isResultValue) {
-                            isResultValue = false
-                            next = key
-                        } else {
-                            val lastPart = current.split('+', '−', '×', '÷').lastOrNull().orEmpty()
-                            next = when {
-                                lastPart == "0" && key == "0" -> current
-                                lastPart == "0" && key != "0" -> current.dropLast(1) + key
-                                current.length < 24 -> current + key
-                                else -> current
-                            }
+                }
+                "+", "−", "×", "÷" -> {
+                    popupHasError = false
+                    if (popupIsEvaluated && popupResult.isNotBlank()) {
+                        popupExpression = popupResult + key
+                        popupResult = ""
+                        popupIsEvaluated = false
+                    } else {
+                        popupIsEvaluated = false
+                        popupResult = ""
+                        popupExpression = when {
+                            popupExpression.isBlank() -> popupExpression
+                            popupExpression.last() in operators -> popupExpression.dropLast(1) + key
+                            else -> popupExpression + key
                         }
                     }
                 }
-                row.copy(expression = next)
+                "." -> {
+                    popupHasError = false
+                    if (popupIsEvaluated) {
+                        popupExpression = "0."
+                        popupResult = ""
+                        popupIsEvaluated = false
+                    } else {
+                        popupResult = ""
+                        popupIsEvaluated = false
+                        val lastPart = popupExpression.split('+', '−', '×', '÷').lastOrNull().orEmpty()
+                        popupExpression = when {
+                            lastPart.contains('.') -> popupExpression
+                            lastPart.isEmpty() -> popupExpression + "0."
+                            else -> popupExpression + "."
+                        }
+                    }
+                }
+                else -> { // Digits 0-9
+                    popupHasError = false
+                    if (popupIsEvaluated) {
+                        popupExpression = key
+                        popupResult = ""
+                        popupIsEvaluated = false
+                    } else {
+                        popupResult = ""
+                        popupIsEvaluated = false
+                        val lastPart = popupExpression.split('+', '−', '×', '÷').lastOrNull().orEmpty()
+                        if (lastPart == "0") {
+                            if (key != "0") {
+                                popupExpression = popupExpression.dropLast(1) + key
+                            }
+                        } else if (popupExpression.length < 32) {
+                            popupExpression += key
+                        }
+                    }
+                }
             }
+        }
+
+        fun confirmPopupResult() {
+            if (!popupIsEvaluated || popupResult.isBlank() || popupHasError) return
+            val targetId = activeRowId.takeIf { id -> rows.any { it.id == id } } ?: return
+            updateAmount(targetId, TextFieldValue(text = popupResult, selection = TextRange(popupResult.length)))
+            activeField = ActiveField.AMOUNT
+            showCalculatorPopup = false
+            popupExpression = ""
+            popupResult = ""
+            popupIsEvaluated = false
+            popupHasError = false
         }
 
         val hasInvalidRows = rows.any { it.expression.isNotBlank() && !MoneyMath.isValidExpression(it.expression) }
@@ -384,137 +503,79 @@ fun MoneyListApp() {
             }
         }
 
-        Surface(modifier = Modifier.fillMaxSize(), color = Ivory) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
-            ) {
-                AppHeader(
-                    onBackClick = ::requestReset,
-                    onMenuClick = { showMenu = true },
-                    menuExpanded = showMenu,
-                    onDismissMenu = { showMenu = false },
-                    onNewList = ::requestReset,
-                    onClearAll = ::clearAllEntries
-                )
-
-                UnitTabs(selectedUnit = selectedUnit, onSelected = ::selectUnit)
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "لائحة جديدة",
-                        modifier = Modifier.weight(1f),
-                        color = Ink,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "•••",
-                        color = MutedInk,
-                        fontSize = 16.sp,
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable { showMenu = true }
-                            .padding(4.dp)
+        RuledPaperBackground {
+            when (currentScreen) {
+                AppScreen.HOME -> {
+                    HisabiHomeScreen(
+                        selectedUnit = selectedUnit,
+                        onUnitSelected = ::selectUnit,
+                        onOpenCalculator = { currentScreen = AppScreen.CALCULATOR }
                     )
                 }
 
-                EntrySheet(
-                    rows = rows,
-                    activeRowId = activeRowId,
-                    unit = selectedUnit,
-                    listState = listState,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .weight(1f),
-                    onTitleChange = { id, title -> updateRow(id) { it.copy(title = title) } },
-                    onAmountSelected = { id ->
-                        focusManager.clearFocus()
-                        activeRowId = id
-                        keyboardExpanded = true
-                        isResultValue = false
-                    },
-                    onTitleFocused = { keyboardExpanded = false },
-                    onRemove = { id ->
-                        if (rows.size <= 1) {
-                            updateRow(id) { it.copy(title = "", expression = "") }
-                        } else {
-                            rows.removeAll { it.id == id }
-                            if (activeRowId == id) {
-                                activeRowId = rows.last().id
-                            }
-                        }
-                    },
-                    onAdd = ::addRow
-                )
-
-                if (keyboardExpanded) {
-                    ExpandedTotalStrip(
-                        totalCentimes = totalCentimes,
-                        primaryUnit = selectedUnit,
+                AppScreen.CALCULATOR -> {
+                    HisabiCalculatorScreen(
+                        categoryName = categoryName,
+                        rows = rows,
+                        activeRowId = activeRowId,
+                        activeField = activeField,
+                        selectedUnit = selectedUnit,
                         hasInvalidRows = hasInvalidRows,
+                        totalCentimes = totalCentimes,
+                        keyboardExpanded = keyboardExpanded,
+                        showCalculatorPopup = showCalculatorPopup,
+                        popupExpression = popupExpression,
+                        popupResult = popupResult,
+                        popupHasError = popupHasError,
+                        popupIsEvaluated = popupIsEvaluated,
+                        pendingFocusRowId = pendingFocusRowId,
+                        listState = listState,
+                        getTitleValue = ::getTitleValue,
+                        getAmountValue = ::getAmountValue,
+                        onBackClick = ::handleBackPress,
+                        onOpenCalculator = ::openCalculatorPopup,
+                        onCloseCalculator = ::closeCalculatorPopup,
+                        onPopupKey = ::applyPopupKey,
+                        onConfirmPopup = ::confirmPopupResult,
+                        onTitleChange = ::updateTitle,
+                        onAmountChange = ::updateAmount,
+                        onTitleFocused = { id ->
+                            activeRowId = id
+                            activeField = ActiveField.TITLE
+                            keyboardExpanded = false
+                        },
+                        onAmountFocused = { id ->
+                            activeRowId = id
+                            activeField = ActiveField.AMOUNT
+                            keyboardExpanded = true
+                        },
+                        onAddRow = ::addNewRow,
+                        onPendingFocusHandled = { pendingFocusRowId = null },
+                        onRemoveRow = ::removeRow,
+                        onConfirmRow = ::confirmRowEdit,
+                        onCompactKey = ::applyCompactKey,
+                        onToggleKeyboard = { keyboardExpanded = !keyboardExpanded },
                         onShowBreakdown = {
                             if (!hasInvalidRows && totalCentimes > 0) showBreakdown = true
                         }
                     )
-                    CalculatorKeyboard(
-                        onCollapse = { keyboardExpanded = false },
-                        onKey = ::applyKey
-                    )
-                } else {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    CollapsedTotalCard(
-                        totalCentimes = totalCentimes,
-                        primaryUnit = selectedUnit,
-                        hasInvalidRows = hasInvalidRows,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        onShowBreakdown = {
-                            if (!hasInvalidRows && totalCentimes > 0) showBreakdown = true
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    CollapsedKeyboard(onExpand = {
-                        focusManager.clearFocus()
-                        keyboardExpanded = true
-                    })
                 }
             }
         }
 
         if (showResetConfirmDialog) {
-            AlertDialog(
-                onDismissRequest = { showResetConfirmDialog = false },
-                title = { Text("لائحة جديدة", fontWeight = FontWeight.Bold, color = Ink) },
-                text = { Text("واش بغيتي تبدا لائحة جديدة وتمسح الحساب الحالي؟", color = Ink) },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            showResetConfirmDialog = false
-                            resetNewList()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Copper)
-                    ) {
-                        Text("نعم، لائحة جديدة")
-                    }
+            HisabiResetDialog(
+                onConfirm = {
+                    showResetConfirmDialog = false
+                    resetNewList()
+                    currentScreen = AppScreen.HOME
                 },
-                dismissButton = {
-                    TextButton(onClick = { showResetConfirmDialog = false }) {
-                        Text("إلغاء", color = MutedInk)
-                    }
-                },
-                containerColor = Paper,
-                shape = RoundedCornerShape(16.dp)
+                onDismiss = { showResetConfirmDialog = false }
             )
         }
 
         if (showBreakdown && !hasInvalidRows && totalCentimes > 0) {
-            MoneyBreakdownSheet(
+            HisabiBreakdownSheet(
                 totalCentimes = totalCentimes,
                 onDismiss = { showBreakdown = false }
             )
@@ -523,636 +584,345 @@ fun MoneyListApp() {
 }
 
 @Composable
-private fun AppHeader(
-    onBackClick: () -> Unit,
-    onMenuClick: () -> Unit,
-    menuExpanded: Boolean,
-    onDismissMenu: () -> Unit,
-    onNewList: () -> Unit,
-    onClearAll: () -> Unit
-) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp)
-                .padding(horizontal = 18.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            CircleAction(text = "←", onClick = onBackClick)
-
-            Text(
-                text = "الحساب",
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center,
-                color = Ink,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            Box {
-                CircleAction(text = "•••", onClick = onMenuClick)
-
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = onDismissMenu,
-                    offset = DpOffset(x = 0.dp, y = 6.dp)
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("لائحة جديدة", fontWeight = FontWeight.Medium) },
-                        onClick = {
-                            onDismissMenu()
-                            onNewList()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("مسح الكل", color = Color(0xFFC0392B)) },
-                        onClick = {
-                            onDismissMenu()
-                            onClearAll()
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CircleAction(text: String, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier
-            .size(38.dp)
-            .clickable(onClick = onClick),
-        shape = CircleShape,
-        color = Paper,
-        border = BorderStroke(1.dp, Hairline),
-        shadowElevation = 1.dp
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                text = text,
-                color = Ink,
-                fontSize = if (text == "←") 18.sp else 13.sp,
-                fontWeight = FontWeight.Normal
-            )
-        }
-    }
-}
-
-@Composable
-private fun UnitTabs(selectedUnit: MoneyUnit, onSelected: (MoneyUnit) -> Unit) {
-    val units = listOf(MoneyUnit.RIAL, MoneyUnit.DIRHAM)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 4.dp)
-            .height(46.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFFEBE6DC))
-            .border(1.dp, Hairline, RoundedCornerShape(14.dp))
-            .padding(3.dp)
-    ) {
-        units.forEach { unit ->
-            val selected = selectedUnit == unit
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(11.dp))
-                    .background(if (selected) CopperSoft else Color.Transparent)
-                    .clickable { onSelected(unit) },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = unit.arabicName,
-                    color = Ink,
-                    fontSize = 16.sp,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun EntrySheet(
+private fun HisabiCalculatorScreen(
+    categoryName: String,
     rows: List<EntryRow>,
-    activeRowId: Long,
-    unit: MoneyUnit,
+    activeRowId: Long?,
+    activeField: ActiveField,
+    selectedUnit: MoneyUnit,
+    hasInvalidRows: Boolean,
+    totalCentimes: Long,
+    keyboardExpanded: Boolean,
+    showCalculatorPopup: Boolean,
+    popupExpression: String,
+    popupResult: String,
+    popupHasError: Boolean,
+    popupIsEvaluated: Boolean,
+    pendingFocusRowId: Long?,
     listState: LazyListState,
-    modifier: Modifier,
-    onTitleChange: (Long, String) -> Unit,
-    onAmountSelected: (Long) -> Unit,
-    onTitleFocused: () -> Unit,
-    onRemove: (Long) -> Unit,
-    onAdd: () -> Unit
+    getTitleValue: (EntryRow) -> TextFieldValue,
+    getAmountValue: (EntryRow) -> TextFieldValue,
+    onBackClick: () -> Unit,
+    onOpenCalculator: () -> Unit,
+    onCloseCalculator: () -> Unit,
+    onPopupKey: (String) -> Unit,
+    onConfirmPopup: () -> Unit,
+    onTitleChange: (Long, TextFieldValue) -> Unit,
+    onAmountChange: (Long, TextFieldValue) -> Unit,
+    onTitleFocused: (Long) -> Unit,
+    onAmountFocused: (Long) -> Unit,
+    onAddRow: () -> Unit,
+    onPendingFocusHandled: () -> Unit,
+    onRemoveRow: (Long) -> Unit,
+    onConfirmRow: (Long) -> Unit,
+    onCompactKey: (String) -> Unit,
+    onToggleKeyboard: () -> Unit,
+    onShowBreakdown: () -> Unit
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Paper),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "العنوان (اختياري)",
-                        modifier = Modifier.weight(1f),
-                        color = MutedInk,
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Start
-                    )
-                    Text(
-                        text = "المبلغ",
-                        modifier = Modifier.width(112.dp),
-                        color = MutedInk,
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Start
-                    )
-                }
-            }
+    BackHandler(onBack = {
+        if (showCalculatorPopup) {
+            onCloseCalculator()
+        } else {
+            onBackClick()
+        }
+    })
 
-            items(rows, key = { it.id }) { row ->
-                val isRowValid = MoneyMath.isValidExpression(row.expression)
-                EntryEditorRow(
-                    row = row,
-                    canDelete = rows.size > 1 || row.title.isNotBlank() || row.expression.isNotBlank(),
-                    isActive = row.id == activeRowId,
-                    isValid = isRowValid,
-                    onTitleChange = { onTitleChange(row.id, it) },
-                    onAmountSelected = { onAmountSelected(row.id) },
-                    onTitleFocused = onTitleFocused,
-                    onRemove = { onRemove(row.id) }
-                )
-            }
+    val currencySuffix = if (selectedUnit == MoneyUnit.DIRHAM) "DH" else "rial"
+    val primaryFormatted = JournalLedgerManager.formatTotal(totalCentimes, selectedUnit)
 
-            item {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp)
-                        .clickable(onClick = onAdd),
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, CopperSoft)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "+  زيد سطر",
-                            color = Copper,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
+    val canConfirm = popupIsEvaluated && popupResult.isNotBlank() && !popupHasError && rows.any { it.id == activeRowId }
+
+    var dockHeightPx by remember { mutableStateOf(0) }
+    val density = LocalDensity.current
+    val dockClearanceDp = remember(dockHeightPx, density) {
+        with(density) {
+            if (dockHeightPx > 0) (dockHeightPx.toDp() + 12.dp) else 16.dp
         }
     }
-}
 
-@Composable
-private fun EntryEditorRow(
-    row: EntryRow,
-    canDelete: Boolean,
-    isActive: Boolean,
-    isValid: Boolean,
-    onTitleChange: (String) -> Unit,
-    onAmountSelected: () -> Unit,
-    onTitleFocused: () -> Unit,
-    onRemove: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = row.title,
-            onValueChange = onTitleChange,
-            modifier = Modifier
-                .weight(1f)
-                .height(50.dp)
-                .onFocusChanged { if (it.isFocused) onTitleFocused() },
-            placeholder = { Text("مثلاً: نعيمة", color = MutedInk, fontSize = 14.sp) },
-            trailingIcon = if (canDelete && row.title.isNotBlank()) {
-                {
-                    Text(
-                        text = "×",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .clickable(onClick = { onTitleChange("") }),
-                        color = MutedInk,
-                        fontSize = 16.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else null,
-            singleLine = true,
-            textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, color = Ink),
-            shape = RoundedCornerShape(11.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Copper,
-                unfocusedBorderColor = Hairline,
-                focusedContainerColor = Paper,
-                unfocusedContainerColor = Paper
-            )
-        )
-
-        val isInvalidState = !isValid && row.expression.isNotBlank()
-        val borderColor = when {
-            isInvalidState -> Color(0xFFD9534F)
-            isActive -> Copper
-            else -> Hairline
-        }
-
-        Surface(
-            modifier = Modifier
-                .width(112.dp)
-                .height(50.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onAmountSelected
-                ),
-            color = Paper,
-            shape = RoundedCornerShape(11.dp),
-            border = BorderStroke(
-                width = if (isActive || isInvalidState) 1.5.dp else 1.dp,
-                color = borderColor
-            )
-        ) {
-            Box(
-                modifier = Modifier.padding(horizontal = 10.dp),
-                contentAlignment = Alignment.CenterStart
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(JournalPaper)
+                    .statusBarsPadding()
             ) {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(1f, fill = false),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = row.expression.ifBlank { "0" },
-                                color = when {
-                                    isInvalidState -> Color(0xFFD9534F)
-                                    row.expression.isBlank() -> MutedInk
-                                    else -> Ink
-                                },
-                                fontSize = 16.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            if (isActive && row.expression.isNotBlank()) {
-                                Text(
-                                    text = " |",
-                                    color = if (isInvalidState) Color(0xFFD9534F) else Copper,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold
+                JournalCategoryHeader(
+                    categoryName = categoryName,
+                    onOpenCalculator = onOpenCalculator
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    JournalRuledDocument(listState = listState) {
+                        rows.forEachIndexed { index, row ->
+                            androidx.compose.runtime.key(row.id) {
+                                val isRowValid = MoneyMath.isValidExpression(row.expression)
+                                val titleVal = getTitleValue(row)
+                                val amountVal = getAmountValue(row)
+                                val titleRequester = remember(row.id) { FocusRequester() }
+                                val amountRequester = remember(row.id) { FocusRequester() }
+
+                                LaunchedEffect(pendingFocusRowId) {
+                                    if (pendingFocusRowId == row.id) {
+                                        titleRequester.requestFocus()
+                                        onPendingFocusHandled()
+                                    }
+                                }
+
+                                JournalEntryRow(
+                                    rowNumber = index + 1,
+                                    titleValue = titleVal,
+                                    amountValue = amountVal,
+                                    currencySuffix = currencySuffix,
+                                    isTitleActive = (row.id == activeRowId && activeField == ActiveField.TITLE),
+                                    isAmountActive = (row.id == activeRowId && activeField == ActiveField.AMOUNT),
+                                    isValid = isRowValid,
+                                    titleFocusRequester = titleRequester,
+                                    amountFocusRequester = amountRequester,
+                                    onTitleValueChange = { onTitleChange(row.id, it) },
+                                    onAmountValueChange = { onAmountChange(row.id, it) },
+                                    onTitleFocused = { onTitleFocused(row.id) },
+                                    onAmountFocused = { onAmountFocused(row.id) },
+                                    onDelete = { onRemoveRow(row.id) },
+                                    onConfirm = { onConfirmRow(row.id) }
                                 )
                             }
                         }
 
-                        if (isInvalidState) {
-                            Text(
-                                text = "!",
-                                color = Color(0xFFD9534F),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+                        JournalAddRowButton(onAddRow = onAddRow)
 
-@Composable
-private fun ExpandedTotalStrip(
-    totalCentimes: Long,
-    primaryUnit: MoneyUnit,
-    hasInvalidRows: Boolean,
-    onShowBreakdown: () -> Unit
-) {
-    val secondaryUnit = if (primaryUnit == MoneyUnit.DIRHAM) MoneyUnit.RIAL else MoneyUnit.DIRHAM
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .clickable(enabled = !hasInvalidRows && totalCentimes > 0, onClick = onShowBreakdown)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("المجموع المؤقت ", color = Ink, fontSize = 14.sp)
-                if (hasInvalidRows) {
-                    Text(
-                        text = "غير مكتمل",
-                        color = Color(0xFFD9534F),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                } else {
-                    Text(
-                        text = MoneyMath.fromCentimes(totalCentimes, primaryUnit),
-                        color = Copper,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(" ${primaryUnit.arabicName}", color = Ink, fontSize = 14.sp)
-                }
-            }
-            if (!hasInvalidRows) {
-                Text(
-                    text = "${MoneyMath.fromCentimes(totalCentimes, secondaryUnit)} ${secondaryUnit.arabicName}",
-                    color = MutedInk,
-                    fontSize = 12.sp
-                )
-            } else {
-                Text(
-                    text = "يرجى إكمال العمليات الحسابية",
-                    color = MutedInk,
-                    fontSize = 12.sp
-                )
-            }
-        }
-    }
-}
+                        val spacerRules = if (keyboardExpanded && rows.size >= 4) 1 else 2
+                        Spacer(modifier = Modifier.height(JournalRuleSpacing * spacerRules))
 
-@Composable
-private fun CollapsedTotalCard(
-    totalCentimes: Long,
-    primaryUnit: MoneyUnit,
-    hasInvalidRows: Boolean,
-    modifier: Modifier = Modifier,
-    onShowBreakdown: () -> Unit
-) {
-    val secondaryUnit = if (primaryUnit == MoneyUnit.DIRHAM) MoneyUnit.RIAL else MoneyUnit.DIRHAM
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Paper),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("المجموع", color = MutedInk, fontSize = 13.sp)
-                if (hasInvalidRows) {
-                    Text(
-                        text = "عملية غير مكتملة",
-                        color = Color(0xFFD9534F),
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                } else {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = MoneyMath.fromCentimes(totalCentimes, primaryUnit),
-                            color = Copper,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
+                        JournalTotalResultBand(
+                            amount = primaryFormatted,
+                            suffix = currencySuffix,
+                            hasInvalidRows = hasInvalidRows,
+                            canBreakdown = !hasInvalidRows && totalCentimes > 0,
+                            onShowBreakdown = onShowBreakdown
                         )
-                        Text(" ${primaryUnit.arabicName}", color = Ink, fontSize = 15.sp)
+
+                        Spacer(modifier = Modifier.height(dockClearanceDp))
                     }
-                    Text(
-                        text = "${MoneyMath.fromCentimes(totalCentimes, secondaryUnit)} ${secondaryUnit.arabicName}",
-                        color = MutedInk,
-                        fontSize = 13.sp
+                }
+
+                if (!showCalculatorPopup) {
+                    JournalCompactNumericDock(
+                        expanded = keyboardExpanded,
+                        onToggleExpand = onToggleKeyboard,
+                        onKey = onCompactKey,
+                        modifier = Modifier.onSizeChanged { dockHeightPx = it.height }
                     )
                 }
             }
 
-            Button(
-                onClick = onShowBreakdown,
-                enabled = !hasInvalidRows && totalCentimes > 0,
-                modifier = Modifier.height(44.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Copper,
-                    disabledContainerColor = Copper.copy(alpha = 0.35f)
+            // 5. Large Full Calculator Popup Modal (Overlay)
+            if (showCalculatorPopup) {
+                JournalCalculatorPopup(
+                    expression = popupExpression,
+                    result = popupResult,
+                    hasError = popupHasError,
+                    canConfirm = canConfirm,
+                    onKey = onPopupKey,
+                    onConfirm = onConfirmPopup,
+                    onDismiss = onCloseCalculator
                 )
-            ) {
-                Text("حسب المجموع", fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
 }
 
 @Composable
-private fun CalculatorKeyboard(onCollapse: () -> Unit, onKey: (String) -> Unit) {
-    Surface(
+private fun HisabiHomeScreen(
+    selectedUnit: MoneyUnit,
+    onUnitSelected: (MoneyUnit) -> Unit,
+    onOpenCalculator: () -> Unit
+) {
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(262.dp),
-        color = Charcoal,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        shadowElevation = 10.dp
+            .fillMaxSize()
+            .background(Paper)
+            .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .navigationBarsPadding()
-                .padding(start = 12.dp, end = 12.dp, top = 2.dp, bottom = 6.dp)
-        ) {
-            Box(
+        RuledDocument {
+            // Header Band (58dp = 2 grid units)
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(18.dp)
-                    .clickable(onClick = onCollapse),
-                contentAlignment = Alignment.Center
+                    .height(HisabiMetrics.Grid * 2)
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.Top
             ) {
-                ChevronIcon(
-                    directionUp = false,
-                    color = Color.White.copy(alpha = 0.75f),
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-
-            Spacer(Modifier.height(2.dp))
-
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    // Row 1: 1 | 2 | 3 | +
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                        listOf("1", "2", "3", "+").forEach { key ->
-                            KeyButton(
-                                text = key,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight(),
-                                accent = false,
-                                onClick = { onKey(key) }
-                            )
-                        }
-                    }
-
-                    // Row 2: 4 | 5 | 6 | −
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                        listOf("4", "5", "6", "−").forEach { key ->
-                            KeyButton(
-                                text = key,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight(),
-                                accent = false,
-                                onClick = { onKey(key) }
-                            )
-                        }
-                    }
-
-                    // Row 3: 7 | 8 | 9 | ×
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                        listOf("7", "8", "9", "×").forEach { key ->
-                            KeyButton(
-                                text = key,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight(),
-                                accent = false,
-                                onClick = { onKey(key) }
-                            )
-                        }
-                    }
-
-                    // Row 4: . | 0 | ⌫ | ÷
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                        listOf(".", "0", "⌫", "÷").forEach { key ->
-                            KeyButton(
-                                text = key,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxHeight(),
-                                accent = false,
-                                onClick = { onKey(key) }
-                            )
-                        }
-                    }
-
-                    // Row 5: = full-width copper button
-                    KeyButton(
-                        text = "=",
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        accent = true,
-                        onClick = { onKey("=") }
+                Column {
+                    Text(
+                        text = "حسابي",
+                        style = TextStyle(
+                            fontFamily = TajawalFamily,
+                            fontSize = 21.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Ink
+                        ),
+                        modifier = Modifier.baselineOnPaperRule()
+                    )
+                    Text(
+                        text = "دفتر الحساب والصرف المغربي",
+                        style = arabicWritingStyle(color = MutedInk, sizeSp = 13.5f),
+                        modifier = Modifier.baselineOnPaperRule()
                     )
                 }
             }
-        }
-    }
-}
 
-@Composable
-private fun KeyButton(
-    text: String,
-    modifier: Modifier,
-    accent: Boolean = false,
-    onClick: () -> Unit
-) {
-    val isBackspace = text == "⌫"
-    Surface(
-        modifier = modifier.clickable(onClick = onClick),
-        color = if (accent) Copper else CharcoalRaised,
-        shape = RoundedCornerShape(11.dp),
-        border = if (accent) null else BorderStroke(1.dp, Color.White.copy(alpha = 0.04f))
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            if (isBackspace) {
-                BackspaceIcon(
-                    color = Color.White,
-                    modifier = Modifier.size(24.dp, 17.dp)
-                )
-            } else {
+            // Section Label Band (29dp = 1 grid unit)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(HisabiMetrics.Grid)
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.Top
+            ) {
                 Text(
-                    text = text,
-                    color = Color.White,
-                    fontSize = if (accent) 22.sp else 19.sp,
-                    fontWeight = if (accent) FontWeight.Medium else FontWeight.Normal
+                    text = "العملة الأساسية:",
+                    style = arabicWritingStyle(color = Ink, sizeSp = 15f, weight = FontWeight.Medium),
+                    modifier = Modifier.baselineOnPaperRule()
                 )
             }
-        }
-    }
-}
 
-@Composable
-private fun CollapsedKeyboard(onExpand: () -> Unit) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onExpand),
-        color = Charcoal,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        shadowElevation = 8.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(vertical = 14.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ChevronIcon(
-                directionUp = true,
-                color = Copper,
-                modifier = Modifier.size(15.dp)
-            )
-            Spacer(Modifier.width(10.dp))
+            // Rial Currency Selection Band (58dp = 2 grid units)
+            val isRial = selectedUnit == MoneyUnit.RIAL
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(HisabiMetrics.Grid * 2)
+                    .clickable(role = Role.RadioButton, onClick = { onUnitSelected(MoneyUnit.RIAL) })
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "ريال",
+                        style = TextStyle(
+                            fontFamily = TajawalFamily,
+                            fontSize = 16.sp,
+                            fontWeight = if (isRial) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isRial) InkTone.Orange.color else Ink
+                        ),
+                        modifier = Modifier.baselineOnPaperRule()
+                    )
+                    Text(
+                        text = "1 درهم = 20 ريال",
+                        style = arabicWritingStyle(color = MutedInk, sizeSp = 12.5f),
+                        modifier = Modifier.baselineOnPaperRule()
+                    )
+                }
+
+                if (isRial) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Check,
+                        contentDescription = "محدد",
+                        tint = InkTone.Orange.color,
+                        size = 18.dp,
+                        modifier = Modifier.offset(y = 10.dp)
+                    )
+                }
+            }
+
+            // Dirham Currency Selection Band (58dp = 2 grid units)
+            val isDirham = selectedUnit == MoneyUnit.DIRHAM
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(HisabiMetrics.Grid * 2)
+                    .clickable(role = Role.RadioButton, onClick = { onUnitSelected(MoneyUnit.DIRHAM) })
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "درهم",
+                        style = TextStyle(
+                            fontFamily = TajawalFamily,
+                            fontSize = 16.sp,
+                            fontWeight = if (isDirham) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isDirham) InkTone.Orange.color else Ink
+                        ),
+                        modifier = Modifier.baselineOnPaperRule()
+                    )
+                    Text(
+                        text = "1 درهم = 100 سنتيم",
+                        style = arabicWritingStyle(color = MutedInk, sizeSp = 12.5f),
+                        modifier = Modifier.baselineOnPaperRule()
+                    )
+                }
+
+                if (isDirham) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Check,
+                        contentDescription = "محدد",
+                        tint = InkTone.Orange.color,
+                        size = 18.dp,
+                        modifier = Modifier.offset(y = 10.dp)
+                    )
+                }
+            }
+
+            // Open Calculator Action Band (58dp = 2 grid units)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(HisabiMetrics.Grid * 2)
+                    .clickable(role = Role.Button, onClick = onOpenCalculator)
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "فتح دفتر الحساب",
+                        style = TextStyle(
+                            fontFamily = TajawalFamily,
+                            fontSize = 16.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = InkTone.Orange.color
+                        ),
+                        modifier = Modifier.baselineOnPaperRule()
+                    )
+                    Text(
+                        text = "تدوين وحساب بالـ (${selectedUnit.arabicName})",
+                        style = arabicWritingStyle(color = MutedInk, sizeSp = 13f),
+                        modifier = Modifier.baselineOnPaperRule()
+                    )
+                }
+
+                HisabiSketchIcon(
+                    symbol = HisabiSymbol.Back,
+                    contentDescription = null,
+                    tint = InkTone.Orange.color,
+                    size = 18.dp,
+                    modifier = Modifier
+                        .scale(scaleX = -1f, scaleY = 1f)
+                        .offset(y = 10.dp)
+                )
+            }
+
+            // Empty spacer rule
+            Spacer(modifier = Modifier.height(HisabiMetrics.Grid))
+
+            // Footer Quote Band
             Text(
-                text = "لوحة الأرقام",
-                color = Color.White,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium
+                text = "« دفتر حساباتك بالريال والدرهم »",
+                style = arabicWritingStyle(color = MutedInk.copy(alpha = 0.72f), sizeSp = 13f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .baselineOnPaperRule()
             )
         }
     }
@@ -1160,111 +930,281 @@ private fun CollapsedKeyboard(onExpand: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MoneyBreakdownSheet(totalCentimes: Long, onDismiss: () -> Unit) {
+private fun HisabiBreakdownSheet(
+    totalCentimes: Long,
+    onDismiss: () -> Unit
+) {
     val pieces = remember(totalCentimes) { MoneyMath.breakdown(totalCentimes) }
+    val remainderCentimes = remember(totalCentimes, pieces) {
+        val accounted = pieces.sumOf { it.denomination.valueCentimes * it.count }
+        (totalCentimes - accounted).coerceAtLeast(0)
+    }
+
+    val dirhamFormatted = MoneyMath.fromCentimes(totalCentimes, MoneyUnit.DIRHAM)
+    val rialFormatted = MoneyMath.fromCentimes(totalCentimes, MoneyUnit.RIAL)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Ivory,
-        contentColor = Ink,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        containerColor = Paper,
+        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
+        tonalElevation = 0.dp,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(3.5.dp)
+                        .background(Rule.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
+                )
+            }
+        }
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 22.dp)
-                .padding(bottom = 16.dp)
+                .padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            Text("قيمة المجموع", fontSize = 21.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            item {
                 Text(
-                    text = "${MoneyMath.fromCentimes(totalCentimes, MoneyUnit.DIRHAM)} درهم",
-                    color = Copper,
-                    fontSize = if (totalCentimes > 10_000_000L) 18.sp else 21.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
-                )
-                Text("=", color = MutedInk, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    text = "${MoneyMath.fromCentimes(totalCentimes, MoneyUnit.RIAL)} ريال",
-                    color = Copper,
-                    fontSize = if (totalCentimes > 10_000_000L) 18.sp else 21.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1
+                    text = "قيمة المجموع",
+                    style = arabicWritingStyle(color = Ink, sizeSp = 18.5f, weight = FontWeight.Bold),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 6.dp)
                 )
             }
 
-            Spacer(Modifier.height(14.dp))
-            HorizontalDivider(color = Hairline)
-            Spacer(Modifier.height(10.dp))
-            Text("طريقة تقسيم الفلوس", color = MutedInk, fontSize = 14.sp)
-            Spacer(Modifier.height(8.dp))
-            LazyColumn(
-                modifier = Modifier.heightIn(max = 420.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(pieces) { piece -> MoneyPieceRow(piece) }
+            // Ruled Summary Conversion Band (58dp)
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp)
+                        .background(PaperWarm, RoundedCornerShape(6.dp))
+                        .border(BorderStroke(0.65.dp, Rule.copy(alpha = 0.72f)), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 14.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "$dirhamFormatted درهم",
+                        style = TextStyle(
+                            fontFamily = TajawalFamily,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = InkTone.Orange.color
+                        )
+                    )
+                    Text(
+                        text = "  =  ",
+                        style = arabicWritingStyle(color = MutedInk, sizeSp = 15f)
+                    )
+                    Text(
+                        text = "$rialFormatted ريال",
+                        style = TextStyle(
+                            fontFamily = TajawalFamily,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = InkTone.Orange.color
+                        )
+                    )
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(14.dp))
+                HorizontalDivider(color = Rule.copy(alpha = 0.54f), thickness = 0.55.dp)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "طريقة تقسيم الفلوس",
+                    style = arabicWritingStyle(color = Ink, sizeSp = 14.5f, weight = FontWeight.Medium),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(4.dp))
+            }
+
+            // Ruled Ledger Rows for Denominations (58dp each)
+            pieces.forEach { piece ->
+                item(key = piece.denomination.label) {
+                    BreakdownItemRow(piece = piece)
+                }
+            }
+
+            if (remainderCentimes > 0) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(58.dp)
+                            .drawBehind {
+                                drawLine(
+                                    color = Rule.copy(alpha = 0.54f),
+                                    start = Offset(0f, size.height),
+                                    end = Offset(size.width, size.height),
+                                    strokeWidth = 0.55.dp.toPx()
+                                )
+                            }
+                            .padding(horizontal = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "الباقي (أقل من 10 سنتيم):",
+                            style = arabicWritingStyle(color = Ink, sizeSp = 13.5f)
+                        )
+                        Text(
+                            text = "$remainderCentimes سنتيم",
+                            style = TextStyle(
+                                fontFamily = ManropeFamily,
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = InkTone.Orange.color
+                            )
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun MoneyPieceRow(piece: MoneyPiece) {
+private fun BreakdownItemRow(piece: MoneyPiece) {
     val bitmap = rememberBanknoteImage(piece.denomination.assetPath)
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Paper,
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, Hairline)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(58.dp)
+            .drawBehind {
+                drawLine(
+                    color = Rule.copy(alpha = 0.54f),
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 0.55.dp.toPx()
+                )
+            }
+            .padding(horizontal = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
-            modifier = Modifier.padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap,
-                    contentDescription = piece.denomination.label,
-                    modifier = Modifier
-                        .width(104.dp)
-                        .height(58.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White),
-                    contentScale = ContentScale.Fit
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .width(104.dp)
-                        .height(58.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(CopperSoft),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(piece.denomination.label, color = Ink, fontWeight = FontWeight.Bold)
-                }
-            }
-            Spacer(Modifier.width(14.dp))
             Text(
-                text = piece.denomination.label,
-                modifier = Modifier.weight(1f),
-                color = Ink,
-                fontSize = 16.sp
+                text = "${piece.count}",
+                style = TextStyle(
+                    fontFamily = ManropeFamily,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = InkTone.Orange.color
+                )
             )
             Text(
-                text = "× ${piece.count}",
-                color = Copper,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                text = "×",
+                style = arabicWritingStyle(color = MutedInk, sizeSp = 14f)
+            )
+            Text(
+                text = piece.denomination.label,
+                style = arabicWritingStyle(color = Ink, sizeSp = 15f, weight = FontWeight.Medium)
+            )
+        }
+
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = piece.denomination.label,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .height(42.dp)
+                    .width(68.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .border(BorderStroke(0.6.dp, Rule.copy(alpha = 0.7f)), RoundedCornerShape(3.dp))
             )
         }
     }
 }
+
+@Composable
+private fun HisabiResetDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            shape = RoundedCornerShape(8.dp),
+            color = Paper,
+            border = BorderStroke(0.65.dp, Rule.copy(alpha = 0.85f)),
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "الرجوع إلى الرئيسية",
+                    style = TextStyle(
+                        fontFamily = TajawalFamily,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Ink
+                    )
+                )
+
+                Text(
+                    text = "واش باغي ترجع للصفحة الرئيسية؟ الحساب الحالي غادي يتمسح.",
+                    style = arabicWritingStyle(color = WritingInk, sizeSp = 14.5f)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        onClick = onDismiss
+                    ) {
+                        Text(
+                            text = "متابعة الحساب",
+                            style = arabicWritingStyle(color = MutedInk, sizeSp = 14f),
+                            maxLines = 1
+                        )
+                    }
+
+                    TextButton(
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        onClick = onConfirm
+                    ) {
+                        Text(
+                            text = "نعم، مسح والرجوع",
+                            style = arabicWritingStyle(color = InkTone.Coral.color, sizeSp = 14f, weight = FontWeight.Medium),
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
