@@ -1,77 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <!-- Required permissions for AdMob -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    
-    <!-- Optional permissions for better ad targeting (not required) -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    
-    <!-- Note: Location permissions are NOT included as they require special handling
-         and privacy policy disclosure. Only add if you specifically need location-based ads. -->
-    
-    <!-- Play Store requirements: Declare that the app doesn't require any special hardware -->
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
-    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
-    <uses-feature android:name="android.hardware.location" android:required="false" />
-    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
-    <uses-feature android:name="android.hardware.location.network" android:required="false" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:name="com.cash.guide.SarfApp"
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Sarf"
         android:usesCleartextTraffic="false"
-        android:requestLegacyExternalStorage="false"
         android:hardwareAccelerated="true"
         android:enableOnBackInvokedCallback="true">
-        <!-- AdMob App ID -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-4182222159500814~7732575734" />
-        
-        <!-- AdMob: Request configuration for better ad performance -->
-        <meta-data
-            android:name="com.google.android.gms.ads.AD_MANAGER_APP"
-            android:value="true" />
 
         <activity
             android:name="com.cash.guide.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Sarf"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize"
             android:windowSoftInputMode="adjustResize"
-            android:launchMode="singleTop"
-            android:resizeableActivity="true">
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
-        <!-- AdMob: Required for interstitial ads -->
-        <activity
-            android:name="com.google.android.gms.ads.AdActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize"
-            android:exported="false"
-            android:theme="@android:style/Theme.Translucent"
-            tools:replace="android:configChanges" />
     </application>
-    
-    <!-- Play Store: Declare queries for packages used by the app (Android 11+) -->
-    <!-- AdMob requires Google Play Services -->
-    <queries>
-        <package android:name="com.android.vending" />
-        <package android:name="com.google.android.gms" />
-    </queries>
-
 </manifest>

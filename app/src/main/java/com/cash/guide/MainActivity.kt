@@ -1,44 +1,33 @@
 package com.cash.guide
 
 import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.Modifier
-import com.google.android.gms.ads.MobileAds
-import com.cash.guide.settings.AppSettings
-import com.cash.guide.settings.ThemeMode
-import com.cash.guide.ui.MainScreen
-import com.cash.guide.ui.theme.SarfTheme
+import androidx.core.view.WindowCompat
+import com.cash.guide.ui.MoneyListApp
+import com.cash.guide.ui.theme.HisabiTheme
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        MobileAds.initialize(this) {}
-
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            ),
+            navigationBarStyle = SystemBarStyle.dark(
+                android.graphics.Color.TRANSPARENT
+            )
+        )
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = false
+        }
         setContent {
-            val context = LocalContext.current
-            val settings = remember(context) { AppSettings(context) }
-            val themeMode by settings.themeMode.collectAsState(initial = ThemeMode.LIGHT)
-
-            SarfTheme(themeMode = themeMode) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .systemBarsPadding(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    MainScreen()
-                }
+            HisabiTheme {
+                MoneyListApp()
             }
         }
     }

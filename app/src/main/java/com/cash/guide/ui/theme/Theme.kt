@@ -1,76 +1,51 @@
 package com.cash.guide.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
+import android.app.Activity
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.platform.LocalLayoutDirection
-import com.cash.guide.settings.ThemeMode
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-private val LightColorScheme = lightColorScheme(
-    primary = SarfGreen,
+val Ivory = Color(0xFFF3F0E8)
+val Paper = Color(0xFFFFFDFC)
+val Charcoal = Color(0xFF232321)
+val CharcoalRaised = Color(0xFF302F2C)
+val Copper = Color(0xFFC9783A)
+val CopperSoft = Color(0xFFE8C2A5)
+val Ink = Color(0xFF28251F)
+val MutedInk = Color(0xFF8A8378)
+val Hairline = Color(0xFFE0DAD0)
+
+private val HisabiColors = lightColorScheme(
+    primary = Copper,
     onPrimary = Color.White,
-    primaryContainer = SarfGreenSoft,
-    onPrimaryContainer = SarfText,
-
-    background = SarfBg,
-    onBackground = SarfText,
-    surface = SarfSurface,
-    onSurface = SarfText,
-
-    outline = SarfOutline,
-    outlineVariant = SarfOutline,
-)
-
-private val DarkColorScheme = darkColorScheme(
-    primary = SarfGreen,
-    onPrimary = Color.White,
-    primaryContainer = SarfGreenStrong,
-    onPrimaryContainer = Color.White,
-
-    background = SarfBgDark,
-    onBackground = SarfTextDark,
-    surface = SarfSurfaceDark,
-    onSurface = SarfTextDark,
-
-    outline = SarfOutlineDark,
-    outlineVariant = SarfOutlineDark,
+    background = Ivory,
+    onBackground = Ink,
+    surface = Paper,
+    onSurface = Ink,
+    surfaceVariant = Color(0xFFECE7DE),
+    onSurfaceVariant = MutedInk,
+    outline = Hairline
 )
 
 @Composable
-fun SarfTheme(
-    themeMode: ThemeMode = ThemeMode.SYSTEM,
-    dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
-) {
-    // Keep compileSdk checks to avoid unused import warnings for older templates.
-    @Suppress("UNUSED_VARIABLE")
-    val sdk = Build.VERSION.SDK_INT
-    val useDark = when (themeMode) {
-        ThemeMode.SYSTEM -> isSystemInDarkTheme()
-        ThemeMode.DARK -> true
-        ThemeMode.LIGHT -> false
-    }
-    val colorScheme = if (useDark) DarkColorScheme else LightColorScheme
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        shapes = SarfShapes,
-        content = {
-            val locale = LocalConfiguration.current.locales[0]
-            val isArabic = locale.language == "ar"
-            CompositionLocalProvider(
-                LocalLayoutDirection provides (if (isArabic) LayoutDirection.Rtl else LayoutDirection.Ltr)
-            ) {
-                content()
+fun HisabiTheme(content: @Composable () -> Unit) {
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                insetsController.isAppearanceLightStatusBars = true
+                insetsController.isAppearanceLightNavigationBars = false
             }
         }
+    }
+    MaterialTheme(
+        colorScheme = HisabiColors,
+        content = content
     )
 }
