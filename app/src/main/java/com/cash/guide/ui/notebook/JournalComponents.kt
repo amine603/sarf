@@ -59,10 +59,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.window.Popup
+import com.cash.guide.domain.JournalKeyboardController
+import com.cash.guide.domain.JournalKeyboardMode
 import com.cash.guide.domain.JournalLedgerManager
 
 /**
@@ -537,7 +542,7 @@ fun JournalTotalResultBand(
  *   1 | 2 | 3 | ⌫
  *   4 | 5 | 6 | .
  *   7 | 8 | 9 | 0
- * - No arithmetic operators, no equals button
+ * - "ABC" switch button on the left of top handle bar
  * - Collapse / Expand handle
  * - Extends behind system navigation bar with no gap
  */
@@ -546,6 +551,7 @@ fun JournalCompactNumericDock(
     expanded: Boolean,
     onToggleExpand: () -> Unit,
     onKey: (String) -> Unit,
+    onSwitchToTextMode: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -563,55 +569,90 @@ fun JournalCompactNumericDock(
                 .navigationBarsPadding()
                 .padding(horizontal = 14.dp, vertical = 2.dp)
         ) {
-            // 1. Collapse / Expand Handle
-            Box(
+            // 1. Top Handle Bar: "ABC" Mode Switch on Left + Centered Chevron + Balanced Right Spacer
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(30.dp)
-                    .clickable(
-                        role = Role.Button,
-                        onClickLabel = if (expanded) "Réduire le clavier" else "Développer le clavier",
-                        onClick = onToggleExpand
-                    ),
-                contentAlignment = Alignment.Center
+                    .height(30.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Canvas(modifier = Modifier.size(18.dp, 10.dp)) {
-                    val strokeW = 1.4.dp.toPx()
-                    val inkColor = JournalInk.copy(alpha = 0.85f)
-                    if (expanded) {
-                        // Chevron Down
-                        drawLine(
-                            color = inkColor,
-                            start = Offset(1.dp.toPx(), 2.dp.toPx()),
-                            end = Offset(size.width / 2f, size.height - 2.dp.toPx()),
-                            strokeWidth = strokeW,
-                            cap = StrokeCap.Round
+                // Left: "ABC" Switch to Text Keyboard
+                Box(
+                    modifier = Modifier
+                        .size(width = 44.dp, height = 30.dp)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = "Passer au clavier texte",
+                            onClick = onSwitchToTextMode
                         )
-                        drawLine(
-                            color = inkColor,
-                            start = Offset(size.width / 2f, size.height - 2.dp.toPx()),
-                            end = Offset(size.width - 1.dp.toPx(), 2.dp.toPx()),
-                            strokeWidth = strokeW,
-                            cap = StrokeCap.Round
+                        .semantics { testTag = "tag_switch_to_text_key" },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "ABC",
+                        style = TextStyle(
+                            fontFamily = JournalHandFamily,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalInk
                         )
-                    } else {
-                        // Chevron Up
-                        drawLine(
-                            color = inkColor,
-                            start = Offset(1.dp.toPx(), size.height - 2.dp.toPx()),
-                            end = Offset(size.width / 2f, 2.dp.toPx()),
-                            strokeWidth = strokeW,
-                            cap = StrokeCap.Round
-                        )
-                        drawLine(
-                            color = inkColor,
-                            start = Offset(size.width / 2f, 2.dp.toPx()),
-                            end = Offset(size.width - 1.dp.toPx(), size.height - 2.dp.toPx()),
-                            strokeWidth = strokeW,
-                            cap = StrokeCap.Round
-                        )
+                    )
+                }
+
+                // Center: Collapse / Expand Handle
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = if (expanded) "Réduire le clavier" else "Développer le clavier",
+                            onClick = onToggleExpand
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Canvas(modifier = Modifier.size(18.dp, 10.dp)) {
+                        val strokeW = 1.4.dp.toPx()
+                        val inkColor = JournalInk.copy(alpha = 0.85f)
+                        if (expanded) {
+                            // Chevron Down
+                            drawLine(
+                                color = inkColor,
+                                start = Offset(1.dp.toPx(), 2.dp.toPx()),
+                                end = Offset(size.width / 2f, size.height - 2.dp.toPx()),
+                                strokeWidth = strokeW,
+                                cap = StrokeCap.Round
+                            )
+                            drawLine(
+                                color = inkColor,
+                                start = Offset(size.width / 2f, size.height - 2.dp.toPx()),
+                                end = Offset(size.width - 1.dp.toPx(), 2.dp.toPx()),
+                                strokeWidth = strokeW,
+                                cap = StrokeCap.Round
+                            )
+                        } else {
+                            // Chevron Up
+                            drawLine(
+                                color = inkColor,
+                                start = Offset(1.dp.toPx(), size.height - 2.dp.toPx()),
+                                end = Offset(size.width / 2f, 2.dp.toPx()),
+                                strokeWidth = strokeW,
+                                cap = StrokeCap.Round
+                            )
+                            drawLine(
+                                color = inkColor,
+                                start = Offset(size.width / 2f, 2.dp.toPx()),
+                                end = Offset(size.width - 1.dp.toPx(), size.height - 2.dp.toPx()),
+                                strokeWidth = strokeW,
+                                cap = StrokeCap.Round
+                            )
+                        }
                     }
                 }
+
+                // Right: Symmetrical 44.dp reserved box for perfect geometric centering
+                Spacer(modifier = Modifier.size(width = 44.dp, height = 30.dp))
             }
 
             if (expanded) {
@@ -686,6 +727,467 @@ fun JournalCompactNumericDock(
                     Spacer(modifier = Modifier.height(4.dp))
                 }
             }
+        }
+    }
+}
+
+/**
+ * Custom In-App French AZERTY Text Keyboard:
+ * - 4 rows:
+ *   Row 1: A  Z  E  R  T  Y  U  I  O  P
+ *   Row 2:  Q  S  D  F  G  H  J  K  L  M
+ *   Row 3:   ⇧  W  X  C  V  B  N  '  ⌫
+ *   Row 4: 123          espace          .   OK ✓
+ * - Vowel long-press shows accent popup (e.g. E -> é, è, ê, ë)
+ * - 123 switches to Amount field and numeric mode
+ * - OK ✓ confirms and commits edit
+ * - Surface: JournalDockBg (#F6F0DF)
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun JournalTextKeyboardDock(
+    expanded: Boolean,
+    isShiftActive: Boolean,
+    onToggleExpand: () -> Unit,
+    onToggleShift: () -> Unit,
+    onChar: (String) -> Unit,
+    onBackspace: () -> Unit,
+    onSwitchToNumericMode: () -> Unit,
+    onConfirm: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var activeAccentChar by remember { mutableStateOf<Char?>(null) }
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics { testTag = "tag_text_keypad" },
+        color = JournalDockBg,
+        shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 8.dp, vertical = 2.dp)
+        ) {
+            // 1. Top Handle Bar: Centered Chevron when expanded, or action bar when collapsed
+            if (expanded) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Spacer(modifier = Modifier.size(width = 44.dp, height = 30.dp))
+
+                    // Center: Collapse Handle
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable(
+                                role = Role.Button,
+                                onClickLabel = "Réduire le clavier",
+                                onClick = onToggleExpand
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Canvas(modifier = Modifier.size(18.dp, 10.dp)) {
+                            val strokeW = 1.4.dp.toPx()
+                            val inkColor = JournalInk.copy(alpha = 0.85f)
+                            // Chevron Down
+                            drawLine(
+                                color = inkColor,
+                                start = Offset(1.dp.toPx(), 2.dp.toPx()),
+                                end = Offset(size.width / 2f, size.height - 2.dp.toPx()),
+                                strokeWidth = strokeW,
+                                cap = StrokeCap.Round
+                            )
+                            drawLine(
+                                color = inkColor,
+                                start = Offset(size.width / 2f, size.height - 2.dp.toPx()),
+                                end = Offset(size.width - 1.dp.toPx(), 2.dp.toPx()),
+                                strokeWidth = strokeW,
+                                cap = StrokeCap.Round
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.size(width = 44.dp, height = 30.dp))
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Left: "123" Switch to Numeric Keyboard
+                    Box(
+                        modifier = Modifier
+                            .size(width = 44.dp, height = 30.dp)
+                            .clickable(
+                                role = Role.Button,
+                                onClickLabel = "Passer au clavier numérique",
+                                onClick = onSwitchToNumericMode
+                            )
+                            .semantics { testTag = "tag_switch_to_num_key_top" },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "123",
+                            style = TextStyle(
+                                fontFamily = JournalHandFamily,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalInk
+                            )
+                        )
+                    }
+
+                    // Center: Expand Chevron Up
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable(
+                                role = Role.Button,
+                                onClickLabel = "Développer le clavier",
+                                onClick = onToggleExpand
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Canvas(modifier = Modifier.size(18.dp, 10.dp)) {
+                            val strokeW = 1.4.dp.toPx()
+                            val inkColor = JournalInk.copy(alpha = 0.85f)
+                            drawLine(
+                                color = inkColor,
+                                start = Offset(1.dp.toPx(), size.height - 2.dp.toPx()),
+                                end = Offset(size.width / 2f, 2.dp.toPx()),
+                                strokeWidth = strokeW,
+                                cap = StrokeCap.Round
+                            )
+                            drawLine(
+                                color = inkColor,
+                                start = Offset(size.width / 2f, 2.dp.toPx()),
+                                end = Offset(size.width - 1.dp.toPx(), size.height - 2.dp.toPx()),
+                                strokeWidth = strokeW,
+                                cap = StrokeCap.Round
+                            )
+                        }
+                    }
+
+                    // Right: "OK ✓" Confirm Button
+                    Box(
+                        modifier = Modifier
+                            .size(width = 44.dp, height = 30.dp)
+                            .clickable(
+                                role = Role.Button,
+                                onClickLabel = "Confirmer",
+                                onClick = onConfirm
+                            )
+                            .semantics { testTag = "tag_confirm_key_top" },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "OK ✓",
+                            style = TextStyle(
+                                fontFamily = JournalHandFamily,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalActionConfirm
+                            )
+                        )
+                    }
+                }
+            }
+
+            if (expanded) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                        ) {
+                            val row1 = listOf('A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P')
+                            val row2 = listOf('Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M')
+                            val row3 = listOf('W', 'X', 'C', 'V', 'B', 'N', '\'')
+
+                            // Row 1: A Z E R T Y U I O P
+                            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                row1.forEach { ch ->
+                                    val displayStr = if (isShiftActive) ch.uppercase() else ch.lowercase()
+                                    JournalTextKeyCell(
+                                        label = displayStr,
+                                        modifier = Modifier.weight(1f),
+                                        hasAccents = JournalKeyboardController.getAccents(ch).isNotEmpty(),
+                                        onClick = { onChar(displayStr) },
+                                        onLongClick = { activeAccentChar = ch }
+                                    )
+                                }
+                            }
+
+                            // Row 2: Q S D F G H J K L M
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 6.dp)
+                            ) {
+                                row2.forEach { ch ->
+                                    val displayStr = if (isShiftActive) ch.uppercase() else ch.lowercase()
+                                    JournalTextKeyCell(
+                                        label = displayStr,
+                                        modifier = Modifier.weight(1f),
+                                        hasAccents = JournalKeyboardController.getAccents(ch).isNotEmpty(),
+                                        onClick = { onChar(displayStr) },
+                                        onLongClick = { activeAccentChar = ch }
+                                    )
+                                }
+                            }
+
+                            // Row 3: ⇧ W X C V B N ' ⌫
+                            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                // Shift
+                                JournalTextKeyCell(
+                                    label = "⇧",
+                                    isShift = true,
+                                    isShiftActive = isShiftActive,
+                                    modifier = Modifier.weight(1.3f),
+                                    onClick = onToggleShift
+                                )
+
+                                row3.forEach { ch ->
+                                    val displayStr = if (ch == '\'') "'" else (if (isShiftActive) ch.uppercase() else ch.lowercase())
+                                    JournalTextKeyCell(
+                                        label = displayStr,
+                                        modifier = Modifier.weight(1f),
+                                        hasAccents = JournalKeyboardController.getAccents(ch).isNotEmpty(),
+                                        onClick = { onChar(displayStr) },
+                                        onLongClick = if (ch != '\'') { { activeAccentChar = ch } } else null
+                                    )
+                                }
+
+                                // Backspace
+                                JournalTextKeyCell(
+                                    label = "⌫",
+                                    isBackspace = true,
+                                    modifier = Modifier.weight(1.3f),
+                                    onClick = onBackspace
+                                )
+                            }
+
+                            // Row 4: 123 | espace | . | OK ✓
+                            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                JournalTextKeyCell(
+                                    label = "123",
+                                    modifier = Modifier.weight(1.4f),
+                                    onClick = onSwitchToNumericMode
+                                )
+                                JournalTextKeyCell(
+                                    label = "espace",
+                                    isSpace = true,
+                                    modifier = Modifier.weight(4.4f),
+                                    onClick = { onChar(" ") }
+                                )
+                                JournalTextKeyCell(
+                                    label = ".",
+                                    modifier = Modifier.weight(1.2f),
+                                    onClick = { onChar(".") }
+                                )
+                                JournalTextKeyCell(
+                                    label = "OK ✓",
+                                    isConfirm = true,
+                                    modifier = Modifier.weight(1.8f),
+                                    onClick = onConfirm
+                                )
+                            }
+                        }
+
+                        // Floating Accent Popup
+                        if (activeAccentChar != null) {
+                            val char = activeAccentChar!!
+                            val accents = JournalKeyboardController.getAccents(
+                                if (isShiftActive) char.uppercaseChar() else char.lowercaseChar()
+                            )
+                            if (accents.isNotEmpty()) {
+                                Popup(
+                                    alignment = Alignment.TopCenter,
+                                    offset = androidx.compose.ui.unit.IntOffset(0, -65),
+                                    onDismissRequest = { activeAccentChar = null }
+                                ) {
+                                    Surface(
+                                        color = JournalPaper,
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = BorderStroke(1.dp, JournalRule.copy(alpha = 0.65f)),
+                                        shadowElevation = 6.dp
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            accents.forEach { acc ->
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(width = 38.dp, height = 44.dp)
+                                                        .clickable(role = Role.Button) {
+                                                            onChar(acc)
+                                                            activeAccentChar = null
+                                                        }
+                                                        .drawBehind {
+                                                            if (acc.startsWith("é") || acc.startsWith("É") || acc.startsWith("à")) {
+                                                                drawRect(HighlighterPink.copy(alpha = 0.25f))
+                                                            }
+                                                        },
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = acc,
+                                                        style = TextStyle(
+                                                            fontFamily = JournalHandFamily,
+                                                            fontSize = 24.sp,
+                                                            color = JournalInk
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun JournalTextKeyCell(
+    label: String,
+    modifier: Modifier = Modifier,
+    isShift: Boolean = false,
+    isShiftActive: Boolean = false,
+    isBackspace: Boolean = false,
+    isSpace: Boolean = false,
+    isConfirm: Boolean = false,
+    hasAccents: Boolean = false,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
+) {
+    val clickModifier = if (onLongClick != null) {
+        Modifier.combinedClickable(
+            role = Role.Button,
+            onClick = onClick,
+            onLongClick = onLongClick
+        )
+    } else {
+        Modifier.clickable(
+            role = Role.Button,
+            onClick = onClick
+        )
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .then(clickModifier)
+            .drawBehind {
+                val strokeW = 0.6.dp.toPx()
+                val dividerColor = JournalRule.copy(alpha = 0.35f)
+                // Subtle pencil bottom line
+                drawLine(
+                    color = dividerColor,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = strokeW
+                )
+                // Shift active dab
+                if (isShift && isShiftActive) {
+                    drawCircle(
+                        color = HighlighterPink.copy(alpha = 0.40f),
+                        radius = size.minDimension * 0.35f,
+                        center = Offset(size.width / 2f, size.height / 2f)
+                    )
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        if (isBackspace) {
+            // Hand-drawn backspace symbol
+            Canvas(modifier = Modifier.size(22.dp, 16.dp)) {
+                val strokeW = 1.15.dp.toPx()
+                val ink = JournalInk.copy(alpha = 0.9f)
+                val w = size.width
+                val h = size.height
+
+                val p = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(w * 0.32f, 0f)
+                    lineTo(w, 0f)
+                    lineTo(w, h)
+                    lineTo(w * 0.32f, h)
+                    lineTo(0f, h / 2f)
+                    close()
+                }
+                drawPath(p, color = ink, style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW))
+
+                val cx = w * 0.64f
+                val cy = h / 2f
+                val d = 3.0.dp.toPx()
+                drawLine(ink, Offset(cx - d, cy - d), Offset(cx + d, cy + d), strokeW, StrokeCap.Round)
+                drawLine(ink, Offset(cx + d, cy - d), Offset(cx - d, cy + d), strokeW, StrokeCap.Round)
+            }
+        } else if (isShift) {
+            // Upward arrow ⇧
+            Canvas(modifier = Modifier.size(18.dp, 18.dp)) {
+                val strokeW = 1.4.dp.toPx()
+                val ink = if (isShiftActive) JournalInk else JournalInk.copy(alpha = 0.85f)
+                val w = size.width
+                val h = size.height
+
+                // Arrow head
+                drawLine(ink, Offset(w * 0.15f, h * 0.48f), Offset(w * 0.5f, h * 0.15f), strokeW, StrokeCap.Round)
+                drawLine(ink, Offset(w * 0.85f, h * 0.48f), Offset(w * 0.5f, h * 0.15f), strokeW, StrokeCap.Round)
+                // Arrow stem
+                drawLine(ink, Offset(w * 0.5f, h * 0.18f), Offset(w * 0.5f, h * 0.82f), strokeW, StrokeCap.Round)
+            }
+        } else {
+            val textColor = when {
+                isConfirm -> JournalActionConfirm
+                isSpace -> JournalMutedInk
+                else -> JournalInk
+            }
+            val fontSize = when {
+                isSpace -> 18.sp
+                isConfirm -> 17.sp
+                label == "123" -> 18.sp
+                label == "." -> 24.sp
+                else -> 21.sp
+            }
+            val fontWeight = when {
+                isConfirm || label == "123" -> FontWeight.Bold
+                else -> FontWeight.Normal
+            }
+
+            Text(
+                text = label,
+                style = TextStyle(
+                    fontFamily = JournalHandFamily,
+                    fontSize = fontSize,
+                    fontWeight = fontWeight,
+                    color = textColor
+                )
+            )
         }
     }
 }

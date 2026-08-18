@@ -100,13 +100,17 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.cash.guide.domain.JournalLedgerManager
+import com.cash.guide.domain.JournalKeyboardController
+import com.cash.guide.domain.JournalKeyboardMode
 import com.cash.guide.ui.notebook.JournalCategoryHeader
 import com.cash.guide.ui.notebook.JournalCompactNumericDock
+import com.cash.guide.ui.notebook.JournalTextKeyboardDock
 import com.cash.guide.ui.notebook.JournalCalculatorPopup
 import com.cash.guide.ui.notebook.JournalEntryRow
 import com.cash.guide.ui.notebook.JournalPaper
 import com.cash.guide.ui.notebook.JournalRuledDocument
 import com.cash.guide.ui.notebook.JournalTotalResultBand
+import androidx.compose.ui.platform.LocalTextInputService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -215,6 +219,8 @@ fun MoneyListApp() {
         }
         var activeRowId by rememberSaveable { mutableStateOf<Long?>(3L) }
         var activeField by rememberSaveable { mutableStateOf(ActiveField.AMOUNT) }
+        var keyboardMode by rememberSaveable { mutableStateOf(JournalKeyboardMode.NUMBER) }
+        var isShiftActive by rememberSaveable { mutableStateOf(false) }
         var keyboardExpanded by rememberSaveable { mutableStateOf(true) }
         var pendingFocusRowId by remember { mutableStateOf<Long?>(null) }
         var showBreakdown by rememberSaveable { mutableStateOf(false) }
@@ -284,8 +290,10 @@ fun MoneyListApp() {
             rows.add(initialRow)
             activeRowId = 1L
             activeField = ActiveField.TITLE
-            nextId = 2L
+            keyboardMode = JournalKeyboardMode.TEXT
             keyboardExpanded = true
+            isShiftActive = true
+            nextId = 2L
             showCalculatorPopup = false
             popupExpression = ""
             popupResult = ""
@@ -313,8 +321,10 @@ fun MoneyListApp() {
             rows.add(newRow)
             activeRowId = newId
             activeField = ActiveField.TITLE
+            keyboardMode = JournalKeyboardMode.TEXT
+            keyboardExpanded = true
+            isShiftActive = true
             pendingFocusRowId = newId
-            keyboardExpanded = false
             coroutineScope.launch {
                 listState.animateScrollToItem(rows.size)
             }
@@ -324,7 +334,9 @@ fun MoneyListApp() {
             focusManager.clearFocus()
             activeRowId = null
             activeField = ActiveField.NONE
+            keyboardMode = JournalKeyboardMode.NONE
             keyboardExpanded = false
+            isShiftActive = false
         }
 
         fun removeRow(id: Long) {
@@ -336,6 +348,8 @@ fun MoneyListApp() {
                 if (activeRowId == id) {
                     activeRowId = null
                     activeField = ActiveField.NONE
+                    keyboardMode = JournalKeyboardMode.NONE
+                    keyboardExpanded = false
                 }
             }
         }
@@ -368,38 +382,51 @@ fun MoneyListApp() {
             popupIsEvaluated = false
         }
 
-        fun applyCompactKey(key: String) {
-            val targetId = activeRowId ?: return
-            val targetRow = rows.firstOrNull { it.id == targetId } ?: return
-            val currentVal = getAmountValue(targetRow)
-            val currentText = currentVal.text
-            val selStart = currentVal.selection.min.coerceIn(0, currentText.length)
-            val selEnd = currentVal.selection.max.coerceIn(0, currentText.length)
-
-            when (key) {
-                "⌫" -> {
-                    if (selStart != selEnd) {
-                        val newText = currentText.removeRange(selStart, selEnd)
-                        updateAmount(targetId, TextFieldValue(newText, TextRange(selStart)))
-                    } else if (selStart > 0) {
-                        val newText = currentText.removeRange(selStart - 1, selStart)
-                        updateAmount(targetId, TextFieldValue(newText, TextRange(selStart - 1)))
-                    }
-                }
-                "." -> {
-                    val textWithoutSelection = currentText.removeRange(selStart, selEnd)
-                    if (!textWithoutSelection.contains('.')) {
-                        val newText = currentText.replaceRange(selStart, selEnd, ".")
-                        updateAmount(targetId, TextFieldValue(newText, TextRange(selStart + 1)))
-                    }
-                }
-                else -> { // Digits 0-9
-                    if (currentText.length < 18) {
-                        val newText = currentText.replaceRange(selStart, selEnd, key)
-                        updateAmount(targetId, TextFieldValue(newText, TextRange(selStart + key.length)))
-                    }
-                }
+        fun applyTextKey(char: String) {
+            val targetId = activeRowId.takeIf { id -> rows.any { it.id == id } } ?: return
+            val row = rows.first { it.id == targetId }
+            val currentVal = getTitleValue(row)
+            val newVal = JournalKeyboardController.insertText(currentVal, char)
+            updateTitle(targetId, newVal)
+            if (isShiftActive) {
+                isShiftActive = false // One-shot shift returns to lowercase
             }
+        }
+
+        fun applyTextBackspace() {
+            val targetId = activeRowId.takeIf { id -> rows.any { it.id == id } } ?: return
+            val row = rows.first { it.id == targetId }
+            val currentVal = getTitleValue(row)
+            val newVal = JournalKeyboardController.deleteBackward(currentVal)
+            updateTitle(targetId, newVal)
+        }
+
+        fun applyCompactKey(key: String) {
+            val targetId = activeRowId.takeIf { id -> rows.any { it.id == id } } ?: return
+            val row = rows.first { it.id == targetId }
+            val currentVal = getAmountValue(row)
+            val newVal = JournalKeyboardController.applyNumericKey(currentVal, key)
+            updateAmount(targetId, newVal)
+        }
+
+        fun switchToTextMode() {
+            val targetId = activeRowId.takeIf { id -> rows.any { it.id == id } } ?: rows.firstOrNull()?.id ?: return
+            activeRowId = targetId
+            activeField = ActiveField.TITLE
+            keyboardMode = JournalKeyboardMode.TEXT
+            keyboardExpanded = true
+            val titleText = rows.firstOrNull { it.id == targetId }?.title.orEmpty()
+            if (titleText.isEmpty()) {
+                isShiftActive = true
+            }
+        }
+
+        fun switchToNumericMode() {
+            val targetId = activeRowId.takeIf { id -> rows.any { it.id == id } } ?: rows.firstOrNull()?.id ?: return
+            activeRowId = targetId
+            activeField = ActiveField.AMOUNT
+            keyboardMode = JournalKeyboardMode.NUMBER
+            keyboardExpanded = true
         }
 
         fun applyPopupKey(key: String) {
@@ -519,6 +546,8 @@ fun MoneyListApp() {
                         rows = rows,
                         activeRowId = activeRowId,
                         activeField = activeField,
+                        keyboardMode = keyboardMode,
+                        isShiftActive = isShiftActive,
                         selectedUnit = selectedUnit,
                         hasInvalidRows = hasInvalidRows,
                         totalCentimes = totalCentimes,
@@ -542,18 +571,29 @@ fun MoneyListApp() {
                         onTitleFocused = { id ->
                             activeRowId = id
                             activeField = ActiveField.TITLE
-                            keyboardExpanded = false
+                            keyboardMode = JournalKeyboardMode.TEXT
+                            keyboardExpanded = true
+                            val titleText = rows.firstOrNull { it.id == id }?.title.orEmpty()
+                            if (titleText.isEmpty()) {
+                                isShiftActive = true
+                            }
                         },
                         onAmountFocused = { id ->
                             activeRowId = id
                             activeField = ActiveField.AMOUNT
+                            keyboardMode = JournalKeyboardMode.NUMBER
                             keyboardExpanded = true
                         },
                         onAddRow = ::addNewRow,
                         onPendingFocusHandled = { pendingFocusRowId = null },
                         onRemoveRow = ::removeRow,
                         onConfirmRow = ::confirmRowEdit,
+                        onToggleShift = { isShiftActive = !isShiftActive },
+                        onTextKey = ::applyTextKey,
+                        onTextBackspace = ::applyTextBackspace,
                         onCompactKey = ::applyCompactKey,
+                        onSwitchToTextMode = ::switchToTextMode,
+                        onSwitchToNumericMode = ::switchToNumericMode,
                         onToggleKeyboard = { keyboardExpanded = !keyboardExpanded },
                         onShowBreakdown = {
                             if (!hasInvalidRows && totalCentimes > 0) showBreakdown = true
@@ -589,6 +629,8 @@ private fun HisabiCalculatorScreen(
     rows: List<EntryRow>,
     activeRowId: Long?,
     activeField: ActiveField,
+    keyboardMode: JournalKeyboardMode,
+    isShiftActive: Boolean,
     selectedUnit: MoneyUnit,
     hasInvalidRows: Boolean,
     totalCentimes: Long,
@@ -615,13 +657,20 @@ private fun HisabiCalculatorScreen(
     onPendingFocusHandled: () -> Unit,
     onRemoveRow: (Long) -> Unit,
     onConfirmRow: (Long) -> Unit,
+    onToggleShift: () -> Unit,
+    onTextKey: (String) -> Unit,
+    onTextBackspace: () -> Unit,
     onCompactKey: (String) -> Unit,
+    onSwitchToTextMode: () -> Unit,
+    onSwitchToNumericMode: () -> Unit,
     onToggleKeyboard: () -> Unit,
     onShowBreakdown: () -> Unit
 ) {
     BackHandler(onBack = {
         if (showCalculatorPopup) {
             onCloseCalculator()
+        } else if (keyboardExpanded) {
+            onToggleKeyboard()
         } else {
             onBackClick()
         }
@@ -640,14 +689,28 @@ private fun HisabiCalculatorScreen(
         }
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(JournalPaper)
-                    .statusBarsPadding()
-            ) {
+    CompositionLocalProvider(
+        LocalLayoutDirection provides LayoutDirection.Ltr,
+        @Suppress("DEPRECATION")
+        LocalTextInputService provides null,
+        androidx.compose.foundation.text.selection.LocalTextSelectionColors provides androidx.compose.foundation.text.selection.TextSelectionColors(
+            handleColor = androidx.compose.ui.graphics.Color.Transparent,
+            backgroundColor = androidx.compose.ui.graphics.Color(0xFFE5B0B0).copy(alpha = 0.35f)
+        )
+    ) {
+        @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+        androidx.compose.ui.platform.InterceptPlatformTextInput(
+            interceptor = { _, _ ->
+                kotlinx.coroutines.awaitCancellation()
+            }
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(JournalPaper)
+                        .statusBarsPadding()
+                ) {
                 JournalCategoryHeader(
                     categoryName = categoryName,
                     onOpenCalculator = onOpenCalculator
@@ -711,13 +774,28 @@ private fun HisabiCalculatorScreen(
                     }
                 }
 
-                if (!showCalculatorPopup) {
-                    JournalCompactNumericDock(
-                        expanded = keyboardExpanded,
-                        onToggleExpand = onToggleKeyboard,
-                        onKey = onCompactKey,
-                        modifier = Modifier.onSizeChanged { dockHeightPx = it.height }
-                    )
+                if (!showCalculatorPopup && keyboardMode != JournalKeyboardMode.NONE) {
+                    if (keyboardMode == JournalKeyboardMode.TEXT) {
+                        JournalTextKeyboardDock(
+                            expanded = keyboardExpanded,
+                            isShiftActive = isShiftActive,
+                            onToggleExpand = onToggleKeyboard,
+                            onToggleShift = onToggleShift,
+                            onChar = onTextKey,
+                            onBackspace = onTextBackspace,
+                            onSwitchToNumericMode = onSwitchToNumericMode,
+                            onConfirm = { activeRowId?.let { onConfirmRow(it) } },
+                            modifier = Modifier.onSizeChanged { dockHeightPx = it.height }
+                        )
+                    } else {
+                        JournalCompactNumericDock(
+                            expanded = keyboardExpanded,
+                            onToggleExpand = onToggleKeyboard,
+                            onKey = onCompactKey,
+                            onSwitchToTextMode = onSwitchToTextMode,
+                            modifier = Modifier.onSizeChanged { dockHeightPx = it.height }
+                        )
+                    }
                 }
             }
 
@@ -735,6 +813,7 @@ private fun HisabiCalculatorScreen(
             }
         }
     }
+}
 }
 
 @Composable
