@@ -74,15 +74,9 @@ import androidx.compose.ui.unit.sp
 import com.cash.guide.domain.MoneyMath
 import com.cash.guide.domain.MoneyPiece
 import com.cash.guide.domain.MoneyUnit
-import com.cash.guide.ui.notebook.HisabiAddRowBand
-import com.cash.guide.ui.notebook.HisabiCalculatorDock
 import com.cash.guide.ui.notebook.HisabiMetrics
-import com.cash.guide.ui.notebook.HisabiNotebookRow
 import com.cash.guide.ui.notebook.HisabiSketchIcon
 import com.cash.guide.ui.notebook.HisabiSymbol
-import com.cash.guide.ui.notebook.HisabiTopBar
-import com.cash.guide.ui.notebook.HisabiTotalSection
-import com.cash.guide.ui.notebook.HisabiUnitTabs
 import com.cash.guide.ui.notebook.Ink
 import com.cash.guide.ui.notebook.InkTone
 import com.cash.guide.ui.notebook.ManropeFamily
@@ -99,9 +93,17 @@ import com.cash.guide.ui.notebook.baselineOnPaperRule
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.cash.guide.ui.notebook.JournalRule
+import com.cash.guide.ui.notebook.HighlighterPink
 import com.cash.guide.domain.JournalLedgerManager
 import com.cash.guide.domain.JournalKeyboardController
 import com.cash.guide.domain.JournalKeyboardMode
+import com.cash.guide.domain.JournalKeyboardLanguage
+import com.cash.guide.domain.JournalShiftMode
+import com.cash.guide.domain.JournalShiftState
+import com.cash.guide.domain.ShiftAction
+import com.cash.guide.domain.AndroidIcuGraphemeSegmenter
+import android.os.SystemClock
 import com.cash.guide.ui.notebook.JournalCategoryHeader
 import com.cash.guide.ui.notebook.JournalCompactNumericDock
 import com.cash.guide.ui.notebook.JournalTextKeyboardDock
@@ -209,22 +211,32 @@ fun MoneyListApp() {
         var popupHasError by rememberSaveable { mutableStateOf(false) }
         var popupIsEvaluated by rememberSaveable { mutableStateOf(false) }
 
-        var nextId by rememberSaveable { mutableLongStateOf(4L) }
+        var nextId by rememberSaveable { mutableLongStateOf(2L) }
         val rows = rememberSaveable(saver = EntryRowListSaver) {
             mutableStateListOf(
-                EntryRow(id = 1L, title = "Naïma", expression = "1200"),
-                EntryRow(id = 2L, title = "Nadia", expression = "5000"),
-                EntryRow(id = 3L, title = "Marché", expression = "2600")
+                EntryRow(id = 1L)
             )
         }
-        var activeRowId by rememberSaveable { mutableStateOf<Long?>(3L) }
-        var activeField by rememberSaveable { mutableStateOf(ActiveField.AMOUNT) }
-        var keyboardMode by rememberSaveable { mutableStateOf(JournalKeyboardMode.NUMBER) }
-        var isShiftActive by rememberSaveable { mutableStateOf(false) }
+        var activeRowId by rememberSaveable { mutableStateOf<Long?>(1L) }
+        var activeField by rememberSaveable { mutableStateOf(ActiveField.TITLE) }
+        var keyboardMode by rememberSaveable { mutableStateOf(JournalKeyboardMode.TEXT) }
+        var selectedLanguage by rememberSaveable { mutableStateOf(JournalKeyboardLanguage.FRENCH) }
+        var shiftMode by rememberSaveable { mutableStateOf(JournalShiftMode.ONE_SHOT) }
+        var lastLatinShiftMode by rememberSaveable { mutableStateOf(JournalShiftMode.ONE_SHOT) }
+        var shiftState by remember {
+            mutableStateOf(
+                JournalShiftState(
+                    mode = JournalShiftMode.ONE_SHOT,
+                    isAutoOneShot = true
+                )
+            )
+        }
         var keyboardExpanded by rememberSaveable { mutableStateOf(true) }
-        var pendingFocusRowId by remember { mutableStateOf<Long?>(null) }
+        var pendingFocusRowId by remember { mutableStateOf<Long?>(1L) }
         var showBreakdown by rememberSaveable { mutableStateOf(false) }
         var showResetConfirmDialog by remember { mutableStateOf(false) }
+
+        val graphemeSegmenter = remember { AndroidIcuGraphemeSegmenter() }
 
         val titleValueMap = remember { mutableStateMapOf<Long, TextFieldValue>() }
         val amountValueMap = remember { mutableStateMapOf<Long, TextFieldValue>() }
@@ -292,13 +304,22 @@ fun MoneyListApp() {
             activeField = ActiveField.TITLE
             keyboardMode = JournalKeyboardMode.TEXT
             keyboardExpanded = true
-            isShiftActive = true
+            if (selectedLanguage != JournalKeyboardLanguage.ARABIC) {
+                shiftState = JournalKeyboardController.reduceShift(
+                    state = shiftState,
+                    action = ShiftAction.AutoSetOneShot,
+                    monotonicNow = { SystemClock.uptimeMillis() }
+                )
+                shiftMode = shiftState.mode
+                lastLatinShiftMode = shiftState.mode
+            }
             nextId = 2L
             showCalculatorPopup = false
             popupExpression = ""
             popupResult = ""
             popupHasError = false
             popupIsEvaluated = false
+            pendingFocusRowId = 1L
         }
 
         fun handleBackPress() {
@@ -323,7 +344,15 @@ fun MoneyListApp() {
             activeField = ActiveField.TITLE
             keyboardMode = JournalKeyboardMode.TEXT
             keyboardExpanded = true
-            isShiftActive = true
+            if (selectedLanguage != JournalKeyboardLanguage.ARABIC) {
+                shiftState = JournalKeyboardController.reduceShift(
+                    state = shiftState,
+                    action = ShiftAction.AutoSetOneShot,
+                    monotonicNow = { SystemClock.uptimeMillis() }
+                )
+                shiftMode = shiftState.mode
+                lastLatinShiftMode = shiftState.mode
+            }
             pendingFocusRowId = newId
             coroutineScope.launch {
                 listState.animateScrollToItem(rows.size)
@@ -336,7 +365,8 @@ fun MoneyListApp() {
             activeField = ActiveField.NONE
             keyboardMode = JournalKeyboardMode.NONE
             keyboardExpanded = false
-            isShiftActive = false
+            shiftState = JournalShiftState(mode = JournalShiftMode.OFF)
+            shiftMode = JournalShiftMode.OFF
         }
 
         fun removeRow(id: Long) {
@@ -382,14 +412,20 @@ fun MoneyListApp() {
             popupIsEvaluated = false
         }
 
-        fun applyTextKey(char: String) {
+        fun applyTextKey(text: String) {
             val targetId = activeRowId.takeIf { id -> rows.any { it.id == id } } ?: return
             val row = rows.first { it.id == targetId }
             val currentVal = getTitleValue(row)
-            val newVal = JournalKeyboardController.insertText(currentVal, char)
+            val newVal = JournalKeyboardController.insertText(currentVal, text)
             updateTitle(targetId, newVal)
-            if (isShiftActive) {
-                isShiftActive = false // One-shot shift returns to lowercase
+            if (selectedLanguage != JournalKeyboardLanguage.ARABIC) {
+                shiftState = JournalKeyboardController.reduceShift(
+                    state = shiftState,
+                    action = ShiftAction.UserTypedText(text),
+                    monotonicNow = { SystemClock.uptimeMillis() }
+                )
+                shiftMode = shiftState.mode
+                lastLatinShiftMode = shiftState.mode
             }
         }
 
@@ -397,7 +433,7 @@ fun MoneyListApp() {
             val targetId = activeRowId.takeIf { id -> rows.any { it.id == id } } ?: return
             val row = rows.first { it.id == targetId }
             val currentVal = getTitleValue(row)
-            val newVal = JournalKeyboardController.deleteBackward(currentVal)
+            val newVal = JournalKeyboardController.deleteBackward(currentVal, graphemeSegmenter)
             updateTitle(targetId, newVal)
         }
 
@@ -405,8 +441,52 @@ fun MoneyListApp() {
             val targetId = activeRowId.takeIf { id -> rows.any { it.id == id } } ?: return
             val row = rows.first { it.id == targetId }
             val currentVal = getAmountValue(row)
-            val newVal = JournalKeyboardController.applyNumericKey(currentVal, key)
+            val newVal = if (key == "⌫") {
+                JournalKeyboardController.deleteBackward(currentVal, graphemeSegmenter)
+            } else {
+                val curText = currentVal.text
+                if (key == "." && curText.contains('.')) {
+                    currentVal
+                } else {
+                    JournalKeyboardController.insertText(currentVal, key)
+                }
+            }
             updateAmount(targetId, newVal)
+        }
+
+        fun cycleLanguage() {
+            val nextLang = JournalKeyboardController.nextLanguage(selectedLanguage)
+            if (selectedLanguage == JournalKeyboardLanguage.ARABIC && nextLang != JournalKeyboardLanguage.ARABIC) {
+                shiftState = shiftState.copy(mode = lastLatinShiftMode)
+                shiftMode = lastLatinShiftMode
+            } else if (selectedLanguage != JournalKeyboardLanguage.ARABIC && nextLang == JournalKeyboardLanguage.ARABIC) {
+                lastLatinShiftMode = shiftState.mode
+                shiftMode = JournalShiftMode.OFF
+            }
+            selectedLanguage = nextLang
+        }
+
+        fun selectLanguage(lang: JournalKeyboardLanguage) {
+            if (selectedLanguage != JournalKeyboardLanguage.ARABIC && lang == JournalKeyboardLanguage.ARABIC) {
+                lastLatinShiftMode = shiftState.mode
+                shiftMode = JournalShiftMode.OFF
+            } else if (selectedLanguage == JournalKeyboardLanguage.ARABIC && lang != JournalKeyboardLanguage.ARABIC) {
+                shiftState = shiftState.copy(mode = lastLatinShiftMode)
+                shiftMode = lastLatinShiftMode
+            }
+            selectedLanguage = lang
+        }
+
+        fun toggleShift() {
+            if (selectedLanguage != JournalKeyboardLanguage.ARABIC) {
+                shiftState = JournalKeyboardController.reduceShift(
+                    state = shiftState,
+                    action = ShiftAction.UserTapShift(SystemClock.uptimeMillis()),
+                    monotonicNow = { SystemClock.uptimeMillis() }
+                )
+                shiftMode = shiftState.mode
+                lastLatinShiftMode = shiftState.mode
+            }
         }
 
         fun switchToTextMode() {
@@ -416,8 +496,14 @@ fun MoneyListApp() {
             keyboardMode = JournalKeyboardMode.TEXT
             keyboardExpanded = true
             val titleText = rows.firstOrNull { it.id == targetId }?.title.orEmpty()
-            if (titleText.isEmpty()) {
-                isShiftActive = true
+            if (titleText.isEmpty() && selectedLanguage != JournalKeyboardLanguage.ARABIC) {
+                shiftState = JournalKeyboardController.reduceShift(
+                    state = shiftState,
+                    action = ShiftAction.AutoSetOneShot,
+                    monotonicNow = { SystemClock.uptimeMillis() }
+                )
+                shiftMode = shiftState.mode
+                lastLatinShiftMode = shiftState.mode
             }
         }
 
@@ -547,7 +633,8 @@ fun MoneyListApp() {
                         activeRowId = activeRowId,
                         activeField = activeField,
                         keyboardMode = keyboardMode,
-                        isShiftActive = isShiftActive,
+                        language = selectedLanguage,
+                        shiftMode = shiftMode,
                         selectedUnit = selectedUnit,
                         hasInvalidRows = hasInvalidRows,
                         totalCentimes = totalCentimes,
@@ -574,8 +661,14 @@ fun MoneyListApp() {
                             keyboardMode = JournalKeyboardMode.TEXT
                             keyboardExpanded = true
                             val titleText = rows.firstOrNull { it.id == id }?.title.orEmpty()
-                            if (titleText.isEmpty()) {
-                                isShiftActive = true
+                            if (titleText.isEmpty() && selectedLanguage != JournalKeyboardLanguage.ARABIC) {
+                                shiftState = JournalKeyboardController.reduceShift(
+                                    state = shiftState,
+                                    action = ShiftAction.AutoSetOneShot,
+                                    monotonicNow = { SystemClock.uptimeMillis() }
+                                )
+                                shiftMode = shiftState.mode
+                                lastLatinShiftMode = shiftState.mode
                             }
                         },
                         onAmountFocused = { id ->
@@ -588,7 +681,9 @@ fun MoneyListApp() {
                         onPendingFocusHandled = { pendingFocusRowId = null },
                         onRemoveRow = ::removeRow,
                         onConfirmRow = ::confirmRowEdit,
-                        onToggleShift = { isShiftActive = !isShiftActive },
+                        onCycleLanguage = ::cycleLanguage,
+                        onSelectLanguage = ::selectLanguage,
+                        onToggleShift = ::toggleShift,
                         onTextKey = ::applyTextKey,
                         onTextBackspace = ::applyTextBackspace,
                         onCompactKey = ::applyCompactKey,
@@ -630,7 +725,8 @@ private fun HisabiCalculatorScreen(
     activeRowId: Long?,
     activeField: ActiveField,
     keyboardMode: JournalKeyboardMode,
-    isShiftActive: Boolean,
+    language: JournalKeyboardLanguage,
+    shiftMode: JournalShiftMode,
     selectedUnit: MoneyUnit,
     hasInvalidRows: Boolean,
     totalCentimes: Long,
@@ -657,6 +753,8 @@ private fun HisabiCalculatorScreen(
     onPendingFocusHandled: () -> Unit,
     onRemoveRow: (Long) -> Unit,
     onConfirmRow: (Long) -> Unit,
+    onCycleLanguage: () -> Unit,
+    onSelectLanguage: (JournalKeyboardLanguage) -> Unit,
     onToggleShift: () -> Unit,
     onTextKey: (String) -> Unit,
     onTextBackspace: () -> Unit,
@@ -694,8 +792,8 @@ private fun HisabiCalculatorScreen(
         @Suppress("DEPRECATION")
         LocalTextInputService provides null,
         androidx.compose.foundation.text.selection.LocalTextSelectionColors provides androidx.compose.foundation.text.selection.TextSelectionColors(
-            handleColor = androidx.compose.ui.graphics.Color.Transparent,
-            backgroundColor = androidx.compose.ui.graphics.Color(0xFFE5B0B0).copy(alpha = 0.35f)
+            handleColor = JournalRule.copy(alpha = 0.85f),
+            backgroundColor = HighlighterPink.copy(alpha = 0.35f)
         )
     ) {
         @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
@@ -777,11 +875,14 @@ private fun HisabiCalculatorScreen(
                 if (!showCalculatorPopup && keyboardMode != JournalKeyboardMode.NONE) {
                     if (keyboardMode == JournalKeyboardMode.TEXT) {
                         JournalTextKeyboardDock(
+                            language = language,
+                            shiftMode = shiftMode,
                             expanded = keyboardExpanded,
-                            isShiftActive = isShiftActive,
                             onToggleExpand = onToggleKeyboard,
+                            onCycleLanguage = onCycleLanguage,
+                            onSelectLanguage = onSelectLanguage,
                             onToggleShift = onToggleShift,
-                            onChar = onTextKey,
+                            onInsertText = onTextKey,
                             onBackspace = onTextBackspace,
                             onSwitchToNumericMode = onSwitchToNumericMode,
                             onConfirm = { activeRowId?.let { onConfirmRow(it) } },

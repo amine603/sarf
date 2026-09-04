@@ -6,7 +6,11 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import android.os.Build
+import android.view.WindowManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,12 +21,25 @@ class JournalInteractionTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
+    @Before
+    fun setUpDevice() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.uiAutomation.executeShellCommand("input keyevent KEYCODE_WAKEUP")
+        instrumentation.uiAutomation.executeShellCommand("wm dismiss-keyguard")
+        composeTestRule.activityRule.scenario.onActivity { activity ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                activity.setShowWhenLocked(true)
+                activity.setTurnScreenOn(true)
+            }
+            activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
     @Test
     fun testCategoryHeaderAndAddButtonDisplayed() {
         composeTestRule.onNodeWithTag("tag_header_calculator_icon").assertIsDisplayed()
         composeTestRule.onNodeWithTag("tag_add_row_button").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("tag_compact_keypad").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("tag_total_section").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("tag_total_result_band").assertIsDisplayed()
     }
 
     @Test

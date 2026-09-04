@@ -49,15 +49,102 @@ val JournalHandFamily = FontFamily(
     Font(R.font.patrick_hand_regular, FontWeight.Normal)
 )
 
-val KalamFamily = FontFamily(
-    Font(R.font.kalam_regular, FontWeight.Normal),
-    Font(R.font.kalam_bold, FontWeight.Bold)
-)
-
 // Authoritative geometry token for ruled paper rhythm and rows
 val JournalRuleSpacing = 48.dp
 
 val NoFontPadding = PlatformTextStyle(includeFontPadding = false)
+
+// --- Migrated Notebook & Theme Design System ---
+val Paper = Color(0xFFFAF8F1)
+val PaperWarm = Color(0xFFF5F0E7)
+val Ink = Color(0xFF3B3C39)
+val WritingInk = Color(0xFF62635E)
+val MutedInk = Color(0xFF74736D)
+val Rule = Color(0xFFBFD2D8)
+
+val ColorCoral = Color(0xFFF05B48)
+val ColorOrange = Color(0xFFE38D2C)
+
+enum class InkTone(val color: Color) {
+    Ink(Color(0xFF3B3C39)),
+    Coral(Color(0xFFF05B48)),
+    Teal(Color(0xFF2CA5A2)),
+    Green(Color(0xFF59A85A)),
+    Blue(Color(0xFF3377AD)),
+    Purple(Color(0xFF8869B2)),
+    Orange(Color(0xFFE38D2C))
+}
+
+object HisabiMetrics {
+    val Grid = 29.dp
+    val WritingBaseline = Grid
+    val MetadataBaseline = Grid
+    val Gutter = 44.dp
+    val TopBarHeight = 54.dp
+    val IconSize = 20.dp
+    val KeypadDockHeight = 260.dp
+}
+
+// --- Bundled Offline Font Families ---
+val PatrickHandFamily = JournalHandFamily
+
+val TajawalFamily = FontFamily(
+    Font(R.font.tajawal_regular, FontWeight.Normal),
+    Font(R.font.tajawal_medium, FontWeight.Medium),
+    Font(R.font.tajawal_bold, FontWeight.Bold)
+)
+
+val ManropeFamily = FontFamily(
+    Font(R.font.manrope_regular, FontWeight.Normal),
+    Font(R.font.manrope_medium, FontWeight.Medium),
+    Font(R.font.manrope_semibold, FontWeight.SemiBold),
+    Font(R.font.manrope_bold, FontWeight.Bold)
+)
+
+// --- Script Detection & Typography Helpers ---
+fun isArabicScript(text: String): Boolean {
+    return text.any { c ->
+        c in '\u0600'..'\u06FF' ||
+        c in '\u0750'..'\u077F' ||
+        c in '\u08A0'..'\u08FF' ||
+        c in '\uFB50'..'\uFDFF' ||
+        c in '\uFE70'..'\uFEFF'
+    }
+}
+
+@Composable
+fun arabicWritingStyle(
+    color: Color = WritingInk,
+    sizeSp: Float = 14.5f,
+    weight: FontWeight = FontWeight.Normal
+) = TextStyle(
+    fontFamily = TajawalFamily,
+    fontSize = sizeSp.sp,
+    lineHeight = with(LocalDensity.current) { HisabiMetrics.Grid.toSp() },
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.None
+    ),
+    fontWeight = weight,
+    color = color
+)
+
+@Composable
+fun amountWritingStyle(
+    color: Color = Ink,
+    sizeSp: Float = 16.5f,
+    weight: FontWeight = FontWeight.Medium
+) = TextStyle(
+    fontFamily = ManropeFamily,
+    fontSize = sizeSp.sp,
+    lineHeight = with(LocalDensity.current) { HisabiMetrics.Grid.toSp() },
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.None
+    ),
+    fontWeight = weight,
+    color = color
+)
 
 // --- Typography Styles ---
 @Composable
@@ -81,14 +168,17 @@ fun journalRowNumberStyle() = TextStyle(
 )
 
 @Composable
-fun journalTitleStyle(color: Color = JournalInk) = TextStyle(
-    fontFamily = JournalHandFamily,
-    fontSize = 16.5.sp,
-    fontWeight = FontWeight.Normal,
-    color = color,
-    lineHeight = 20.sp,
-    platformStyle = NoFontPadding
-)
+fun journalTitleStyle(text: String = "", color: Color = JournalInk): TextStyle {
+    val isArabic = text.any { it in '\u0600'..'\u06FF' }
+    return TextStyle(
+        fontFamily = if (isArabic) TajawalFamily else JournalHandFamily,
+        fontSize = if (isArabic) 18.sp else 16.5.sp,
+        fontWeight = FontWeight.Normal,
+        color = color,
+        lineHeight = 20.sp,
+        platformStyle = NoFontPadding
+    )
+}
 
 @Composable
 fun journalAmountStyle(color: Color = JournalInk) = TextStyle(
