@@ -6,7 +6,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
-import com.cash.guide.ui.MoneyListApp
+import com.cash.guide.app.HssabiApp
 import com.cash.guide.ui.theme.HisabiTheme
 
 class MainActivity : ComponentActivity() {
@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             HisabiTheme {
-                MoneyListApp()
+                HssabiApp()
             }
         }
     }

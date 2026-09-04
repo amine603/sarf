@@ -1,4 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Brand and navigation -->
     <string name="app_name">حسابي</string>
+    <string name="app_tagline">دفتر الحسابات</string>
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_history">السجل</string>
+    <string name="nav_settings">الإعدادات</string>
+
+    <!-- Home -->
+    <string name="home_search_placeholder">ابحث عن حساب</string>
+    <string name="home_new_calculation">حساب جديد</string>
+    <string name="home_recent_title">الحسابات الأخيرة</string>
+    <string name="home_empty_title">ما كاين حتى حساب محفوظ</string>
+    <string name="home_empty_body">دير أول حساب ديالك وغادي تلقاه هنا.</string>
+    <string name="home_see_all">عرض الكل</string>
+    <string name="card_lines_singular">%1$d سطر</string>
+    <string name="card_lines_plural">%1$d سطور</string>
+
+    <!-- Date groups -->
+    <string name="date_today">اليوم</string>
+    <string name="date_yesterday">أمس</string>
+    <string name="date_this_week">هذا الأسبوع</string>
+
+    <!-- Editor -->
+    <string name="editor_new_title">حساب جديد</string>
+    <string name="editor_title_placeholder">عنوان الحساب</string>
+    <string name="editor_item_placeholder">البيان</string>
+    <string name="editor_amount_placeholder">المبلغ</string>
+    <string name="editor_add_row">زيد سطر</string>
+    <string name="editor_total">المجموع</string>
+    <string name="editor_save">حفظ</string>
+    <string name="editor_saving">جاري الحفظ…</string>
+    <string name="editor_saved">تم حفظ الحساب</string>
+    <string name="editor_invalid_amount">المبلغ غير صحيح</string>
+    <string name="editor_title_required">زيد عنوان للحساب</string>
+    <string name="editor_delete_row">حذف السطر</string>
+    <string name="editor_confirm_row">تأكيد السطر</string>
+    <string name="editor_open_calculator">فتح الحاسبة</string>
+    <string name="editor_show_money_breakdown">شوف الأوراق والقطع</string>
+
+    <!-- Unsaved changes -->
+    <string name="unsaved_title">تغييرات ما تحفظوش</string>
+    <string name="unsaved_body">واش بغيتي تحفظ قبل ما تخرج؟</string>
+    <string name="unsaved_save">حفظ</string>
+    <string name="unsaved_discard">تجاهل التغييرات</string>
+    <string name="unsaved_continue">كمل الحساب</string>
+
+    <!-- Calculator popup and keyboards -->
+    <string name="calculator_title">الحاسبة</string>
+    <string name="calculator_confirm">تأكيد</string>
+    <string name="calculator_close">إغلاق</string>
+    <string name="calculator_error">العملية غير صحيحة</string>
+    <string name="keyboard_numbers">أرقام</string>
+    <string name="keyboard_letters">حروف</string>
+    <string name="keyboard_space">مسافة</string>
+    <string name="keyboard_delete">حذف</string>
+    <string name="keyboard_shift">حرف كبير</string>
+    <string name="keyboard_validate">تأكيد</string>
+    <string name="keyboard_language">لغة لوحة المفاتيح</string>
+
+    <!-- History and search -->
+    <string name="history_title">السجل</string>
+    <string name="history_search_placeholder">البحث في الحسابات</string>
+    <string name="history_filter_all">الكل</string>
+    <string name="history_filter_today">اليوم</string>
+    <string name="history_filter_month">هذا الشهر</string>
+    <string name="history_no_results_title">ما لقينا حتى نتيجة</string>
+    <string name="history_no_results_body">جرب كلمة أخرى.</string>
+    <string name="history_search_hint">البحث كيشوف العناوين والملاحظات والسطور.</string>
+
+    <!-- Saved calculation actions -->
+    <string name="action_edit">تعديل</string>
+    <string name="action_duplicate">نسخ الحساب</string>
+    <string name="action_share_image">مشاركة كصورة</string>
+    <string name="action_export_pdf">تصدير PDF</string>
+    <string name="action_export_csv">تصدير CSV</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_cancel">إلغاء</string>
+
+    <!-- Delete -->
+    <string name="delete_title">واش تحذف هاد الحساب؟</string>
+    <string name="delete_body">غادي يتحذف الحساب والسطور ديالو كاملين.</string>
+    <string name="delete_confirm">حذف</string>
+    <string name="delete_cancel">إلغاء</string>
+    <string name="delete_undo_message">تحذف الحساب</string>
+    <string name="delete_undo_action">تراجع</string>
+
+    <!-- Settings -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_language">اللغة</string>
+    <string name="settings_language_description">لغة التطبيق</string>
+    <string name="settings_currency">العملة الافتراضية</string>
+    <string name="settings_currency_description">كتستعمل فالحسابات الجديدة</string>
+    <string name="settings_french">الفرنسية</string>
+    <string name="settings_arabic">العربية</string>
+    <string name="currency_dirham">درهم</string>
+    <string name="currency_rial">ريال</string>
+
+    <!-- Money breakdown -->
+    <string name="breakdown_title">قيمة المجموع</string>
+    <string name="breakdown_distribution">الأوراق والقطع</string>
+    <string name="breakdown_remainder">الباقي</string>
+
+    <!-- Accessibility descriptions -->
+    <string name="cd_back">رجوع</string>
+    <string name="cd_more_options">خيارات أخرى</string>
+    <string name="cd_open_calculation">فتح الحساب</string>
+    <string name="cd_clear_search">مسح البحث</string>
+    <string name="cd_selected">محدد</string>
+    <string name="cd_not_selected">غير محدد</string>
 </resources>

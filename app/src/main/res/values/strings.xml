@@ -1,4 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">حسابي</string>
+    <!-- Brand and navigation -->
+    <string name="app_name">Hssabi</string>
+    <string name="app_tagline">Carnet de calculs</string>
+    <string name="nav_home">Accueil</string>
+    <string name="nav_history">Historique</string>
+    <string name="nav_settings">Paramètres</string>
+
+    <!-- Home -->
+    <string name="home_search_placeholder">Rechercher un calcul</string>
+    <string name="home_new_calculation">Nouveau calcul</string>
+    <string name="home_recent_title">Calculs récents</string>
+    <string name="home_empty_title">Aucun calcul enregistré</string>
+    <string name="home_empty_body">Créez votre premier calcul pour le retrouver ici.</string>
+    <string name="home_see_all">Voir tout</string>
+    <string name="card_lines_singular">%1$d ligne</string>
+    <string name="card_lines_plural">%1$d lignes</string>
+
+    <!-- Date groups -->
+    <string name="date_today">Aujourd’hui</string>
+    <string name="date_yesterday">Hier</string>
+    <string name="date_this_week">Cette semaine</string>
+
+    <!-- Editor -->
+    <string name="editor_new_title">Nouveau calcul</string>
+    <string name="editor_title_placeholder">Titre du calcul</string>
+    <string name="editor_item_placeholder">Libellé</string>
+    <string name="editor_amount_placeholder">Montant</string>
+    <string name="editor_add_row">Ajouter une ligne</string>
+    <string name="editor_total">Total</string>
+    <string name="editor_save">Enregistrer</string>
+    <string name="editor_saving">Enregistrement…</string>
+    <string name="editor_saved">Calcul enregistré</string>
+    <string name="editor_invalid_amount">Montant incorrect</string>
+    <string name="editor_title_required">Ajoutez un titre</string>
+    <string name="editor_delete_row">Supprimer la ligne</string>
+    <string name="editor_confirm_row">Valider la ligne</string>
+    <string name="editor_open_calculator">Ouvrir la calculatrice</string>
+    <string name="editor_show_money_breakdown">Voir les billets et pièces</string>
+
+    <!-- Unsaved changes -->
+    <string name="unsaved_title">Modifications non enregistrées</string>
+    <string name="unsaved_body">Voulez-vous enregistrer avant de quitter ?</string>
+    <string name="unsaved_save">Enregistrer</string>
+    <string name="unsaved_discard">Ignorer les modifications</string>
+    <string name="unsaved_continue">Continuer</string>
+
+    <!-- Calculator popup and keyboards -->
+    <string name="calculator_title">Calculatrice</string>
+    <string name="calculator_confirm">Confirmer</string>
+    <string name="calculator_close">Fermer</string>
+    <string name="calculator_error">Calcul incorrect</string>
+    <string name="keyboard_numbers">Chiffres</string>
+    <string name="keyboard_letters">Lettres</string>
+    <string name="keyboard_space">espace</string>
+    <string name="keyboard_delete">Effacer</string>
+    <string name="keyboard_shift">Majuscule</string>
+    <string name="keyboard_validate">Valider</string>
+    <string name="keyboard_language">Langue du clavier</string>
+
+    <!-- History and search -->
+    <string name="history_title">Historique</string>
+    <string name="history_search_placeholder">Rechercher dans les calculs</string>
+    <string name="history_filter_all">Tout</string>
+    <string name="history_filter_today">Aujourd’hui</string>
+    <string name="history_filter_month">Ce mois</string>
+    <string name="history_no_results_title">Aucun résultat</string>
+    <string name="history_no_results_body">Essayez un autre mot.</string>
+    <string name="history_search_hint">La recherche vérifie les titres, les notes et les lignes.</string>
+
+    <!-- Saved calculation actions -->
+    <string name="action_edit">Modifier</string>
+    <string name="action_duplicate">Dupliquer</string>
+    <string name="action_share_image">Partager en image</string>
+    <string name="action_export_pdf">Exporter en PDF</string>
+    <string name="action_export_csv">Exporter en CSV</string>
+    <string name="action_delete">Supprimer</string>
+    <string name="action_cancel">Annuler</string>
+
+    <!-- Delete -->
+    <string name="delete_title">Supprimer ce calcul ?</string>
+    <string name="delete_body">Cette action supprimera le calcul et toutes ses lignes.</string>
+    <string name="delete_confirm">Supprimer</string>
+    <string name="delete_cancel">Annuler</string>
+    <string name="delete_undo_message">Calcul supprimé</string>
+    <string name="delete_undo_action">Annuler</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_language">Langue</string>
+    <string name="settings_language_description">Langue de l’application</string>
+    <string name="settings_currency">Devise par défaut</string>
+    <string name="settings_currency_description">Utilisée pour les nouveaux calculs</string>
+    <string name="settings_french">Français</string>
+    <string name="settings_arabic">العربية</string>
+    <string name="currency_dirham">DH</string>
+    <string name="currency_rial">rial</string>
+
+    <!-- Money breakdown -->
+    <string name="breakdown_title">Valeur du total</string>
+    <string name="breakdown_distribution">Billets et pièces</string>
+    <string name="breakdown_remainder">Reste</string>
+
+    <!-- Accessibility descriptions -->
+    <string name="cd_back">Retour</string>
+    <string name="cd_more_options">Plus d’options</string>
+    <string name="cd_open_calculation">Ouvrir le calcul</string>
+    <string name="cd_clear_search">Effacer la recherche</string>
+    <string name="cd_selected">Sélectionné</string>
+    <string name="cd_not_selected">Non sélectionné</string>
 </resources>
