@@ -1,5 +1,8 @@
 package com.cash.guide.feature.home
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,10 +55,19 @@ import com.cash.guide.ui.notebook.TajawalFamily
 
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import com.cash.guide.app.LocalizedContextWrapper
 import com.cash.guide.domain.DateGroupHelper
 import com.cash.guide.ui.notebook.JournalPrimaryActionButton
+import com.cash.guide.ui.notebook.JournalFloatingActionButton
 import com.cash.guide.ui.notebook.JournalInlineSearchRow
 import com.cash.guide.ui.notebook.JournalTwoLineCalculationRow
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is LocalizedContextWrapper -> originalActivity ?: baseContext.findActivity()
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 
 @Composable
 fun HomeScreen(
@@ -77,7 +89,7 @@ fun HomeScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         JournalRuledDocument(modifier = Modifier.fillMaxSize()) {
-            // Line 1: Header Band (Brand name sitting directly on the ruled line)
+            // Line 1: Greeting Band ("Bonjour Youssef" / "مرحباً يوسف" sitting directly on the ruled line)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -86,87 +98,56 @@ fun HomeScreen(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.Start
             ) {
-                if (isRtl) {
-                    Row(
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .offset(y = 2.0.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(HighlighterPink.copy(alpha = 0.40f))
-                                .padding(horizontal = 7.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "حسابي",
-                                fontFamily = TajawalFamily,
-                                fontSize = 16.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalInk,
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        }
-                        Text(
-                            text = "Hssabi",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 17.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = 2.5.dp)
-                        )
-                    }
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = "Hssabi",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 17.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = 2.5.dp)
-                        )
-                        Box(
-                            modifier = Modifier
-                                .offset(y = 2.0.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(HighlighterPink.copy(alpha = 0.40f))
-                                .padding(horizontal = 7.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "حسابي",
-                                fontFamily = TajawalFamily,
-                                fontSize = 16.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalInk,
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = stringResource(R.string.home_greeting),
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 18.5.sp else 21.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+                )
             }
 
-            // Line 2: Prominent Ruled-Line Search Row (tapping opens History with search active)
+            // Line 2: Prominent Ruled-Line Search Row with attached thin line and Calendar icon
             JournalInlineSearchRow(
-                query = "",
-                onQueryChange = null,
-                onClick = onOpenHistory
+                query = state.searchQuery,
+                onQueryChange = { query -> viewModel.updateSearchQuery(query) },
+                onOpenCalendar = {
+                    val activity = context.findActivity() ?: return@JournalInlineSearchRow
+                    val cal = java.util.Calendar.getInstance()
+                    state.selectedDateEpoch?.let { cal.timeInMillis = it }
+                    android.app.DatePickerDialog(
+                        activity,
+                        { _, year, month, dayOfMonth ->
+                            val picked = java.util.Calendar.getInstance().apply {
+                                set(java.util.Calendar.YEAR, year)
+                                set(java.util.Calendar.MONTH, month)
+                                set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
+                                set(java.util.Calendar.HOUR_OF_DAY, 12)
+                                set(java.util.Calendar.MINUTE, 0)
+                                set(java.util.Calendar.SECOND, 0)
+                            }
+                            viewModel.filterByDate(picked.timeInMillis)
+                        },
+                        cal.get(java.util.Calendar.YEAR),
+                        cal.get(java.util.Calendar.MONTH),
+                        cal.get(java.util.Calendar.DAY_OF_MONTH)
+                    ).show()
+                },
+                isDateFiltered = state.selectedDateEpoch != null,
+                showUnderline = true
             )
 
-            // Lines 3 & 4: Primary Action Button ("+ حساب جديد" / "+ Nouveau calcul") spanning 2 notebook lines
-            JournalPrimaryActionButton(onClick = onNewCalculation)
+            // Lines 3 & 4: Skip 2 ruled lines ("na9ezz 2 stoura ta7t search")
+            Spacer(modifier = Modifier.height(JournalRuleSpacing * 2))
 
-            // Line 5+: Recent calculations header sitting directly on the ruled line
+            // Line 5+: Section header ("Vos calculs" / "حساباتك") sitting directly on the ruled line
             if (!state.isEmpty) {
                 JournalRecentHeader(onOpenHistory = onOpenHistory)
 
                 // Date-grouped saved calculations (each calculation is exactly 2 ruled lines = 58dp, zero cards)
-                state.recentDateGroups.forEach { group ->
+                state.displayDateGroups.forEach { group ->
                     JournalDateRuleBand(title = group.header)
 
                     group.calculations.forEachIndexed { idx, calc ->
@@ -206,7 +187,11 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.home_empty_title),
+                        text = if (state.isFiltering) {
+                            stringResource(R.string.home_no_results_for_date)
+                        } else {
+                            stringResource(R.string.home_empty_title)
+                        },
                         fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                         fontSize = 16.5.sp,
                         fontWeight = FontWeight.Medium,
@@ -217,8 +202,8 @@ fun HomeScreen(
                 }
             }
 
-            // Bottom Spacers: 5 notebook lines for full scrolling clearance above dock
-            Spacer(modifier = Modifier.height(JournalRuleSpacing * 5))
+            // Bottom Spacers: 6 notebook lines for full scrolling clearance above dock and FAB
+            Spacer(modifier = Modifier.height(JournalRuleSpacing * 6))
         }
 
         // Action Sheet
@@ -252,6 +237,19 @@ fun HomeScreen(
                 onDismiss = { viewModel.dismissDeleteDialog() }
             )
         }
+
+        // Floating Action Button at the bottom-right ("+ Nouveau calcul" / "+ حساب جديد")
+        // Anchored strictly to the physical right ("3la limen") in both French (LTR) and Arabic (RTL)
+        JournalFloatingActionButton(
+            onClick = onNewCalculation,
+            modifier = Modifier
+                .align(if (isRtl) Alignment.BottomStart else Alignment.BottomEnd)
+                .padding(
+                    start = if (isRtl) 18.dp else 0.dp,
+                    end = if (isRtl) 0.dp else 18.dp,
+                    bottom = 18.dp
+                )
+        )
     }
 }
 

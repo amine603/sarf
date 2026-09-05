@@ -23,6 +23,9 @@ import com.cash.guide.feature.settings.SettingsViewModel
 import com.cash.guide.ui.notebook.JournalPaper
 import com.cash.guide.ui.notebook.NotebookBottomNavigation
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.res.Configuration
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -31,6 +34,11 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import java.util.Locale
+
+class LocalizedContextWrapper(
+    base: Context,
+    val originalActivity: Activity?
+) : ContextWrapper(base)
 
 @Composable
 fun HssabiApp() {
@@ -50,7 +58,10 @@ fun HssabiApp() {
         }
     }
     val localizedContext = remember(appLanguage, context) {
-        context.createConfigurationContext(localizedConfig)
+        LocalizedContextWrapper(
+            context.createConfigurationContext(localizedConfig),
+            context as? Activity
+        )
     }
     val layoutDirection = if (appLanguage == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr
 

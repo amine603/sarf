@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -51,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import com.cash.guide.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.focus.onFocusChanged
@@ -916,6 +918,9 @@ fun JournalInlineSearchRow(
     onQueryChange: ((String) -> Unit)?,
     placeholder: String = stringResource(R.string.home_search_input_placeholder),
     onClick: (() -> Unit)? = null,
+    onOpenCalendar: (() -> Unit)? = null,
+    isDateFiltered: Boolean = false,
+    showUnderline: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val layoutDirection = LocalLayoutDirection.current
@@ -925,8 +930,28 @@ fun JournalInlineSearchRow(
         .fillMaxWidth()
         .height(JournalRuleSpacing)
         .padding(horizontal = 14.dp)
+        .drawBehind {
+            if (showUnderline) {
+                val strokeW = 1.0.dp.toPx()
+                val inkColor = JournalInk.copy(alpha = 0.32f)
+                val lineY = size.height - 2.5.dp.toPx()
+                if (isRtl) {
+                    val startX = 14.dp.toPx() + (if (onOpenCalendar != null) 30.dp.toPx() else 0f) + (if (query.isNotEmpty()) 24.dp.toPx() else 0f)
+                    val endX = size.width - 14.dp.toPx() - 20.dp.toPx()
+                    if (endX > startX) {
+                        drawLine(inkColor, Offset(startX, lineY), Offset(endX, lineY), strokeW, StrokeCap.Round)
+                    }
+                } else {
+                    val startX = 14.dp.toPx() + 20.dp.toPx()
+                    val endX = size.width - 14.dp.toPx() - (if (onOpenCalendar != null) 30.dp.toPx() else 0f) - (if (query.isNotEmpty()) 24.dp.toPx() else 0f)
+                    if (endX > startX) {
+                        drawLine(inkColor, Offset(startX, lineY), Offset(endX, lineY), strokeW, StrokeCap.Round)
+                    }
+                }
+            }
+        }
         .then(
-            if (onClick != null) {
+            if (onClick != null && onQueryChange == null) {
                 Modifier.clickable(role = Role.Button, onClick = onClick)
             } else Modifier
         )
@@ -937,71 +962,12 @@ fun JournalInlineSearchRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         if (isRtl) {
-            // In RTL: Text / TextField is on Start (Right), Search Icon is on End (Left)
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .offset(y = 5.7.dp),
-                contentAlignment = Alignment.BottomStart
+            // In RTL: Text / TextField is on Start (Right), Search Icon is on Start edge
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (onQueryChange != null) {
-                    BasicTextField(
-                        value = query,
-                        onValueChange = onQueryChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        cursorBrush = SolidColor(JournalInk),
-                        textStyle = TextStyle(
-                            fontFamily = TajawalFamily,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = JournalInk,
-                            platformStyle = NoFontPadding
-                        ),
-                        decorationBox = { innerTextField ->
-                            if (query.isEmpty()) {
-                                Text(
-                                    text = placeholder,
-                                    fontFamily = TajawalFamily,
-                                    fontSize = 15.5.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = JournalMutedInk.copy(alpha = 0.55f),
-                                    style = TextStyle(platformStyle = NoFontPadding)
-                                )
-                            } else {
-                                innerTextField()
-                            }
-                        }
-                    )
-                } else {
-                    Text(
-                        text = placeholder,
-                        fontFamily = TajawalFamily,
-                        fontSize = 15.5.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = JournalMutedInk.copy(alpha = 0.55f),
-                        style = TextStyle(platformStyle = NoFontPadding)
-                    )
-                }
-            }
-
-            if (!query.isEmpty() && onQueryChange != null) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable(role = Role.Button, onClick = { onQueryChange("") })
-                        .offset(y = 3.0.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "✕",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = JournalMutedInk
-                    )
-                }
-            } else {
                 HisabiSketchIcon(
                     symbol = HisabiSymbol.Search,
                     contentDescription = null,
@@ -1009,6 +975,95 @@ fun JournalInlineSearchRow(
                     size = 18.dp,
                     modifier = Modifier.offset(y = 3.5.dp)
                 )
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .offset(y = 5.7.dp),
+                    contentAlignment = Alignment.BottomStart
+                ) {
+                    if (onQueryChange != null) {
+                        BasicTextField(
+                            value = query,
+                            onValueChange = onQueryChange,
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            cursorBrush = SolidColor(JournalInk),
+                            textStyle = TextStyle(
+                                fontFamily = TajawalFamily,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = JournalInk,
+                                platformStyle = NoFontPadding
+                            ),
+                            decorationBox = { innerTextField ->
+                                if (query.isEmpty()) {
+                                    Text(
+                                        text = placeholder,
+                                        fontFamily = TajawalFamily,
+                                        fontSize = 15.5.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        color = JournalMutedInk.copy(alpha = 0.55f),
+                                        style = TextStyle(platformStyle = NoFontPadding)
+                                    )
+                                } else {
+                                    innerTextField()
+                                }
+                            }
+                        )
+                    } else {
+                        Text(
+                            text = placeholder,
+                            fontFamily = TajawalFamily,
+                            fontSize = 15.5.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = JournalMutedInk.copy(alpha = 0.55f),
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+                    }
+                }
+            }
+
+            // End controls (Calendar + Clear)
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.offset(y = 3.5.dp)
+            ) {
+                if (onOpenCalendar != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (isDateFiltered) HighlighterYellow.copy(alpha = 0.50f) else Color.Transparent)
+                            .clickable(role = Role.Button, onClick = onOpenCalendar),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Calendar,
+                            contentDescription = stringResource(R.string.home_pick_date),
+                            tint = if (isDateFiltered) JournalInk else JournalInk.copy(alpha = 0.85f),
+                            size = 18.dp
+                        )
+                    }
+                }
+
+                if (!query.isEmpty() && onQueryChange != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable(role = Role.Button, onClick = { onQueryChange("") }),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "✕",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalMutedInk
+                        )
+                    }
+                }
             }
         } else {
             // In LTR: Search Icon on Start (Left), Text / TextField on End (Right)
@@ -1073,23 +1128,109 @@ fun JournalInlineSearchRow(
                 }
             }
 
-            if (!query.isEmpty() && onQueryChange != null) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable(role = Role.Button, onClick = { onQueryChange("") })
-                        .offset(y = 3.0.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "✕",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = JournalMutedInk
-                    )
+            // End controls (Clear + Calendar on the right)
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.offset(y = 3.5.dp)
+            ) {
+                if (!query.isEmpty() && onQueryChange != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable(role = Role.Button, onClick = { onQueryChange("") }),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "✕",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalMutedInk
+                        )
+                    }
+                }
+
+                if (onOpenCalendar != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (isDateFiltered) HighlighterYellow.copy(alpha = 0.50f) else Color.Transparent)
+                            .clickable(role = Role.Button, onClick = onOpenCalendar),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Calendar,
+                            contentDescription = stringResource(R.string.home_pick_date),
+                            tint = if (isDateFiltered) JournalInk else JournalInk.copy(alpha = 0.85f),
+                            size = 18.dp
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Notebook ledger primary action button positioned at the bottom-right ("+ Nouveau calcul" / "+ حساب جديد").
+ * Matches the exact aesthetic of the soft pink highlighter pill button with paper shadow.
+ */
+@Composable
+fun JournalFloatingActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    text: String = stringResource(R.string.home_new_calculation)
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
+    Box(
+        modifier = modifier
+            .shadow(
+                elevation = 4.dp,
+                shape = RoundedCornerShape(22.dp),
+                ambientColor = JournalInk.copy(alpha = 0.20f),
+                spotColor = JournalInk.copy(alpha = 0.25f)
+            )
+            .clip(RoundedCornerShape(22.dp))
+            .background(HighlighterPink.copy(alpha = 0.60f))
+            .border(
+                width = 0.85.dp,
+                color = JournalInk.copy(alpha = 0.20f),
+                shape = RoundedCornerShape(22.dp)
+            )
+            .clickable(
+                role = Role.Button,
+                onClickLabel = text,
+                onClick = onClick
+            )
+            .padding(horizontal = 20.dp, vertical = 11.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Canvas(modifier = Modifier.size(13.dp)) {
+                val strokeW = 1.9.dp.toPx()
+                val ink = JournalInk
+                val midX = size.width / 2f
+                val midY = size.height / 2f
+                drawLine(ink, Offset(1.dp.toPx(), midY), Offset(size.width - 1.dp.toPx(), midY), strokeW, StrokeCap.Round)
+                drawLine(ink, Offset(midX, 1.dp.toPx()), Offset(midX, size.height - 1.dp.toPx()), strokeW, StrokeCap.Round)
+            }
+
+            Text(
+                text = text,
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 16.5.sp else 17.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = JournalInk,
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.offset(y = if (isRtl) (-0.5).dp else 0.dp)
+            )
         }
     }
 }

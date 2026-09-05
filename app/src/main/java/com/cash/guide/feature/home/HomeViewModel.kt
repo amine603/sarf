@@ -20,20 +20,89 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private var allItems: List<CalculationWithItems> = emptyList()
+    private var lastContext: Context? = null
+
     fun loadRecent(context: Context) {
+        lastContext = context
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            repository.observeRecentSaved(limit = 10).collect { items ->
-                val groups = DateGroupHelper.groupByDate(
-                    items = items,
-                    todayString = context.getString(R.string.date_today),
-                    yesterdayString = context.getString(R.string.date_yesterday),
-                    thisWeekString = context.getString(R.string.date_this_week),
-                    locale = context.resources.configuration.locales[0]
-                )
-                _uiState.update { it.copy(recentDateGroups = groups, isLoading = false) }
+            repository.observeAllSaved().collect { items ->
+                allItems = items
+                applyFilters(context)
             }
         }
+    }
+
+    fun updateSearchQuery(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+        lastContext?.let { applyFilters(it) }
+    }
+
+    fun filterByDate(epochMs: Long?) {
+        _uiState.update { it.copy(selectedDateEpoch = epochMs) }
+        lastContext?.let { applyFilters(it) }
+    }
+
+    fun clearDateFilter() {
+        filterByDate(null)
+    }
+
+    private fun applyFilters(context: Context) {
+        val query = _uiState.value.searchQuery.trim()
+        val selectedDate = _uiState.value.selectedDateEpoch
+
+        val recentGroups = DateGroupHelper.groupByDate(
+            items = allItems.take(10),
+            todayString = context.getString(R.string.date_today),
+            yesterdayString = context.getString(R.string.date_yesterday),
+            thisWeekString = context.getString(R.string.date_this_week),
+            locale = context.resources.configuration.locales[0]
+        )
+
+        if (query.isBlank() && selectedDate == null) {
+            _uiState.update {
+                it.copy(
+                    recentDateGroups = recentGroups,
+                    filteredDateGroups = emptyList(),
+                    isLoading = false
+                )
+            }
+        } else {
+            val filtered = allItems.filter { calc ->
+                val matchesQuery = if (query.isBlank()) true else {
+                    calc.calculation.title.contains(query, ignoreCase = true) ||
+                    calc.items.any { it.label.contains(query, ignoreCase = true) }
+                }
+                val matchesDate = if (selectedDate == null) true else {
+                    isSameDay(calc.calculation.updatedAtEpochMs, selectedDate)
+                }
+                matchesQuery && matchesDate
+            }
+
+            val filteredGroups = DateGroupHelper.groupByDate(
+                items = filtered,
+                todayString = context.getString(R.string.date_today),
+                yesterdayString = context.getString(R.string.date_yesterday),
+                thisWeekString = context.getString(R.string.date_this_week),
+                locale = context.resources.configuration.locales[0]
+            )
+
+            _uiState.update {
+                it.copy(
+                    recentDateGroups = recentGroups,
+                    filteredDateGroups = filteredGroups,
+                    isLoading = false
+                )
+            }
+        }
+    }
+
+    private fun isSameDay(epoch1: Long, epoch2: Long): Boolean {
+        val c1 = java.util.Calendar.getInstance().apply { timeInMillis = epoch1 }
+        val c2 = java.util.Calendar.getInstance().apply { timeInMillis = epoch2 }
+        return c1.get(java.util.Calendar.YEAR) == c2.get(java.util.Calendar.YEAR) &&
+               c1.get(java.util.Calendar.DAY_OF_YEAR) == c2.get(java.util.Calendar.DAY_OF_YEAR)
     }
 
     fun selectCalculationForAction(calc: CalculationWithItems?) {

@@ -8,9 +8,13 @@
     <string name="nav_settings">الإعدادات</string>
 
     <!-- Home -->
+    <string name="home_greeting">مرحباً يوسف</string>
     <string name="home_search_placeholder">ابحث عن حساب</string>
     <string name="home_new_calculation">حساب جديد</string>
-    <string name="home_recent_title">الحسابات الأخيرة</string>
+    <string name="home_recent_title">حساباتك</string>
+    <string name="home_pick_date">اختيار تاريخ</string>
+    <string name="home_clear_date_filter">مسح الفلتر</string>
+    <string name="home_no_results_for_date">ما كاين حتى حساب فهاد النهار</string>
     <string name="home_empty_title">ما كاين حتى حساب محفوظ</string>
     <string name="home_empty_body">دير أول حساب ديالك وغادي تلقاه هنا.</string>
     <string name="home_see_all">عرض الكل</string>

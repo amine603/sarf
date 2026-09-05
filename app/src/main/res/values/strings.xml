@@ -8,9 +8,13 @@
     <string name="nav_settings">Paramètres</string>
 
     <!-- Home -->
+    <string name="home_greeting">Bonjour Youssef</string>
     <string name="home_search_placeholder">Rechercher un calcul</string>
     <string name="home_new_calculation">Nouveau calcul</string>
-    <string name="home_recent_title">Calculs récents</string>
+    <string name="home_recent_title">Vos calculs</string>
+    <string name="home_pick_date">Choisir une date</string>
+    <string name="home_clear_date_filter">Effacer le filtre</string>
+    <string name="home_no_results_for_date">Aucun calcul pour cette date</string>
     <string name="home_empty_title">Aucun calcul enregistré</string>
     <string name="home_empty_body">Créez votre premier calcul pour le retrouver ici.</string>
     <string name="home_see_all">Voir tout</string>

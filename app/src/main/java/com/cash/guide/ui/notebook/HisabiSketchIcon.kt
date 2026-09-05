@@ -38,7 +38,8 @@ enum class HisabiSymbol {
     Gear,
     Lightbulb,
     Pencil,
-    Copy
+    Copy,
+    Calendar
 }
 
 @Composable
@@ -263,6 +264,27 @@ fun HisabiSketchIcon(
                     cornerRadius = CornerRadius(u(2f)),
                     style = pen
                 )
+            }
+            HisabiSymbol.Calendar -> {
+                // Calendar body outline
+                drawRoundRect(
+                    tint,
+                    topLeft = point(4f, 5.5f),
+                    size = Size(u(16f), u(14.5f)),
+                    cornerRadius = CornerRadius(u(2.5f)),
+                    style = pen
+                )
+                // Header divider line
+                drawLine(tint, point(4f, 9.5f), point(20f, 9.5f), u(1.2f))
+                // Rings / binder loops
+                drawLine(tint, point(8f, 3.5f), point(8f, 6.5f), u(1.5f), StrokeCap.Round)
+                drawLine(tint, point(16f, 3.5f), point(16f, 6.5f), u(1.5f), StrokeCap.Round)
+                // Small day dots
+                drawCircle(tint, u(0.85f), point(8f, 13f))
+                drawCircle(tint, u(0.85f), point(12f, 13f))
+                drawCircle(tint, u(0.85f), point(16f, 13f))
+                drawCircle(tint, u(0.85f), point(8f, 16.5f))
+                drawCircle(tint, u(0.85f), point(12f, 16.5f))
             }
         }
     }
