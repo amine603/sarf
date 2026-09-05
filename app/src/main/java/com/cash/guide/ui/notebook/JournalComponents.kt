@@ -764,6 +764,8 @@ fun JournalRecentHeader(
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
+    val markerColor = HighlighterPink.copy(alpha = 0.55f)
+    val swatchColor = HighlighterPink.copy(alpha = 0.80f)
 
     Row(
         modifier = modifier
@@ -773,17 +775,24 @@ fun JournalRecentHeader(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Title with double underline ("2 stoura ta7tha") to make it distinct
-        Box(
-            modifier = Modifier.drawBehind {
-                val strokeW = 1.0.dp.toPx()
-                val inkColor = JournalInk.copy(alpha = 0.70f)
-                val line1Y = size.height
-                val line2Y = size.height + 2.8.dp.toPx()
-                drawLine(inkColor, Offset(0f, line1Y), Offset(size.width, line1Y), strokeW, StrokeCap.Round)
-                drawLine(inkColor, Offset(0f, line2Y), Offset(size.width, line2Y), strokeW, StrokeCap.Round)
-            }
+        Row(
+            modifier = Modifier.weight(1f, fill = true),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.Start
         ) {
+            // Swatch marker dab before title (like in bullet journal photo)
+            Box(
+                modifier = Modifier
+                    .offset(y = (-4.0).dp)
+                    .width(4.5.dp)
+                    .height(13.dp)
+                    .clip(RoundedCornerShape(1.5.dp))
+                    .background(swatchColor)
+            )
+
+            Spacer(modifier = Modifier.width(7.dp))
+
+            // Bold Title text sitting on the ruled line
             Text(
                 text = stringResource(R.string.home_recent_title),
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
@@ -793,8 +802,23 @@ fun JournalRecentHeader(
                 style = TextStyle(platformStyle = NoFontPadding),
                 modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
             )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Full-width bold Mildliner line with light color (chisel stroke)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .offset(y = (-5.5).dp)
+                    .height(8.5.dp)
+                    .clip(RoundedCornerShape(2.5.dp))
+                    .background(markerColor)
+            )
         }
 
+        Spacer(modifier = Modifier.width(10.dp))
+
+        // "Voir tout" / "عرض الكل"
         Text(
             text = stringResource(R.string.home_see_all),
             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
@@ -811,6 +835,7 @@ fun JournalRecentHeader(
 
 /**
  * Header row for Pinned / Favorite Calculations on the Home Page, sitting on exactly 1 ruled line (29dp).
+ * Features a bullet-journal Mildliner header: sketch pin icon + bold title + thick full-width pastel line.
  */
 @Composable
 fun JournalFavoritesHeader(
@@ -818,6 +843,7 @@ fun JournalFavoritesHeader(
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
+    val markerColor = HighlighterYellow.copy(alpha = 0.65f)
 
     Row(
         modifier = modifier
@@ -827,27 +853,37 @@ fun JournalFavoritesHeader(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.Start
     ) {
-        Row(
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            HisabiSketchIcon(
-                symbol = HisabiSymbol.Pin,
-                contentDescription = null,
-                tint = JournalInk,
-                size = 17.dp,
-                modifier = Modifier.offset(y = if (isRtl) 3.5.dp else 1.0.dp)
-            )
-            Text(
-                text = stringResource(R.string.home_favorites_title),
-                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 17.5.sp else 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = JournalInk,
-                style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
-            )
-        }
+        HisabiSketchIcon(
+            symbol = HisabiSymbol.Pin,
+            contentDescription = null,
+            tint = JournalInk,
+            size = 17.dp,
+            modifier = Modifier.offset(y = if (isRtl) 3.5.dp else 1.0.dp)
+        )
+
+        Spacer(modifier = Modifier.width(6.dp))
+
+        Text(
+            text = stringResource(R.string.home_favorites_title),
+            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+            fontSize = if (isRtl) 17.5.sp else 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = JournalInk,
+            style = TextStyle(platformStyle = NoFontPadding),
+            modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Full-width bold Mildliner line with light color (chisel stroke to margin)
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .offset(y = (-5.5).dp)
+                .height(8.5.dp)
+                .clip(RoundedCornerShape(2.5.dp))
+                .background(markerColor)
+        )
     }
 }
 
