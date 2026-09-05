@@ -42,6 +42,7 @@ import com.cash.guide.ui.notebook.HighlighterPink
 import com.cash.guide.ui.notebook.JournalBaselineHighlightedText
 import com.cash.guide.ui.notebook.JournalCalculationRow
 import com.cash.guide.ui.notebook.JournalDateRuleBand
+import com.cash.guide.ui.notebook.getDateTimelineStyle
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalWritingInk
@@ -259,6 +260,11 @@ fun HomeScreen(
                 state.displayDateGroups.forEachIndexed { groupIndex, group ->
                     JournalDateRuleBand(title = group.header)
 
+                    val todayText = stringResource(R.string.date_today)
+                    val yesterdayText = stringResource(R.string.date_yesterday)
+                    val timelineStyle = getDateTimelineStyle(group.header, todayText, yesterdayText)
+                    val calcsCount = group.calculations.size
+
                     group.calculations.forEachIndexed { idx, calc ->
                         val currency = runCatching { MoneyUnit.valueOf(calc.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
                         val totalFormatted = JournalLedgerManager.formatTotal(calc.totalCentimes, currency)
@@ -274,7 +280,12 @@ fun HomeScreen(
                             totalAmount = totalFormatted,
                             currencySuffix = currencySuffix,
                             onClick = { onOpenCalculation(calc.calculation.id) },
-                            onMoreClick = { viewModel.selectCalculationForAction(calc) }
+                            onMoreClick = { viewModel.selectCalculationForAction(calc) },
+                            hasTimeline = true,
+                            isFirstInTimeline = idx == 0,
+                            isLastInTimeline = idx == calcsCount - 1,
+                            timelineDotColor = timelineStyle.dotColor,
+                            timelineLineColor = timelineStyle.lineColor
                         )
                     }
 
