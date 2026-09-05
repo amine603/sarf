@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -21,8 +23,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -30,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -39,10 +44,10 @@ import com.cash.guide.R
 
 /**
  * Line spacing for the Actions Popup sheet.
- * Slightly larger than the homepage (38dp vs 29dp) for comfortable touch targets,
- * while maintaining authentic lined notebook paper rhythm.
+ * Slightly larger than the homepage (42dp vs 29dp) for comfortable touch targets
+ * and badge placement, while maintaining authentic lined notebook paper rhythm.
  */
-private val ActionSheetRuleSpacing: Dp = 38.dp
+private val ActionSheetRuleSpacing: Dp = 42.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,7 +96,7 @@ fun SavedCalculationActionsSheet(
                     .fillMaxWidth()
                     .navigationBarsPadding()
             ) {
-                // Row 1: Calculation Title sitting directly on its ruled notebook line
+                // Row 1: Calculation Title sitting directly on its ruled notebook line (centered)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -108,7 +113,7 @@ fun SavedCalculationActionsSheet(
                         }
                         .padding(horizontal = 20.dp),
                     verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.Start
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = calculationTitle.ifBlank { stringResource(R.string.editor_new_title) },
@@ -118,8 +123,11 @@ fun SavedCalculationActionsSheet(
                         color = JournalInk,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
                         style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = if (isRtl) 6.2.dp else 5.8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .offset(y = if (isRtl) 6.2.dp else 5.8.dp)
                     )
                 }
 
@@ -127,6 +135,7 @@ fun SavedCalculationActionsSheet(
                 ActionSheetRuledItem(
                     label = stringResource(if (isPinned) R.string.action_unpin else R.string.action_pin),
                     symbol = HisabiSymbol.Pin,
+                    badgeColor = HighlighterBlue.copy(alpha = 0.50f),
                     onClick = {
                         onDismiss()
                         onTogglePin()
@@ -137,6 +146,7 @@ fun SavedCalculationActionsSheet(
                 ActionSheetRuledItem(
                     label = stringResource(R.string.action_edit),
                     symbol = HisabiSymbol.Pencil,
+                    badgeColor = HighlighterPink.copy(alpha = 0.40f),
                     onClick = {
                         onDismiss()
                         onEdit()
@@ -147,6 +157,7 @@ fun SavedCalculationActionsSheet(
                 ActionSheetRuledItem(
                     label = stringResource(R.string.action_duplicate),
                     symbol = HisabiSymbol.Copy,
+                    badgeColor = HighlighterYellow.copy(alpha = 0.55f),
                     onClick = {
                         onDismiss()
                         onDuplicate()
@@ -157,6 +168,7 @@ fun SavedCalculationActionsSheet(
                 ActionSheetRuledItem(
                     label = stringResource(R.string.action_delete),
                     symbol = HisabiSymbol.Trash,
+                    badgeColor = JournalActionDelete.copy(alpha = 0.15f),
                     isDestructive = true,
                     onClick = {
                         onDismiss()
@@ -189,12 +201,13 @@ fun SavedCalculationActionsSheet(
 
 /**
  * An action row inside the bottom sheet sitting directly on 1 notebook ruled line.
- * Features a sketch icon on the start and handwritten label sitting directly on the line.
+ * Features a colored sketch icon badge on the start and handwritten label sitting directly on the line.
  */
 @Composable
 private fun ActionSheetRuledItem(
     label: String,
     symbol: HisabiSymbol,
+    badgeColor: Color,
     isDestructive: Boolean = false,
     onClick: () -> Unit
 ) {
@@ -221,13 +234,21 @@ private fun ActionSheetRuledItem(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        HisabiSketchIcon(
-            symbol = symbol,
-            contentDescription = null,
-            tint = tintColor,
-            size = 20.dp,
-            modifier = Modifier.offset(y = if (isRtl) 1.5.dp else 1.0.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(badgeColor)
+                .offset(y = (-1.5).dp),
+            contentAlignment = Alignment.Center
+        ) {
+            HisabiSketchIcon(
+                symbol = symbol,
+                contentDescription = null,
+                tint = tintColor,
+                size = 16.dp
+            )
+        }
 
         Text(
             text = label,
