@@ -1159,7 +1159,7 @@ fun JournalInlineSearchRow(
         // Generous breathing space before the calendar icon
         Spacer(modifier = Modifier.width(14.dp))
 
-        // Calendar Icon Button, sitting directly on the blue line
+        // Calendar Icon Button, sitting directly on the blue line aligned vertically with the search bar
         if (onOpenCalendar != null) {
             Box(
                 modifier = Modifier
@@ -1171,14 +1171,13 @@ fun JournalInlineSearchRow(
                         onClickLabel = stringResource(R.string.home_pick_date),
                         onClick = onOpenCalendar
                     ),
-                contentAlignment = Alignment.BottomCenter
+                contentAlignment = Alignment.Center
             ) {
                 HisabiSketchIcon(
                     symbol = HisabiSymbol.Calendar,
                     contentDescription = stringResource(R.string.home_pick_date),
                     tint = if (isDateFiltered) JournalInk else JournalInk.copy(alpha = 0.85f),
-                    size = 19.dp,
-                    modifier = Modifier.offset(y = 1.0.dp)
+                    size = 25.dp
                 )
             }
         }
