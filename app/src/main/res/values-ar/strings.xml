@@ -89,6 +89,8 @@
     <!-- Settings -->
     <string name="settings_title">الإعدادات</string>
     <string name="settings_tagline">إعدادات التطبيق</string>
+    <string name="settings_storage_title">تخزين البيانات</string>
+    <string name="settings_storage_badge">✓ Hors-ligne 100%</string>
     <string name="settings_storage_notice">البيانات ديالك محفوظة غير فهاد الهاتف فقط.</string>
     <string name="settings_language">اللغة</string>
     <string name="settings_language_description">اختار اللغة ديالك</string>
@@ -98,6 +100,16 @@
     <string name="settings_arabic">العربية</string>
     <string name="currency_dirham">درهم</string>
     <string name="currency_rial">ريال</string>
+    <string name="settings_upcoming_title">مزايا مستقبلية</string>
+    <string name="settings_upcoming_badge">قريباً</string>
+    <string name="settings_backup_title">نسخة احتياطية محلية</string>
+    <string name="settings_backup_desc">حفظ نسخة من بياناتك في الهاتف.</string>
+    <string name="settings_share_image_title">مشاركة الحساب كصورة</string>
+    <string name="settings_share_image_desc">مشاركة حساب مع الآخرين على شكل صورة.</string>
+    <string name="settings_export_title">تصدير PDF / Excel</string>
+    <string name="settings_export_desc">تصدير حساباتك إلى ملف PDF أو Excel.</string>
+    <string name="home_search_input_placeholder">ابحث في حساباتك…</string>
+    <string name="calculation_lines_count">%d عناصر</string>
 
     <!-- Money breakdown -->
     <string name="breakdown_title">صرف الفلوس</string>

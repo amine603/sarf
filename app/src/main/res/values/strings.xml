@@ -89,6 +89,8 @@
     <!-- Settings -->
     <string name="settings_title">Paramètres</string>
     <string name="settings_tagline">Réglages de l’app</string>
+    <string name="settings_storage_title">Stockage des données</string>
+    <string name="settings_storage_badge">✓ Hors-ligne 100%</string>
     <string name="settings_storage_notice">Vos données sont stockées uniquement sur cet appareil.</string>
     <string name="settings_language">Langue</string>
     <string name="settings_language_description">Choisissez votre langue</string>
@@ -98,6 +100,16 @@
     <string name="settings_arabic">العربية</string>
     <string name="currency_dirham">DH</string>
     <string name="currency_rial">rial</string>
+    <string name="settings_upcoming_title">Fonctionnalités à venir</string>
+    <string name="settings_upcoming_badge">Bientôt</string>
+    <string name="settings_backup_title">Sauvegarde locale</string>
+    <string name="settings_backup_desc">Sauvegarder vos données sur votre téléphone.</string>
+    <string name="settings_share_image_title">Partager en image</string>
+    <string name="settings_share_image_desc">Partager un calcul sous forme d’image.</string>
+    <string name="settings_export_title">Exporter PDF / Excel</string>
+    <string name="settings_export_desc">Exporter vos calculs en PDF ou Excel.</string>
+    <string name="home_search_input_placeholder">Rechercher dans vos calculs…</string>
+    <string name="calculation_lines_count">%d lignes</string>
 
     <!-- Money breakdown -->
     <string name="breakdown_title">Détail des espèces</string>

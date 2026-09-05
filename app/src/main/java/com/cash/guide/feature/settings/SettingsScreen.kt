@@ -40,16 +40,22 @@ import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
 
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import com.cash.guide.ui.notebook.JournalUpcomingFeatureRow
+
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
 
     Box(modifier = modifier.fillMaxSize()) {
         JournalRuledDocument(modifier = Modifier.fillMaxSize()) {
-            // Line 1: Header Band (الإعدادات • Paramètres) sitting directly on ruled line 1
+            // Line 1: Header Band (Single Screen Title in pink pill sitting directly on ruled line 1)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -58,35 +64,20 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.Start
             ) {
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                Box(
+                    modifier = Modifier
+                        .offset(y = 2.0.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(HighlighterPink.copy(alpha = 0.40f))
+                        .padding(horizontal = 10.dp, vertical = 2.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .offset(y = 2.0.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(HighlighterPink.copy(alpha = 0.40f))
-                            .padding(horizontal = 7.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "الإعدادات",
-                            fontFamily = TajawalFamily,
-                            fontSize = 16.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    }
-
                     Text(
-                        text = "Paramètres",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 17.5.sp,
+                        text = stringResource(R.string.settings_title),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = 16.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
-                        style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = 2.5.dp)
+                        style = TextStyle(platformStyle = NoFontPadding)
                     )
                 }
             }
@@ -117,8 +108,8 @@ fun SettingsScreen(
 
                     Text(
                         text = stringResource(R.string.settings_language),
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 17.5.sp,
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = if (isRtl) 16.5.sp else 17.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding),
@@ -157,8 +148,8 @@ fun SettingsScreen(
             ) {
                 Text(
                     text = stringResource(R.string.settings_language_description),
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 14.sp,
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -192,8 +183,8 @@ fun SettingsScreen(
 
                     Text(
                         text = stringResource(R.string.settings_currency),
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 17.5.sp,
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = if (isRtl) 16.5.sp else 17.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding),
@@ -209,6 +200,7 @@ fun SettingsScreen(
                         label = stringResource(R.string.currency_dirham),
                         isSelected = state.defaultCurrency == MoneyUnit.DIRHAM,
                         highlightColor = HighlighterYellow.copy(alpha = 0.65f),
+                        isArabic = isRtl,
                         onClick = { viewModel.selectDefaultCurrency(MoneyUnit.DIRHAM) }
                     )
 
@@ -216,6 +208,7 @@ fun SettingsScreen(
                         label = stringResource(R.string.currency_rial),
                         isSelected = state.defaultCurrency == MoneyUnit.RIAL,
                         highlightColor = HighlighterYellow.copy(alpha = 0.65f),
+                        isArabic = isRtl,
                         onClick = { viewModel.selectDefaultCurrency(MoneyUnit.RIAL) }
                     )
                 }
@@ -231,8 +224,8 @@ fun SettingsScreen(
             ) {
                 Text(
                     text = stringResource(R.string.settings_currency_description),
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 14.sp,
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -265,9 +258,9 @@ fun SettingsScreen(
                     }
 
                     Text(
-                        text = "Stockage des données",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 17.5.sp,
+                        text = stringResource(R.string.settings_storage_title),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = if (isRtl) 16.5.sp else 17.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding),
@@ -283,7 +276,7 @@ fun SettingsScreen(
                         .padding(horizontal = 7.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = "✓ 100% Hors-ligne",
+                        text = stringResource(R.string.settings_storage_badge),
                         fontFamily = PatrickHandFamily,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
@@ -303,8 +296,8 @@ fun SettingsScreen(
             ) {
                 Text(
                     text = stringResource(R.string.settings_storage_notice),
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 14.sp,
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -312,8 +305,65 @@ fun SettingsScreen(
                 )
             }
 
-            // Bottom Spacers: exactly 3 notebook lines
-            Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
+            // Lines 11 & 12: 2 empty notebook lines spacer
+            Spacer(modifier = Modifier.height(JournalRuleSpacing * 2))
+
+            // Line 13: Section Header - Upcoming Features (sitting directly on ruled line 13)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Box(
+                    modifier = Modifier
+                        .offset(y = 2.0.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(HighlighterPink.copy(alpha = 0.40f))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_upcoming_title),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+            }
+
+            // Line 14: 1 empty notebook line spacer
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Lines 15 & 16: Feature 1 - Local Backup
+            JournalUpcomingFeatureRow(
+                title = stringResource(R.string.settings_backup_title),
+                description = stringResource(R.string.settings_backup_desc)
+            )
+
+            // Line 17: 1 empty notebook line spacer
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Lines 18 & 19: Feature 2 - Share as Image
+            JournalUpcomingFeatureRow(
+                title = stringResource(R.string.settings_share_image_title),
+                description = stringResource(R.string.settings_share_image_desc)
+            )
+
+            // Line 20: 1 empty notebook line spacer
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Lines 21 & 22: Feature 3 - Export PDF / Excel
+            JournalUpcomingFeatureRow(
+                title = stringResource(R.string.settings_export_title),
+                description = stringResource(R.string.settings_export_desc)
+            )
+
+            // Bottom Spacers: 5 notebook lines for full scrolling clearance above dock
+            Spacer(modifier = Modifier.height(JournalRuleSpacing * 5))
         }
     }
 }
@@ -327,22 +377,13 @@ private fun JournalSelectableOption(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val bgModifier = if (isSelected) {
-        Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(highlightColor)
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-    } else {
-        Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-    }
-
     Box(
         modifier = modifier
             .offset(y = 2.0.dp)
-            .then(bgModifier)
-            .clickable(role = Role.RadioButton, onClick = onClick),
+            .clip(RoundedCornerShape(6.dp))
+            .then(if (isSelected) Modifier.background(highlightColor) else Modifier)
+            .clickable(role = Role.RadioButton, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(

@@ -50,6 +50,13 @@ import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.SavedCalculationActionsSheet
 import com.cash.guide.ui.notebook.TajawalFamily
 
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import com.cash.guide.domain.DateGroupHelper
+import com.cash.guide.ui.notebook.JournalPrimaryActionButton
+import com.cash.guide.ui.notebook.JournalInlineSearchRow
+import com.cash.guide.ui.notebook.JournalTwoLineCalculationRow
+
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
@@ -61,6 +68,8 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
 
     LaunchedEffect(context) {
         viewModel.loadRecent(context)
@@ -68,79 +77,95 @@ fun HomeScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         JournalRuledDocument(modifier = Modifier.fillMaxSize()) {
-            // Line 1: Header Band (Brand name on left + Search on right)
+            // Line 1: Header Band (Brand name sitting directly on the ruled line)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(JournalRuleSpacing)
                     .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.Start
             ) {
-                // Left: "حسابي • Hssabi" sitting directly on the ruled line
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .offset(y = 2.0.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(HighlighterPink.copy(alpha = 0.40f))
-                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                if (isRtl) {
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .offset(y = 2.0.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(HighlighterPink.copy(alpha = 0.40f))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "حسابي",
+                                fontFamily = TajawalFamily,
+                                fontSize = 16.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalInk,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        }
                         Text(
-                            text = "حسابي",
-                            fontFamily = TajawalFamily,
-                            fontSize = 16.5.sp,
+                            text = "Hssabi",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 17.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding)
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.offset(y = 2.5.dp)
                         )
                     }
-                    Text(
-                        text = "Hssabi",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 17.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = JournalInk,
-                        style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = 2.5.dp)
-                    )
-                }
-
-                // Right: Hand-drawn Search icon sitting on the ruled line
-                Box(
-                    modifier = Modifier
-                        .size(width = 36.dp, height = JournalRuleSpacing)
-                        .clickable(
-                            role = Role.Button,
-                            onClickLabel = stringResource(R.string.home_search_placeholder),
-                            onClick = onOpenHistory
-                        ),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    HisabiSketchIcon(
-                        symbol = HisabiSymbol.Search,
-                        contentDescription = null,
-                        tint = JournalInk,
-                        size = 18.dp,
-                        modifier = Modifier.offset(y = 3.5.dp)
-                    )
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Hssabi",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 17.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.offset(y = 2.5.dp)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .offset(y = 2.0.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(HighlighterPink.copy(alpha = 0.40f))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "حسابي",
+                                fontFamily = TajawalFamily,
+                                fontSize = 16.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalInk,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        }
+                    }
                 }
             }
 
-            // Line 2: "+ Nouveau calcul" sitting directly on the ruled line (matching + Ajouter une ligne)
-            JournalNewCalculationButton(onNewCalculation = onNewCalculation)
+            // Line 2: Prominent Ruled-Line Search Row (tapping opens History with search active)
+            JournalInlineSearchRow(
+                query = "",
+                onQueryChange = null,
+                onClick = onOpenHistory
+            )
 
-            // Line 3: 1 empty notebook line
-            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+            // Lines 3 & 4: Primary Action Button ("+ حساب جديد" / "+ Nouveau calcul") spanning 2 notebook lines
+            JournalPrimaryActionButton(onClick = onNewCalculation)
 
-            // Line 4: Recent calculations header sitting directly on the ruled line
+            // Line 5+: Recent calculations header sitting directly on the ruled line
             if (!state.isEmpty) {
                 JournalRecentHeader(onOpenHistory = onOpenHistory)
 
-                // Date-grouped saved calculations (each calculation is exactly 1 ruled line, zero cards)
+                // Date-grouped saved calculations (each calculation is exactly 2 ruled lines = 58dp, zero cards)
                 state.recentDateGroups.forEach { group ->
                     JournalDateRuleBand(title = group.header)
 
@@ -152,10 +177,15 @@ fun HomeScreen(
                         } else {
                             stringResource(R.string.currency_rial)
                         }
+                        val subtitle = DateGroupHelper.formatHomeCalculationSubtitle(
+                            epochMs = calc.calculation.updatedAtEpochMs,
+                            locale = context.resources.configuration.locales[0]
+                        )
 
-                        JournalCalculationRow(
+                        JournalTwoLineCalculationRow(
                             index = idx,
                             title = calc.calculation.title,
+                            subtitle = subtitle,
                             totalAmount = totalFormatted,
                             currencySuffix = currencySuffix,
                             onClick = { onOpenCalculation(calc.calculation.id) },
@@ -177,7 +207,7 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.home_empty_title),
-                        fontFamily = PatrickHandFamily,
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                         fontSize = 16.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = JournalMutedInk,
@@ -187,8 +217,8 @@ fun HomeScreen(
                 }
             }
 
-            // Bottom Spacers: exactly 3 notebook lines
-            Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
+            // Bottom Spacers: 5 notebook lines for full scrolling clearance above dock
+            Spacer(modifier = Modifier.height(JournalRuleSpacing * 5))
         }
 
         // Action Sheet

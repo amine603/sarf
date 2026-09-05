@@ -97,6 +97,9 @@ private fun BottomNavItem(
 ) {
     val selectedDesc = if (isSelected) stringResource(R.string.cd_selected) else stringResource(R.string.cd_not_selected)
 
+    val layoutDirection = androidx.compose.ui.platform.LocalLayoutDirection.current
+    val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
+
     Box(
         modifier = modifier
             .height(58.dp)
@@ -122,8 +125,8 @@ private fun BottomNavItem(
 
             Text(
                 text = label,
-                fontFamily = PatrickHandFamily,
-                fontSize = 13.5.sp,
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 12.5.sp else 13.5.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 color = if (isSelected) JournalInk else JournalMutedInk,
                 maxLines = 1
@@ -131,3 +134,4 @@ private fun BottomNavItem(
         }
     }
 }
+

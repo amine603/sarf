@@ -48,6 +48,13 @@ import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.SavedCalculationActionsSheet
 import com.cash.guide.ui.notebook.TajawalFamily
 
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import com.cash.guide.domain.DateGroupHelper
+import com.cash.guide.ui.notebook.JournalFilterBar
+import com.cash.guide.ui.notebook.JournalInlineSearchRow
+import com.cash.guide.ui.notebook.JournalTwoLineCalculationRow
+
 @Composable
 fun HistoryScreen(
     viewModel: HistoryViewModel,
@@ -57,6 +64,8 @@ fun HistoryScreen(
 ) {
     val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
 
     LaunchedEffect(context) {
         viewModel.loadAll(context)
@@ -67,7 +76,7 @@ fun HistoryScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         JournalRuledDocument(modifier = Modifier.fillMaxSize()) {
-            // Line 1: Header Band (السجل • Historique) sitting directly on ruled line 1
+            // Line 1: Header Band (Single Screen Title in pink pill sitting directly on ruled line 1)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -76,108 +85,32 @@ fun HistoryScreen(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.Start
             ) {
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                Box(
+                    modifier = Modifier
+                        .offset(y = 2.0.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(HighlighterPink.copy(alpha = 0.40f))
+                        .padding(horizontal = 10.dp, vertical = 2.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .offset(y = 2.0.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(HighlighterPink.copy(alpha = 0.40f))
-                            .padding(horizontal = 7.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "السجل",
-                            fontFamily = TajawalFamily,
-                            fontSize = 16.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    }
-
                     Text(
-                        text = "Historique",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 17.5.sp,
+                        text = stringResource(R.string.history_title),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = 16.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
-                        style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = 2.5.dp)
+                        style = TextStyle(platformStyle = NoFontPadding)
                     )
                 }
             }
 
             // Line 2: Handwritten Search Bar sitting directly on ruled line 2
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(JournalRuleSpacing)
-                    .padding(horizontal = 14.dp),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                HisabiSketchIcon(
-                    symbol = HisabiSymbol.Search,
-                    contentDescription = null,
-                    tint = JournalInk,
-                    size = 17.dp,
-                    modifier = Modifier.offset(y = 3.5.dp)
-                )
+            JournalInlineSearchRow(
+                query = state.searchQuery,
+                onQueryChange = { viewModel.updateSearchQuery(it) }
+            )
 
-                BasicTextField(
-                    value = state.searchQuery,
-                    onValueChange = { viewModel.updateSearchQuery(it) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .offset(y = 5.7.dp),
-                    singleLine = true,
-                    cursorBrush = SolidColor(JournalInk),
-                    textStyle = TextStyle(
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = JournalInk,
-                        platformStyle = NoFontPadding
-                    ),
-                    decorationBox = { innerTextField ->
-                        if (state.searchQuery.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.history_search_placeholder),
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 16.5.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = JournalMutedInk.copy(alpha = 0.5f),
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        } else {
-                            innerTextField()
-                        }
-                    }
-                )
-
-                if (state.searchQuery.isNotEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable(role = Role.Button, onClick = { viewModel.updateSearchQuery("") })
-                            .offset(y = 3.0.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "✕",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalMutedInk
-                        )
-                    }
-                }
-            }
-
-            // Line 3: 1 empty notebook line spacer
-            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+            // Line 3: Minimal Filter Bar (الكل ∨, 📅 هذا الشهر ∨)
+            JournalFilterBar()
 
             // Line 4+: Results or Date Groups
             if (state.isSearching) {
@@ -190,10 +123,12 @@ fun HistoryScreen(
                         } else {
                             stringResource(R.string.currency_rial)
                         }
+                        val subtitle = DateGroupHelper.formatHistoryCalculationSubtitle(calc, context)
 
-                        JournalCalculationRow(
+                        JournalTwoLineCalculationRow(
                             index = idx,
                             title = calc.calculation.title,
+                            subtitle = subtitle,
                             totalAmount = totalFormatted,
                             currencySuffix = currencySuffix,
                             onClick = { onOpenCalculation(calc.calculation.id) },
@@ -211,7 +146,7 @@ fun HistoryScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.history_no_results_title),
-                            fontFamily = PatrickHandFamily,
+                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                             fontSize = 16.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = JournalMutedInk,
@@ -233,10 +168,12 @@ fun HistoryScreen(
                             } else {
                                 stringResource(R.string.currency_rial)
                             }
+                            val subtitle = DateGroupHelper.formatHistoryCalculationSubtitle(calc, context)
 
-                            JournalCalculationRow(
+                            JournalTwoLineCalculationRow(
                                 index = idx,
                                 title = calc.calculation.title,
+                                subtitle = subtitle,
                                 totalAmount = totalFormatted,
                                 currencySuffix = currencySuffix,
                                 onClick = { onOpenCalculation(calc.calculation.id) },
@@ -258,7 +195,7 @@ fun HistoryScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.home_empty_title),
-                            fontFamily = PatrickHandFamily,
+                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                             fontSize = 16.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = JournalMutedInk,
@@ -269,8 +206,8 @@ fun HistoryScreen(
                 }
             }
 
-            // Bottom Spacers: exactly 3 notebook lines
-            Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
+            // Bottom Spacers: 5 notebook lines for full scrolling clearance above dock
+            Spacer(modifier = Modifier.height(JournalRuleSpacing * 5))
         }
 
         // Action Sheet
