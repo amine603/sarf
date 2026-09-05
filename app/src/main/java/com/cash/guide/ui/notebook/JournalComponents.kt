@@ -901,7 +901,7 @@ fun JournalDateRuleBand(
             .height(JournalRuleSpacing)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier.drawBehind {
@@ -1012,239 +1012,139 @@ fun JournalInlineSearchRow(
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
-
-    val rowModifier = modifier
-        .fillMaxWidth()
-        .height(JournalRuleSpacing)
-        .padding(horizontal = 14.dp)
-        .then(
-            if (onClick != null && onQueryChange == null) {
-                Modifier.clickable(role = Role.Button, onClick = onClick)
-            } else Modifier
-        )
+    var isFocused by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Row(
-        modifier = rowModifier,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing)
+            .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        if (isRtl) {
-            // In RTL: Text / TextField is on Start (Right), Search Icon is on Start edge
+        // The Search Box (Grey highlight capsule sitting directly on the blue line)
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(25.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFF6B7067).copy(alpha = 0.16f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    if (onQueryChange != null) {
+                        focusRequester.requestFocus()
+                        keyboardController?.show()
+                    }
+                    onClick?.invoke()
+                }
+                .padding(horizontal = 9.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
             Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
+                // Search Icon inside the box
                 HisabiSketchIcon(
                     symbol = HisabiSymbol.Search,
                     contentDescription = null,
-                    tint = JournalInk,
-                    size = 18.dp,
-                    modifier = Modifier.offset(y = 1.0.dp)
+                    tint = JournalInk.copy(alpha = 0.70f),
+                    size = 15.dp
                 )
 
-                // Soft grey highlight capsule around the search input
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(24.dp)
-                        .offset(y = (-1.0).dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFF6B7067).copy(alpha = 0.16f))
-                        .padding(horizontal = 8.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (onQueryChange != null) {
-                        BasicTextField(
-                            value = query,
-                            onValueChange = onQueryChange,
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            cursorBrush = SolidColor(JournalInk),
-                            textStyle = TextStyle(
-                                fontFamily = TajawalFamily,
-                                fontSize = 14.5.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = JournalInk,
-                                platformStyle = NoFontPadding
-                            ),
-                            decorationBox = { innerTextField ->
-                                if (query.isEmpty()) {
-                                    Text(
-                                        text = placeholder,
-                                        fontFamily = TajawalFamily,
-                                        fontSize = 13.5.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = JournalWritingInk.copy(alpha = 0.75f),
-                                        style = TextStyle(platformStyle = NoFontPadding)
-                                    )
-                                } else {
-                                    innerTextField()
-                                }
-                            }
-                        )
-                    } else {
-                        Text(
-                            text = placeholder,
-                            fontFamily = TajawalFamily,
-                            fontSize = 13.5.sp,
+                // Search Input with cursor and disappearing placeholder on focus
+                if (onQueryChange != null) {
+                    BasicTextField(
+                        value = query,
+                        onValueChange = onQueryChange,
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { isFocused = it.isFocused },
+                        singleLine = true,
+                        cursorBrush = SolidColor(JournalInk),
+                        textStyle = TextStyle(
+                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                            fontSize = if (isRtl) 14.5.sp else 15.5.sp,
                             fontWeight = FontWeight.Medium,
-                            color = JournalWritingInk.copy(alpha = 0.75f),
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    }
-                }
-            }
-
-            // End controls (Calendar + Clear)
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.offset(y = 1.0.dp)
-            ) {
-                if (onOpenCalendar != null) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (isDateFiltered) HighlighterYellow.copy(alpha = 0.50f) else Color.Transparent)
-                            .clickable(role = Role.Button, onClick = onOpenCalendar),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Calendar,
-                            contentDescription = stringResource(R.string.home_pick_date),
-                            tint = if (isDateFiltered) JournalInk else JournalInk.copy(alpha = 0.85f),
-                            size = 18.dp
-                        )
-                    }
+                            color = JournalInk,
+                            platformStyle = NoFontPadding
+                        ),
+                        decorationBox = { innerTextField ->
+                            if (query.isEmpty() && !isFocused) {
+                                Text(
+                                    text = placeholder,
+                                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                    fontSize = if (isRtl) 13.sp else 14.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = JournalWritingInk.copy(alpha = 0.60f),
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    )
+                } else {
+                    Text(
+                        text = placeholder,
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = if (isRtl) 13.sp else 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = JournalWritingInk.copy(alpha = 0.60f),
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
-                if (!query.isEmpty() && onQueryChange != null) {
+                // Clear button inside the box
+                if (query.isNotEmpty() && onQueryChange != null) {
                     Box(
                         modifier = Modifier
-                            .size(24.dp)
+                            .size(18.dp)
                             .clickable(role = Role.Button, onClick = { onQueryChange("") }),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "✕",
                             fontFamily = PatrickHandFamily,
-                            fontSize = 16.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = JournalMutedInk
                         )
                     }
                 }
             }
-        } else {
-            // In LTR: Search Icon on Start (Left), Text / TextField on End (Right)
-            Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        }
+
+        // Generous breathing space before the calendar icon
+        Spacer(modifier = Modifier.width(14.dp))
+
+        // Calendar Icon Button, sitting directly on the blue line
+        if (onOpenCalendar != null) {
+            Box(
+                modifier = Modifier
+                    .size(25.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(if (isDateFiltered) HighlighterYellow.copy(alpha = 0.50f) else Color.Transparent)
+                    .clickable(
+                        role = Role.Button,
+                        onClickLabel = stringResource(R.string.home_pick_date),
+                        onClick = onOpenCalendar
+                    ),
+                contentAlignment = Alignment.BottomCenter
             ) {
                 HisabiSketchIcon(
-                    symbol = HisabiSymbol.Search,
-                    contentDescription = null,
-                    tint = JournalInk,
-                    size = 18.dp,
+                    symbol = HisabiSymbol.Calendar,
+                    contentDescription = stringResource(R.string.home_pick_date),
+                    tint = if (isDateFiltered) JournalInk else JournalInk.copy(alpha = 0.85f),
+                    size = 19.dp,
                     modifier = Modifier.offset(y = 1.0.dp)
                 )
-
-                // Soft grey highlight capsule around the search input
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(24.dp)
-                        .offset(y = (-1.0).dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFF6B7067).copy(alpha = 0.16f))
-                        .padding(horizontal = 8.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (onQueryChange != null) {
-                        BasicTextField(
-                            value = query,
-                            onValueChange = onQueryChange,
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            cursorBrush = SolidColor(JournalInk),
-                            textStyle = TextStyle(
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 15.5.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = JournalInk,
-                                platformStyle = NoFontPadding
-                            ),
-                            decorationBox = { innerTextField ->
-                                if (query.isEmpty()) {
-                                    Text(
-                                        text = placeholder,
-                                        fontFamily = PatrickHandFamily,
-                                        fontSize = 14.5.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = JournalWritingInk.copy(alpha = 0.75f),
-                                        style = TextStyle(platformStyle = NoFontPadding)
-                                    )
-                                } else {
-                                    innerTextField()
-                                }
-                            }
-                        )
-                    } else {
-                        Text(
-                            text = placeholder,
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 14.5.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = JournalWritingInk.copy(alpha = 0.75f),
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    }
-                }
-            }
-
-            // End controls (Clear + Calendar on the right)
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.offset(y = 1.0.dp)
-            ) {
-                if (!query.isEmpty() && onQueryChange != null) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable(role = Role.Button, onClick = { onQueryChange("") }),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "✕",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalMutedInk
-                        )
-                    }
-                }
-
-                if (onOpenCalendar != null) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (isDateFiltered) HighlighterYellow.copy(alpha = 0.50f) else Color.Transparent)
-                            .clickable(role = Role.Button, onClick = onOpenCalendar),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Calendar,
-                            contentDescription = stringResource(R.string.home_pick_date),
-                            tint = if (isDateFiltered) JournalInk else JournalInk.copy(alpha = 0.85f),
-                            size = 18.dp
-                        )
-                    }
-                }
             }
         }
     }

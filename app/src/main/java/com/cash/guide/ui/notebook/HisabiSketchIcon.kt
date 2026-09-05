@@ -40,7 +40,8 @@ enum class HisabiSymbol {
     Pencil,
     Copy,
     Calendar,
-    Pin
+    Pin,
+    Smile
 }
 
 @Composable
@@ -354,6 +355,19 @@ fun HisabiSketchIcon(
                     cornerRadius = CornerRadius(u(2f)),
                     style = pen
                 )
+            }
+            HisabiSymbol.Smile -> {
+                // Circle face outline
+                drawCircle(tint, u(9f), point(12f, 12f), style = pen)
+                // Two expressive eyes
+                drawCircle(tint, u(1.1f), point(8.5f, 9.5f))
+                drawCircle(tint, u(1.1f), point(15.5f, 9.5f))
+                // Happy hand-drawn smile arc
+                val smilePath = Path().apply {
+                    moveTo(u(7.5f), u(13.5f))
+                    quadraticTo(u(12f), u(17.5f), u(16.5f), u(13.5f))
+                }
+                drawPath(smilePath, tint, style = pen)
             }
         }
     }

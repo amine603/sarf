@@ -116,7 +116,7 @@ fun HomeScreen(
             ) {
                 Row(
                     verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     if (isRtl) {
                         Text(
@@ -137,14 +137,12 @@ fun HomeScreen(
                             style = TextStyle(platformStyle = NoFontPadding),
                             modifier = Modifier.offset(y = 6.0.dp)
                         )
-                        Text(
-                            text = "  :)",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = 5.5.dp)
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Smile,
+                            contentDescription = null,
+                            tint = JournalInk,
+                            size = 18.dp,
+                            modifier = Modifier.offset(y = 1.0.dp)
                         )
                     } else {
                         Text(
@@ -165,14 +163,12 @@ fun HomeScreen(
                             style = TextStyle(platformStyle = NoFontPadding),
                             modifier = Modifier.offset(y = 5.5.dp)
                         )
-                        Text(
-                            text = " :)",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = 5.5.dp)
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Smile,
+                            contentDescription = null,
+                            tint = JournalInk,
+                            size = 18.dp,
+                            modifier = Modifier.offset(y = 1.0.dp)
                         )
                     }
                 }
@@ -188,7 +184,10 @@ fun HomeScreen(
                 )
             }
 
-            // Line 2: Prominent Ruled-Line Search Row with Calendar icon popup
+            // Skip 1 ruled line ("na99ez star o dir search")
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Prominent Ruled-Line Search Row with Calendar icon popup
             JournalInlineSearchRow(
                 query = state.searchQuery,
                 onQueryChange = { query -> viewModel.updateSearchQuery(query) },
@@ -223,10 +222,10 @@ fun HomeScreen(
                                 onClick = { onOpenCalculation(calc.calculation.id) },
                                 onMoreClick = { viewModel.selectCalculationForAction(calc) }
                             )
-
-                            // 1 empty notebook line between calculations ("star khawi")
-                            Spacer(modifier = Modifier.height(JournalRuleSpacing))
                         }
+
+                        // 1 empty notebook line after favorites before "Vos calculs"
+                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
                     } else {
                         // Subtle hint row sitting directly on the ruled line
                         Row(
@@ -256,7 +255,7 @@ fun HomeScreen(
                 // Section header ("VOS CALCULS" / "حساباتك") with edge-to-edge flush highlight
                 JournalRecentHeader()
 
-                // Date-grouped saved calculations (moved up directly below header with zero extra spacer)
+                // Date-grouped saved calculations (directly under each other without blank lines between items)
                 state.displayDateGroups.forEachIndexed { groupIndex, group ->
                     JournalDateRuleBand(title = group.header)
 
@@ -277,13 +276,10 @@ fun HomeScreen(
                             onClick = { onOpenCalculation(calc.calculation.id) },
                             onMoreClick = { viewModel.selectCalculationForAction(calc) }
                         )
-
-                        // 1 empty notebook line between calculations ("yban lina ghir lfar9 bina kol calcul o lakher bi star khawi")
-                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
                     }
 
-                    // 1 empty notebook line between date groups if not already separated
-                    if (group.calculations.isEmpty() && groupIndex < state.displayDateGroups.lastIndex) {
+                    // 1 empty notebook line between date groups
+                    if (groupIndex < state.displayDateGroups.lastIndex) {
                         Spacer(modifier = Modifier.height(JournalRuleSpacing))
                     }
                 }
