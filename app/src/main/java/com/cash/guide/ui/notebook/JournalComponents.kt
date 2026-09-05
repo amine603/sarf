@@ -775,12 +775,12 @@ fun JournalRecentHeader(
             .fillMaxWidth()
             .height(JournalRuleSpacing),
         verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.Center
     ) {
-        // Highlight starts flush at the screen edge (touches x = 0, sitting directly on the blue line)
+        // Highlight starts flush at the left screen edge (weight 1f balances with right side to center the title)
         Box(
             modifier = Modifier
-                .width(24.dp)
+                .weight(1f)
                 .offset(y = 0.dp)
                 .height(16.dp)
                 .clip(RoundedCornerShape(topStart = 0.dp, bottomStart = 0.dp, topEnd = 3.dp, bottomEnd = 3.dp))
@@ -789,7 +789,7 @@ fun JournalRecentHeader(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Uppercase Title text sitting directly on the blue ruled line
+        // Uppercase Title text sitting directly on the blue ruled line in the center
         Text(
             text = if (isRtl) stringResource(R.string.home_recent_title) else stringResource(R.string.home_recent_title).uppercase(),
             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
@@ -802,7 +802,7 @@ fun JournalRecentHeader(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Full-width Mildliner line extending all the way to opposite screen edge sitting on the blue line
+        // Full-width Mildliner line extending all the way to right screen edge sitting on the blue line
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -816,7 +816,7 @@ fun JournalRecentHeader(
 
 /**
  * Header row for Pinned / Favorite Calculations on the Home Page, sitting on exactly 1 ruled line (29dp).
- * Features an edge-to-edge flush Mildliner yellow highlighter bar flanking the uppercase title.
+ * Features an edge-to-edge flush Mildliner yellow highlighter bar flanking the centered uppercase title.
  */
 @Composable
 fun JournalFavoritesHeader(
@@ -831,12 +831,12 @@ fun JournalFavoritesHeader(
             .fillMaxWidth()
             .height(JournalRuleSpacing),
         verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.Center
     ) {
-        // Highlight starts flush at the screen edge (touches x = 0, sitting directly on the blue line)
+        // Highlight starts flush at the left screen edge (weight 1f balances with right side to center the title)
         Box(
             modifier = Modifier
-                .width(24.dp)
+                .weight(1f)
                 .offset(y = 0.dp)
                 .height(16.dp)
                 .clip(RoundedCornerShape(topStart = 0.dp, bottomStart = 0.dp, topEnd = 3.dp, bottomEnd = 3.dp))
@@ -845,7 +845,7 @@ fun JournalFavoritesHeader(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Uppercase Title text sitting directly on the blue ruled line
+        // Uppercase Title text sitting directly on the blue ruled line in the center
         Text(
             text = if (isRtl) stringResource(R.string.home_favorites_title) else stringResource(R.string.home_favorites_title).uppercase(),
             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
@@ -858,7 +858,7 @@ fun JournalFavoritesHeader(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Full-width Mildliner line extending all the way to opposite screen edge sitting on the blue line
+        // Full-width Mildliner line extending all the way to right screen edge sitting on the blue line
         Box(
             modifier = Modifier
                 .weight(1f)
