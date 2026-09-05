@@ -197,8 +197,8 @@ fun HomeScreen(
                 showUnderline = false
             )
 
-            // Lines 3 & 4: Skip 2 ruled lines ("na9ezz 2 stoura ta7t search")
-            Spacer(modifier = Modifier.height(JournalRuleSpacing * 2))
+            // Skip 1 ruled line under search ("tale3 vos favoris lstar li lfo9")
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
             // Section: Vos favoris ("o 9bel vos calculs dir vos favourites o hna ykouno l7issabat matalan li dayr lihom pin")
             if (!state.isEmpty) {

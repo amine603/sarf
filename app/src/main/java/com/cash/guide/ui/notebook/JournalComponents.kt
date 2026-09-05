@@ -940,12 +940,13 @@ fun JournalDateRuleBand(
             modifier = Modifier
                 .padding(start = 2.dp)
                 .drawBehind {
-                    // Soft highlighter wash behind the date word sitting directly above the blue line
+                    // Soft highlighter wash centered vertically around the date text,
+                    // extending slightly below the notebook blue line so text is optically centered
                     val h = size.height
                     val w = size.width
-                    val washY = h - (if (isRtl) 11.5.dp.toPx() else 10.5.dp.toPx())
-                    val washHeight = 15.5.dp.toPx()
-                    val padH = 7.dp.toPx()
+                    val washHeight = 21.dp.toPx()
+                    val washY = h - (if (isRtl) 17.0.dp.toPx() else 17.5.dp.toPx())
+                    val padH = 8.dp.toPx()
                     drawRoundRect(
                         color = highlighterWashColor,
                         topLeft = Offset(-padH, washY),
