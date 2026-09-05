@@ -1,4 +1,4 @@
-﻿package com.cash.guide.feature.editor
+package com.cash.guide.feature.editor
 
 import android.os.SystemClock
 import androidx.compose.ui.text.TextRange
@@ -56,18 +56,18 @@ class CalculationEditorViewModel(
                 // Check if an uncommitted new draft exists
                 val draft = calculationRepository.getRecoverableDraft(null)
                 if (draft != null && (draft.calculation.title.isNotBlank() || draft.items.isNotEmpty())) {
+                    val draftCurrency = runCatching { MoneyUnit.valueOf(draft.calculation.currency) }.getOrDefault(defaultCurrency)
                     val restoredRows = if (draft.items.isEmpty()) {
                         listOf(EditorRowUiState(id = 1L))
                     } else {
-                        draft.items.mapIndexed { idx, item ->
+                        draft.items.sortedBy { it.position }.mapIndexed { idx, item ->
+                            val rawText = item.rawExpression?.takeIf { it.isNotBlank() }
+                                ?: if (item.amountCentimes > 0) MoneyMath.fromCentimes(item.amountCentimes, draftCurrency) else ""
                             EditorRowUiState(
                                 id = (idx + 1).toLong(),
                                 title = TextFieldValue(item.label, TextRange(item.label.length)),
-                                amount = TextFieldValue(
-                                    MoneyMath.fromCentimes(item.amountCentimes, MoneyUnit.valueOf(draft.calculation.currency)),
-                                    TextRange(MoneyMath.fromCentimes(item.amountCentimes, MoneyUnit.valueOf(draft.calculation.currency)).length)
-                                ),
-                                rawExpression = item.rawExpression ?: ""
+                                amount = TextFieldValue(rawText, TextRange(rawText.length)),
+                                rawExpression = rawText
                             )
                         }
                     }
@@ -78,7 +78,7 @@ class CalculationEditorViewModel(
                             editingSavedId = null,
                             mode = EditorMode.NEW,
                             title = TextFieldValue(draft.calculation.title, TextRange(draft.calculation.title.length)),
-                            currency = MoneyUnit.valueOf(draft.calculation.currency),
+                            currency = draftCurrency,
                             rows = restoredRows,
                             activeRowId = restoredRows.firstOrNull()?.id,
                             activeField = ActiveField.TITLE,
@@ -86,7 +86,8 @@ class CalculationEditorViewModel(
                             keyboardLanguage = defaultLanguage,
                             keyboardExpanded = true,
                             isDirty = true,
-                            recoveredDraft = true
+                            recoveredDraft = true,
+                            createdAtEpochMs = draft.calculation.createdAtEpochMs
                         )
                     }
                 } else {
@@ -111,16 +112,18 @@ class CalculationEditorViewModel(
             } else {
                 // Check if draft for this saved calculation exists
                 val draft = calculationRepository.getRecoverableDraft(id)
+                val saved = calculationRepository.getCalculation(id)
+                val originalCreatedAt = saved?.calculation?.createdAtEpochMs
                 if (draft != null) {
-                    val restoredRows = draft.items.mapIndexed { idx, item ->
+                    val draftCurrency = runCatching { MoneyUnit.valueOf(draft.calculation.currency) }.getOrDefault(defaultCurrency)
+                    val restoredRows = draft.items.sortedBy { it.position }.mapIndexed { idx, item ->
+                        val rawText = item.rawExpression?.takeIf { it.isNotBlank() }
+                            ?: if (item.amountCentimes > 0) MoneyMath.fromCentimes(item.amountCentimes, draftCurrency) else ""
                         EditorRowUiState(
                             id = (idx + 1).toLong(),
                             title = TextFieldValue(item.label, TextRange(item.label.length)),
-                            amount = TextFieldValue(
-                                MoneyMath.fromCentimes(item.amountCentimes, MoneyUnit.valueOf(draft.calculation.currency)),
-                                TextRange(MoneyMath.fromCentimes(item.amountCentimes, MoneyUnit.valueOf(draft.calculation.currency)).length)
-                            ),
-                            rawExpression = item.rawExpression ?: ""
+                            amount = TextFieldValue(rawText, TextRange(rawText.length)),
+                            rawExpression = rawText
                         )
                     }
                     nextRowId = (restoredRows.maxOfOrNull { it.id } ?: 1L) + 1
@@ -130,46 +133,49 @@ class CalculationEditorViewModel(
                             editingSavedId = id,
                             mode = EditorMode.EXISTING,
                             title = TextFieldValue(draft.calculation.title, TextRange(draft.calculation.title.length)),
-                            currency = MoneyUnit.valueOf(draft.calculation.currency),
+                            currency = draftCurrency,
                             rows = restoredRows.ifEmpty { listOf(EditorRowUiState(id = 1L)) },
                             activeRowId = null,
                             activeField = ActiveField.NONE,
-                            keyboardMode = JournalKeyboardMode.NONE,
+                            keyboardMode = JournalKeyboardMode.NUMBER,
                             keyboardExpanded = false,
                             isDirty = true,
-                            recoveredDraft = true
+                            recoveredDraft = true,
+                            createdAtEpochMs = originalCreatedAt ?: draft.calculation.createdAtEpochMs
                         )
                     }
-                } else {
-                    val saved = calculationRepository.getCalculation(id)
-                    if (saved != null) {
-                        val loadedCurrency = runCatching { MoneyUnit.valueOf(saved.calculation.currency) }.getOrDefault(defaultCurrency)
-                        val loadedRows = saved.items.sortedBy { it.position }.mapIndexed { idx, item ->
-                            val amountStr = MoneyMath.fromCentimes(item.amountCentimes, loadedCurrency)
-                            EditorRowUiState(
-                                id = (idx + 1).toLong(),
-                                title = TextFieldValue(item.label, TextRange(item.label.length)),
-                                amount = TextFieldValue(amountStr, TextRange(amountStr.length)),
-                                rawExpression = item.rawExpression ?: ""
-                            )
+                } else if (saved != null) {
+                    val loadedCurrency = runCatching { MoneyUnit.valueOf(saved.calculation.currency) }.getOrDefault(defaultCurrency)
+                    val loadedRows = saved.items.sortedBy { it.position }.mapIndexed { idx, item ->
+                        val amountStr = if (!item.rawExpression.isNullOrBlank()) {
+                            item.rawExpression
+                        } else {
+                            MoneyMath.fromCentimes(item.amountCentimes, loadedCurrency)
                         }
-                        val rows = loadedRows.ifEmpty { listOf(EditorRowUiState(id = 1L)) }
-                        nextRowId = (rows.maxOfOrNull { it.id } ?: 1L) + 1
-                        _uiState.update {
-                            it.copy(
-                                calculationId = saved.calculation.id,
-                                editingSavedId = id,
-                                mode = EditorMode.EXISTING,
-                                title = TextFieldValue(saved.calculation.title, TextRange(saved.calculation.title.length)),
-                                currency = loadedCurrency,
-                                rows = rows,
-                                activeRowId = null,
-                                activeField = ActiveField.NONE,
-                                keyboardMode = JournalKeyboardMode.NONE,
-                                keyboardExpanded = false,
-                                isDirty = false
-                            )
-                        }
+                        EditorRowUiState(
+                            id = (idx + 1).toLong(),
+                            title = TextFieldValue(item.label, TextRange(item.label.length)),
+                            amount = TextFieldValue(amountStr, TextRange(amountStr.length)),
+                            rawExpression = item.rawExpression ?: ""
+                        )
+                    }
+                    val rows = loadedRows.ifEmpty { listOf(EditorRowUiState(id = 1L)) }
+                    nextRowId = (rows.maxOfOrNull { it.id } ?: 1L) + 1
+                    _uiState.update {
+                        it.copy(
+                            calculationId = saved.calculation.id,
+                            editingSavedId = id,
+                            mode = EditorMode.EXISTING,
+                            title = TextFieldValue(saved.calculation.title, TextRange(saved.calculation.title.length)),
+                            currency = loadedCurrency,
+                            rows = rows,
+                            activeRowId = null,
+                            activeField = ActiveField.NONE,
+                            keyboardMode = JournalKeyboardMode.NUMBER,
+                            keyboardExpanded = false,
+                            isDirty = false,
+                            createdAtEpochMs = saved.calculation.createdAtEpochMs
+                        )
                     }
                 }
             }
@@ -177,7 +183,13 @@ class CalculationEditorViewModel(
     }
 
     fun updateTitle(value: TextFieldValue) {
-        _uiState.update { it.copy(title = value, isDirty = true) }
+        _uiState.update { state ->
+            state.copy(
+                title = value,
+                isDirty = true,
+                validationError = if (value.text.isNotBlank() && state.validationError == "TITLE_REQUIRED") null else state.validationError
+            )
+        }
         scheduleDraftSave()
     }
 
@@ -273,7 +285,7 @@ class CalculationEditorViewModel(
             state.copy(
                 activeRowId = null,
                 activeField = ActiveField.NONE,
-                keyboardMode = JournalKeyboardMode.NONE,
+                keyboardMode = state.keyboardMode.takeIf { it != JournalKeyboardMode.NONE } ?: JournalKeyboardMode.NUMBER,
                 keyboardExpanded = false,
                 shiftState = JournalShiftState(mode = JournalShiftMode.OFF),
                 shiftMode = JournalShiftMode.OFF
@@ -324,6 +336,22 @@ class CalculationEditorViewModel(
                         keyboardExpanded = false
                     )
                 }
+            }
+        }
+    }
+
+    fun toggleKeyboardExpanded() {
+        _uiState.update { state ->
+            val nextExpanded = !state.keyboardExpanded
+            if (nextExpanded && state.activeRowId == null) {
+                val targetRow = state.rows.lastOrNull() ?: EditorRowUiState(id = 1L)
+                state.copy(
+                    keyboardExpanded = true,
+                    activeRowId = targetRow.id,
+                    activeField = if (state.keyboardMode == JournalKeyboardMode.TEXT) ActiveField.TITLE else ActiveField.AMOUNT
+                )
+            } else {
+                state.copy(keyboardExpanded = nextExpanded)
             }
         }
     }
@@ -628,11 +656,24 @@ class CalculationEditorViewModel(
     }
 
     fun saveCalculation(onSuccess: (() -> Unit)? = null) {
-        viewModelScope.launch {
-            val state = _uiState.value
-            _uiState.update { it.copy(isSaving = true) }
+        val state = _uiState.value
+        val titleText = state.title.text.trim()
+        if (titleText.isEmpty()) {
+            _uiState.update {
+                it.copy(
+                    validationError = "TITLE_REQUIRED",
+                    activeRowId = null,
+                    activeField = ActiveField.TITLE,
+                    keyboardMode = JournalKeyboardMode.TEXT,
+                    keyboardExpanded = true
+                )
+            }
+            return
+        }
 
-            val titleText = state.title.text.trim().ifEmpty { "Calcul" }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, validationError = null) }
+
             val targetId = state.editingSavedId ?: state.calculationId ?: UUID.randomUUID().toString()
             val now = System.currentTimeMillis()
 
@@ -655,7 +696,7 @@ class CalculationEditorViewModel(
                 id = targetId,
                 title = titleText,
                 currency = state.currency.name,
-                createdAtEpochMs = now,
+                createdAtEpochMs = state.createdAtEpochMs ?: now,
                 updatedAtEpochMs = now,
                 status = "SAVED",
                 editingCalculationId = null

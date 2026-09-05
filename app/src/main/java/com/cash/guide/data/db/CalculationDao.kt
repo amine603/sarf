@@ -105,7 +105,7 @@ interface CalculationDao {
             title = if (source.calculation.title.isNotBlank()) "${source.calculation.title} (copie)" else "",
             createdAtEpochMs = now,
             updatedAtEpochMs = now,
-            status = "SAVED",
+            status = "DRAFT",
             editingCalculationId = null
         )
         val duplicatedItems = source.items.mapIndexed { index, item ->

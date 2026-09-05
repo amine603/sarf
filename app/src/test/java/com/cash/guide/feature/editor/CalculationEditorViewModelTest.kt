@@ -1,4 +1,4 @@
-﻿package com.cash.guide.feature.editor
+package com.cash.guide.feature.editor
 
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -303,5 +303,74 @@ class CalculationEditorViewModelTest {
 
         assertTrue(navigatedBack)
         assertFalse(viewModel.uiState.value.showUnsavedDialog)
+    }
+
+    @Test
+    fun saveCalculation_failsWhenTitleIsBlank_andSetsValidationError() = runTest {
+        viewModel.loadCalculation(null)
+        advanceUntilIdle()
+
+        viewModel.updateTitle(TextFieldValue("   "))
+        viewModel.updateRowAmount(1L, TextFieldValue("150"))
+
+        var saved = false
+        viewModel.saveCalculation { saved = true }
+        advanceUntilIdle()
+
+        assertFalse(saved)
+        assertEquals("TITLE_REQUIRED", viewModel.uiState.value.validationError)
+        assertFalse(viewModel.uiState.value.isSaved)
+    }
+
+    @Test
+    fun updateTitle_clearsValidationError() = runTest {
+        viewModel.loadCalculation(null)
+        advanceUntilIdle()
+
+        viewModel.saveCalculation()
+        assertEquals("TITLE_REQUIRED", viewModel.uiState.value.validationError)
+
+        viewModel.updateTitle(TextFieldValue("A"))
+        assertNull(viewModel.uiState.value.validationError)
+    }
+
+    @Test
+    fun losslessDraftRecovery_restoresRawExpressionFaithfully() = runTest {
+        val draftId = "draft_raw"
+        val now = 1000L
+        val draftCalc = CalculationEntity(
+            id = draftId,
+            title = "Brouillon",
+            currency = "DIRHAM",
+            createdAtEpochMs = now,
+            updatedAtEpochMs = now,
+            status = "DRAFT"
+        )
+        val draftItem = CalculationItemEntity(
+            id = "d_i1",
+            calculationId = draftId,
+            label = "Courses",
+            amountCentimes = 85_000L,
+            rawExpression = "600 + 250",
+            position = 0,
+            createdAtEpochMs = now,
+            updatedAtEpochMs = now
+        )
+        dao.upsertCalculationWithItems(draftCalc, listOf(draftItem))
+
+        val draftVm = CalculationEditorViewModel(
+            calculationRepository = repository,
+            settingsRepository = null,
+            graphemeSegmenter = JvmGraphemeSegmenter(),
+            monotonicClock = { 1000L }
+        )
+        draftVm.loadCalculation(null)
+        advanceUntilIdle()
+
+        val state = draftVm.uiState.value
+        assertTrue(state.recoveredDraft)
+        assertEquals("Brouillon", state.title.text)
+        assertEquals("600 + 250", state.rows[0].amount.text)
+        assertEquals("600 + 250", state.rows[0].rawExpression)
     }
 }

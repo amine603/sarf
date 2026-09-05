@@ -1,4 +1,4 @@
-﻿package com.cash.guide.ui.notebook
+package com.cash.guide.ui.notebook
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -42,16 +42,16 @@ fun NotebookSearchField(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .height(42.dp)
+            .clip(RoundedCornerShape(10.dp))
             .then(
                 if (readOnly && onClickWhenReadOnly != null) {
                     Modifier.clickable(role = Role.Button, onClick = onClickWhenReadOnly)
                 } else Modifier
             ),
-        shape = RoundedCornerShape(12.dp),
-        color = JournalDockBg.copy(alpha = 0.8f),
-        border = BorderStroke(0.75.dp, JournalRule.copy(alpha = 0.8f)),
+        shape = RoundedCornerShape(10.dp),
+        color = JournalPaper,
+        border = BorderStroke(0.8.dp, JournalRule.copy(alpha = 0.50f)),
         tonalElevation = 0.dp
     ) {
         Row(
@@ -76,8 +76,8 @@ fun NotebookSearchField(
                 if (query.isEmpty()) {
                     Text(
                         text = placeholder,
-                        fontFamily = ManropeFamily,
-                        fontSize = 14.5.sp,
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 17.sp,
                         color = JournalMutedInk.copy(alpha = 0.7f)
                     )
                 }
@@ -88,8 +88,8 @@ fun NotebookSearchField(
                         onValueChange = onQueryChange,
                         modifier = Modifier.fillMaxWidth(),
                         textStyle = TextStyle(
-                            fontFamily = ManropeFamily,
-                            fontSize = 14.5.sp,
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 18.sp,
                             color = JournalInk
                         ),
                         singleLine = true,

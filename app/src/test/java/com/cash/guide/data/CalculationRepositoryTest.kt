@@ -229,7 +229,62 @@ class CalculationRepositoryTest {
     }
 
     @Test
-    fun duplicateCalculation_clonesContentWithNewIdsAndTimestamps() = runBlocking {
+    fun saveCalculation_preservesOriginalCreatedAt_whenEditingExisting() = runBlocking {
+        val initialTime = 1000L
+        val originalCalc = CalculationEntity(
+            id = "c_edit",
+            title = "Initial Title",
+            currency = "DIRHAM",
+            createdAtEpochMs = initialTime,
+            updatedAtEpochMs = initialTime,
+            status = "SAVED"
+        )
+        val originalItems = listOf(
+            CalculationItemEntity(
+                id = "it1",
+                calculationId = "c_edit",
+                label = "First",
+                amountCentimes = 10_000L,
+                position = 0,
+                createdAtEpochMs = initialTime,
+                updatedAtEpochMs = initialTime
+            )
+        )
+        repository.saveCalculation(originalCalc, originalItems)
+
+        val laterTime = 5000L
+        val editedCalc = CalculationEntity(
+            id = "c_edit",
+            title = "Updated Title",
+            currency = "DIRHAM",
+            createdAtEpochMs = laterTime,
+            updatedAtEpochMs = laterTime,
+            status = "SAVED"
+        )
+        val editedItems = listOf(
+            CalculationItemEntity(
+                id = "it1",
+                calculationId = "c_edit",
+                label = "First updated",
+                amountCentimes = 12_000L,
+                position = 0,
+                createdAtEpochMs = laterTime,
+                updatedAtEpochMs = laterTime
+            )
+        )
+        repository.saveCalculation(editedCalc, editedItems)
+
+        val updated = repository.getCalculation("c_edit")
+        assertNotNull(updated)
+        // Verify original createdAt is preserved forever!
+        assertEquals(initialTime, updated!!.calculation.createdAtEpochMs)
+        assertEquals("Updated Title", updated.calculation.title)
+        assertTrue(updated.calculation.updatedAtEpochMs >= laterTime)
+        assertEquals(initialTime, updated.items[0].createdAtEpochMs)
+    }
+
+    @Test
+    fun duplicateCalculation_createsIndependentCopy_asDraftWithoutPollutingHistory() = runBlocking {
         val originalCalc = CalculationEntity(
             id = "source1",
             title = "Aïd Elkbir",
@@ -255,12 +310,18 @@ class CalculationRepositoryTest {
         assertNotNull(duplicated)
         assertNotEquals("source1", duplicated!!.calculation.id)
         assertEquals("Aïd Elkbir (copie)", duplicated.calculation.title)
-        assertEquals("SAVED", duplicated.calculation.status)
+        assertEquals("DRAFT", duplicated.calculation.status)
         assertEquals(1, duplicated.items.size)
         assertEquals("Hawli", duplicated.items[0].label)
         assertEquals(300_000L, duplicated.items[0].amountCentimes)
         assertNotEquals("item1", duplicated.items[0].id)
         assertEquals(duplicated.calculation.id, duplicated.items[0].calculationId)
+
+        // Verify duplicate does NOT pollute saved queries
+        var savedList: List<CalculationWithItems>? = null
+        repository.observeAllSaved().collect { savedList = it }
+        assertEquals(1, savedList?.size)
+        assertEquals("source1", savedList?.first()?.calculation?.id)
 
         // Original is untouched
         val original = repository.getCalculation("source1")

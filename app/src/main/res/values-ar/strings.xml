@@ -88,19 +88,23 @@
 
     <!-- Settings -->
     <string name="settings_title">الإعدادات</string>
+    <string name="settings_tagline">إعدادات التطبيق</string>
+    <string name="settings_storage_notice">البيانات ديالك محفوظة غير فهاد الهاتف فقط.</string>
     <string name="settings_language">اللغة</string>
-    <string name="settings_language_description">لغة التطبيق</string>
-    <string name="settings_currency">العملة الافتراضية</string>
-    <string name="settings_currency_description">كتستعمل فالحسابات الجديدة</string>
+    <string name="settings_language_description">اختار اللغة ديالك</string>
+    <string name="settings_currency">العملة</string>
+    <string name="settings_currency_description">اختار العملة ديالك</string>
     <string name="settings_french">الفرنسية</string>
     <string name="settings_arabic">العربية</string>
     <string name="currency_dirham">درهم</string>
     <string name="currency_rial">ريال</string>
 
     <!-- Money breakdown -->
-    <string name="breakdown_title">قيمة المجموع</string>
-    <string name="breakdown_distribution">الأوراق والقطع</string>
+    <string name="breakdown_title">صرف الفلوس</string>
+    <string name="breakdown_subtitle">تفكيك المجموع إلى أوراق نقدية وقطع</string>
+    <string name="breakdown_distribution">الأوراق والقطع النقدية</string>
     <string name="breakdown_remainder">الباقي</string>
+    <string name="editor_breakdown_money">صرف الفلوس</string>
 
     <!-- Accessibility descriptions -->
     <string name="cd_back">رجوع</string>

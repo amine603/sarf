@@ -88,19 +88,23 @@
 
     <!-- Settings -->
     <string name="settings_title">Paramètres</string>
+    <string name="settings_tagline">Réglages de l’app</string>
+    <string name="settings_storage_notice">Vos données sont stockées uniquement sur cet appareil.</string>
     <string name="settings_language">Langue</string>
-    <string name="settings_language_description">Langue de l’application</string>
-    <string name="settings_currency">Devise par défaut</string>
-    <string name="settings_currency_description">Utilisée pour les nouveaux calculs</string>
+    <string name="settings_language_description">Choisissez votre langue</string>
+    <string name="settings_currency">Devise</string>
+    <string name="settings_currency_description">Choisissez votre devise</string>
     <string name="settings_french">Français</string>
     <string name="settings_arabic">العربية</string>
     <string name="currency_dirham">DH</string>
     <string name="currency_rial">rial</string>
 
     <!-- Money breakdown -->
-    <string name="breakdown_title">Valeur du total</string>
-    <string name="breakdown_distribution">Billets et pièces</string>
+    <string name="breakdown_title">Détail des espèces</string>
+    <string name="breakdown_subtitle">Décomposition du montant en billets et pièces</string>
+    <string name="breakdown_distribution">Billets et pièces de monnaie</string>
     <string name="breakdown_remainder">Reste</string>
+    <string name="editor_breakdown_money">Détail des espèces</string>
 
     <!-- Accessibility descriptions -->
     <string name="cd_back">Retour</string>

@@ -1,22 +1,19 @@
 package com.cash.guide.feature.history
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,26 +21,32 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
-import com.cash.guide.ui.notebook.CalculationSummaryCard
+import com.cash.guide.domain.JournalLedgerManager
+import com.cash.guide.domain.MoneyUnit
 import com.cash.guide.ui.notebook.DeleteConfirmationDialog
+import com.cash.guide.ui.notebook.HighlighterPink
 import com.cash.guide.ui.notebook.HisabiSketchIcon
 import com.cash.guide.ui.notebook.HisabiSymbol
-import com.cash.guide.ui.notebook.JournalDockBg
+import com.cash.guide.ui.notebook.JournalCalculationRow
+import com.cash.guide.ui.notebook.JournalDateRuleBand
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
-import com.cash.guide.ui.notebook.JournalPaper
-import com.cash.guide.ui.notebook.JournalRule
-import com.cash.guide.ui.notebook.ManropeFamily
-import com.cash.guide.ui.notebook.NotebookSearchField
+import com.cash.guide.ui.notebook.JournalRuleSpacing
+import com.cash.guide.ui.notebook.JournalRuledDocument
+import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.SavedCalculationActionsSheet
+import com.cash.guide.ui.notebook.TajawalFamily
 
 @Composable
 fun HistoryScreen(
@@ -62,177 +65,212 @@ fun HistoryScreen(
         }
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(JournalPaper)
-    ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Header: Title
-            item {
-                Text(
-                    text = stringResource(R.string.history_title),
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalInk,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                )
-            }
-
-            // Search Field
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    NotebookSearchField(
-                        query = state.searchQuery,
-                        onQueryChange = { viewModel.updateSearchQuery(it) },
-                        placeholder = stringResource(R.string.history_search_placeholder)
-                    )
+    Box(modifier = modifier.fillMaxSize()) {
+        JournalRuledDocument(modifier = Modifier.fillMaxSize()) {
+            // Line 1: Header Band (السجل • Historique) sitting directly on ruled line 1
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .offset(y = 2.0.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(HighlighterPink.copy(alpha = 0.40f))
+                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "السجل",
+                            fontFamily = TajawalFamily,
+                            fontSize = 16.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalInk,
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+                    }
 
                     Text(
-                        text = stringResource(R.string.history_search_hint),
-                        fontFamily = ManropeFamily,
-                        fontSize = 12.sp,
-                        color = JournalMutedInk.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                        text = "Historique",
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 17.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.offset(y = 2.5.dp)
                     )
                 }
             }
 
-            // If user is searching
+            // Line 2: Handwritten Search Bar sitting directly on ruled line 2
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                HisabiSketchIcon(
+                    symbol = HisabiSymbol.Search,
+                    contentDescription = null,
+                    tint = JournalInk,
+                    size = 17.dp,
+                    modifier = Modifier.offset(y = 3.5.dp)
+                )
+
+                BasicTextField(
+                    value = state.searchQuery,
+                    onValueChange = { viewModel.updateSearchQuery(it) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .offset(y = 5.7.dp),
+                    singleLine = true,
+                    cursorBrush = SolidColor(JournalInk),
+                    textStyle = TextStyle(
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = JournalInk,
+                        platformStyle = NoFontPadding
+                    ),
+                    decorationBox = { innerTextField ->
+                        if (state.searchQuery.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.history_search_placeholder),
+                                fontFamily = PatrickHandFamily,
+                                fontSize = 16.5.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = JournalMutedInk.copy(alpha = 0.5f),
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        } else {
+                            innerTextField()
+                        }
+                    }
+                )
+
+                if (state.searchQuery.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable(role = Role.Button, onClick = { viewModel.updateSearchQuery("") })
+                            .offset(y = 3.0.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "✕",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalMutedInk
+                        )
+                    }
+                }
+            }
+
+            // Line 3: 1 empty notebook line spacer
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Line 4+: Results or Date Groups
             if (state.isSearching) {
                 if (state.searchResults.isNotEmpty()) {
-                    items(state.searchResults, key = { it.calculation.id }) { calc ->
-                        CalculationSummaryCard(
-                            calculationWithItems = calc,
-                            searchQuery = state.searchQuery,
+                    state.searchResults.forEachIndexed { idx, calc ->
+                        val currency = runCatching { MoneyUnit.valueOf(calc.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
+                        val totalFormatted = JournalLedgerManager.formatTotal(calc.totalCentimes, currency)
+                        val currencySuffix = if (currency == MoneyUnit.DIRHAM) {
+                            stringResource(R.string.currency_dirham)
+                        } else {
+                            stringResource(R.string.currency_rial)
+                        }
+
+                        JournalCalculationRow(
+                            index = idx,
+                            title = calc.calculation.title,
+                            totalAmount = totalFormatted,
+                            currencySuffix = currencySuffix,
                             onClick = { onOpenCalculation(calc.calculation.id) },
                             onMoreClick = { viewModel.selectCalculationForAction(calc) }
                         )
                     }
                 } else {
-                    // No search results
-                    item {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 40.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Surface(
-                                modifier = Modifier.size(56.dp),
-                                shape = CircleShape,
-                                color = JournalDockBg,
-                                border = BorderStroke(1.dp, JournalRule.copy(alpha = 0.6f))
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    HisabiSketchIcon(
-                                        symbol = HisabiSymbol.Search,
-                                        contentDescription = null,
-                                        tint = JournalMutedInk,
-                                        size = 24.dp
-                                    )
-                                }
-                            }
-
-                            Text(
-                                text = stringResource(R.string.history_no_results_title),
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalInk,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Text(
-                                text = stringResource(R.string.history_no_results_body),
-                                fontFamily = ManropeFamily,
-                                fontSize = 14.sp,
-                                color = JournalMutedInk,
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                    // Empty search result on 1 notebook line
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(JournalRuleSpacing),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.history_no_results_title),
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 16.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = JournalMutedInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.offset(y = 5.7.dp)
+                        )
                     }
                 }
             } else {
-                // Not searching -> display date-grouped history
                 if (state.allDateGroups.isNotEmpty()) {
                     state.allDateGroups.forEach { group ->
-                        item(key = "header_${group.header}") {
-                            Text(
-                                text = group.header,
-                                fontFamily = ManropeFamily,
-                                fontSize = 13.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalMutedInk,
-                                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
-                            )
-                        }
+                        JournalDateRuleBand(title = group.header)
 
-                        items(group.calculations, key = { it.calculation.id }) { calc ->
-                            CalculationSummaryCard(
-                                calculationWithItems = calc,
+                        group.calculations.forEachIndexed { idx, calc ->
+                            val currency = runCatching { MoneyUnit.valueOf(calc.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
+                            val totalFormatted = JournalLedgerManager.formatTotal(calc.totalCentimes, currency)
+                            val currencySuffix = if (currency == MoneyUnit.DIRHAM) {
+                                stringResource(R.string.currency_dirham)
+                            } else {
+                                stringResource(R.string.currency_rial)
+                            }
+
+                            JournalCalculationRow(
+                                index = idx,
+                                title = calc.calculation.title,
+                                totalAmount = totalFormatted,
+                                currencySuffix = currencySuffix,
                                 onClick = { onOpenCalculation(calc.calculation.id) },
                                 onMoreClick = { viewModel.selectCalculationForAction(calc) }
                             )
                         }
+
+                        // 1 empty notebook line spacer after each date group
+                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
                     }
                 } else if (!state.isLoading) {
-                    // Empty History
-                    item {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 40.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Surface(
-                                modifier = Modifier.size(64.dp),
-                                shape = CircleShape,
-                                color = JournalDockBg,
-                                border = BorderStroke(1.dp, JournalRule.copy(alpha = 0.6f))
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    HisabiSketchIcon(
-                                        symbol = HisabiSymbol.Page,
-                                        contentDescription = null,
-                                        tint = JournalMutedInk,
-                                        size = 28.dp
-                                    )
-                                }
-                            }
-
-                            Text(
-                                text = stringResource(R.string.home_empty_title),
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalInk,
-                                textAlign = TextAlign.Center
-                            )
-
-                            Text(
-                                text = stringResource(R.string.home_empty_body),
-                                fontFamily = ManropeFamily,
-                                fontSize = 14.sp,
-                                color = JournalMutedInk,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 24.dp)
-                            )
-                        }
+                    // Empty history on 1 notebook line
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(JournalRuleSpacing),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.home_empty_title),
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 16.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = JournalMutedInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.offset(y = 5.7.dp)
+                        )
                     }
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            // Bottom Spacers: exactly 3 notebook lines
+            Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
         }
 
         // Action Sheet

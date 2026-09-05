@@ -1,4 +1,4 @@
-﻿package com.cash.guide.data.db
+package com.cash.guide.data.db
 
 import android.content.Context
 import androidx.room.Database
@@ -11,7 +11,7 @@ import androidx.room.RoomDatabase
         CalculationItemEntity::class
     ],
     version = 1,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class HssabiDatabase : RoomDatabase() {
 
@@ -27,7 +27,10 @@ abstract class HssabiDatabase : RoomDatabase() {
                     context.applicationContext,
                     HssabiDatabase::class.java,
                     "hssabi.db"
-                ).fallbackToDestructiveMigration()
+                )
+                    // Production migration safety: Never use fallbackToDestructiveMigration().
+                    // Future schema changes must provide explicit Room Migration instances
+                    // (e.g., .addMigrations(MIGRATION_1_2)) to preserve user calculation history.
                     .build()
                     .also { INSTANCE = it }
             }

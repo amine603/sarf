@@ -123,7 +123,9 @@ class HomeViewModelTest {
         val duplicated = repository.getCalculation(duplicatedId!!)
         assertNotNull(duplicated)
         assertEquals("Source (copie)", duplicated!!.calculation.title)
-        assertEquals(1, duplicated.items.size)
-        assertEquals(5000L, duplicated.items[0].amountCentimes)
+        assertEquals("DRAFT", duplicated.calculation.status)
+        val allSaved = dao.calculations.values.filter { it.status == "SAVED" }
+        assertEquals(1, allSaved.size)
+        assertEquals("src-1", allSaved.first().id)
     }
 }

@@ -37,7 +37,14 @@ fun HssabiNavHost(
                 viewModel = homeViewModel,
                 onNewCalculation = { navController.navigate(AppDestination.NewCalculation.route) },
                 onOpenCalculation = { id -> navController.navigate("calculation/$id") },
-                onOpenHistory = { navController.navigate(AppDestination.History.route) }
+                onOpenHistory = { navController.navigate(AppDestination.History.route) },
+                onOpenStyleShowcase = { navController.navigate(AppDestination.StyleShowcase.route) }
+            )
+        }
+
+        composable(AppDestination.StyleShowcase.route) {
+            com.cash.guide.feature.showcase.TestNotebookShowcaseScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

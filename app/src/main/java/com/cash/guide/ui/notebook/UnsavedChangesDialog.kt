@@ -1,4 +1,4 @@
-﻿package com.cash.guide.ui.notebook
+package com.cash.guide.ui.notebook
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +22,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.cash.guide.R
@@ -33,11 +37,20 @@ fun UnsavedChangesDialog(
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val layoutDirection = LocalLayoutDirection.current
+
     Dialog(
         onDismissRequest = onContinue,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        CompositionLocalProvider(
+            LocalContext provides context,
+            LocalConfiguration provides configuration,
+            LocalLayoutDirection provides layoutDirection
+        ) {
+            Surface(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
@@ -131,6 +144,7 @@ fun UnsavedChangesDialog(
                         )
                     }
                 }
+            }
             }
         }
     }

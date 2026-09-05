@@ -51,8 +51,8 @@ fun NotebookBottomNavigation(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
-                    .padding(horizontal = 4.dp),
+                    .height(68.dp)
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
@@ -68,7 +68,7 @@ fun NotebookBottomNavigation(
                 // Tab 2: History
                 BottomNavItem(
                     label = stringResource(R.string.nav_history),
-                    symbol = HisabiSymbol.Page,
+                    symbol = HisabiSymbol.Clock,
                     isSelected = currentDestination == AppDestination.History,
                     onClick = { onNavigateTo(AppDestination.History) },
                     modifier = Modifier.weight(1f)
@@ -77,7 +77,7 @@ fun NotebookBottomNavigation(
                 // Tab 3: Settings
                 BottomNavItem(
                     label = stringResource(R.string.nav_settings),
-                    symbol = HisabiSymbol.More,
+                    symbol = HisabiSymbol.Gear,
                     isSelected = currentDestination == AppDestination.Settings,
                     onClick = { onNavigateTo(AppDestination.Settings) },
                     modifier = Modifier.weight(1f)
@@ -99,32 +99,32 @@ private fun BottomNavItem(
 
     Box(
         modifier = modifier
-            .height(44.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (isSelected) HighlighterPink.copy(alpha = 0.35f) else Color.Transparent)
+            .height(58.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (isSelected) HighlighterPink.copy(alpha = 0.40f) else Color.Transparent)
             .clickable(role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 4.dp)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
             .semantics {
                 contentDescription = "$label, $selectedDesc"
             },
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             HisabiSketchIcon(
                 symbol = symbol,
                 contentDescription = null,
                 tint = if (isSelected) JournalInk else JournalMutedInk,
-                size = 18.dp
+                size = 22.dp
             )
 
             Text(
                 text = label,
-                fontFamily = ManropeFamily,
-                fontSize = 13.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                fontFamily = PatrickHandFamily,
+                fontSize = 13.5.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 color = if (isSelected) JournalInk else JournalMutedInk,
                 maxLines = 1
             )

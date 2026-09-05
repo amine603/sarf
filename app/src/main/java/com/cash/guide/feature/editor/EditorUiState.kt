@@ -1,4 +1,4 @@
-﻿package com.cash.guide.feature.editor
+package com.cash.guide.feature.editor
 
 import androidx.compose.ui.text.input.TextFieldValue
 import com.cash.guide.domain.JournalKeyboardLanguage
@@ -55,7 +55,8 @@ data class EditorUiState(
     val showBreakdownSheet: Boolean = false,
     val recoveredDraft: Boolean = false,
     val validationError: String? = null,
-    val pendingFocusRowId: Long? = 1L
+    val pendingFocusRowId: Long? = 1L,
+    val createdAtEpochMs: Long? = null
 ) {
     val hasInvalidRows: Boolean
         get() = rows.any { it.amount.text.isNotBlank() && !MoneyMath.isValidExpression(it.amount.text) }

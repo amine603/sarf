@@ -33,7 +33,12 @@ enum class HisabiSymbol {
     Page,
     Home,
     Search,
-    Calculator
+    Calculator,
+    Clock,
+    Gear,
+    Lightbulb,
+    Pencil,
+    Copy
 }
 
 @Composable
@@ -56,9 +61,11 @@ fun HisabiSketchIcon(
 
         when (symbol) {
             HisabiSymbol.Back -> {
-                // Natural back in RTL points right '>'
-                drawLine(tint, point(6f, 4f), point(17f, 12f), u(1.45f), StrokeCap.Round)
-                drawLine(tint, point(17f, 12f), point(6f, 20f), u(1.45f), StrokeCap.Round)
+                val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
+                val xStart = if (isRtl) 7f else 16.5f
+                val xPoint = if (isRtl) 16.5f else 7f
+                drawLine(tint, point(xStart, 4.5f), point(xPoint, 12f), u(1.45f), StrokeCap.Round)
+                drawLine(tint, point(xPoint, 12f), point(xStart, 19.5f), u(1.45f), StrokeCap.Round)
             }
             HisabiSymbol.More -> {
                 drawCircle(tint, u(1.15f), point(12f, 5f))
@@ -194,6 +201,68 @@ fun HisabiSketchIcon(
                 drawCircle(tint, u(0.75f), point(8f, 15.5f))
                 drawCircle(tint, u(0.75f), point(12f, 15.5f))
                 drawCircle(tint, u(0.75f), point(16f, 15.5f))
+            }
+            HisabiSymbol.Clock -> {
+                drawCircle(tint, u(8.5f), point(12f, 12f), style = pen)
+                drawLine(tint, point(12f, 12f), point(12f, 7f), u(1.5f), StrokeCap.Round)
+                drawLine(tint, point(12f, 12f), point(15.5f, 12f), u(1.4f), StrokeCap.Round)
+                drawCircle(tint, u(1.1f), point(12f, 12f))
+            }
+            HisabiSymbol.Gear -> {
+                val outerRadius = 8f
+                val innerRadius = 3.5f
+                drawCircle(tint, u(innerRadius), point(12f, 12f), style = pen)
+                drawCircle(tint, u(outerRadius), point(12f, 12f), style = fine)
+                for (i in 0 until 6) {
+                    val angle = (i * 60.0) * Math.PI / 180.0
+                    val cx = 12f + (outerRadius * kotlin.math.cos(angle)).toFloat()
+                    val cy = 12f + (outerRadius * kotlin.math.sin(angle)).toFloat()
+                    drawCircle(tint, u(1.4f), point(cx, cy))
+                }
+            }
+            HisabiSymbol.Lightbulb -> {
+                val bulb = Path().apply {
+                    moveTo(u(8.5f), u(13.5f))
+                    cubicTo(u(5.5f), u(10.5f), u(5.5f), u(6f), u(12f), u(4.5f))
+                    cubicTo(u(18.5f), u(6f), u(18.5f), u(10.5f), u(15.5f), u(13.5f))
+                    lineTo(u(14.5f), u(16.5f))
+                    lineTo(u(9.5f), u(16.5f))
+                    close()
+                }
+                drawPath(bulb, tint, style = pen)
+                drawLine(tint, point(10f, 18.5f), point(14f, 18.5f), u(1.4f), StrokeCap.Round)
+                // Small filament rays
+                drawLine(tint, point(3.5f, 10f), point(5f, 10f), u(1.2f), StrokeCap.Round)
+                drawLine(tint, point(19f, 10f), point(20.5f, 10f), u(1.2f), StrokeCap.Round)
+                drawLine(tint, point(12f, 2f), point(12f, 3.5f), u(1.2f), StrokeCap.Round)
+            }
+            HisabiSymbol.Pencil -> {
+                val pencil = Path().apply {
+                    moveTo(u(5f), u(19f))
+                    lineTo(u(8f), u(19f))
+                    lineTo(u(19f), u(8f))
+                    lineTo(u(16f), u(5f))
+                    lineTo(u(5f), u(16f))
+                    close()
+                }
+                drawPath(pencil, tint, style = fine)
+                drawLine(tint, point(14f, 7f), point(17f, 10f), u(1.1f), StrokeCap.Round)
+                drawLine(tint, point(4f, 20f), point(5f, 19f), u(1.3f), StrokeCap.Round)
+            }
+            HisabiSymbol.Copy -> {
+                val back = Path().apply {
+                    moveTo(u(5f), u(15f))
+                    lineTo(u(5f), u(5f))
+                    lineTo(u(15f), u(5f))
+                }
+                drawPath(back, tint, style = pen)
+                drawRoundRect(
+                    tint,
+                    topLeft = point(8f, 8f),
+                    size = Size(u(11f), u(11f)),
+                    cornerRadius = CornerRadius(u(2f)),
+                    style = pen
+                )
             }
         }
     }

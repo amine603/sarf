@@ -32,6 +32,10 @@ import com.cash.guide.R
 import com.cash.guide.data.db.CalculationWithItems
 import com.cash.guide.domain.JournalLedgerManager
 import com.cash.guide.domain.MoneyUnit
+import com.cash.guide.ui.notebook.HighlighterBlue
+import com.cash.guide.ui.notebook.HighlighterGreen
+import com.cash.guide.ui.notebook.HighlighterPink
+import com.cash.guide.ui.notebook.HighlighterYellow
 
 @Composable
 fun CalculationSummaryCard(
@@ -61,13 +65,22 @@ fun CalculationSummaryCard(
         }
     } else null
 
+    val pastelColors = listOf(
+        HighlighterPink.copy(alpha = 0.45f),
+        HighlighterYellow.copy(alpha = 0.50f),
+        HighlighterGreen.copy(alpha = 0.45f),
+        HighlighterBlue.copy(alpha = 0.45f)
+    )
+    val badgeTint = pastelColors[kotlin.math.abs(calc.id.hashCode()) % pastelColors.size]
+    val isLatinSuffix = currencySuffix.contains(Regex("[a-zA-Z]"))
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp)),
         shape = RoundedCornerShape(10.dp),
-        color = JournalDockBg.copy(alpha = 0.65f),
-        border = BorderStroke(0.65.dp, JournalRule.copy(alpha = 0.75f)),
+        color = JournalPaper,
+        border = BorderStroke(0.8.dp, JournalRule.copy(alpha = 0.50f)),
         tonalElevation = 0.dp
     ) {
         Row(
@@ -79,18 +92,35 @@ fun CalculationSummaryCard(
                 modifier = Modifier
                     .weight(1f)
                     .clickable(role = Role.Button, onClick = onClick)
-                    .padding(start = 16.dp, top = 14.dp, bottom = 14.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                // Decorative notebook badge
+                Surface(
+                    modifier = Modifier.size(32.dp),
+                    shape = CircleShape,
+                    color = badgeTint
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Page,
+                            contentDescription = null,
+                            tint = JournalInk,
+                            size = 15.dp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
                         text = calc.title.ifBlank { stringResource(R.string.editor_new_title) },
                         fontFamily = PatrickHandFamily,
-                        fontSize = 20.sp,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         maxLines = 1,
@@ -101,15 +131,15 @@ fun CalculationSummaryCard(
                     if (matchingItemSnippet != null) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(HighlighterYellow.copy(alpha = 0.35f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(HighlighterPink.copy(alpha = 0.40f))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = matchingItemSnippet,
-                                fontFamily = ManropeFamily,
+                                fontFamily = PatrickHandFamily,
                                 fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = FontWeight.Normal,
                                 color = JournalWritingInk
                             )
                         }
@@ -122,31 +152,34 @@ fun CalculationSummaryCard(
                             if (lineCount == 1) R.string.card_lines_singular else R.string.card_lines_plural,
                             lineCount
                         ),
-                        fontFamily = ManropeFamily,
-                        fontSize = 12.sp,
-                        color = JournalMutedInk
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 13.sp,
+                        color = JournalMutedInk.copy(alpha = 0.75f)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-                // Total Amount & Unit
-                Column(
-                    horizontalAlignment = Alignment.End
+                // Total Amount & Unit (handwritten font unified with editor)
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
                         text = totalFormatted,
-                        fontFamily = ManropeFamily,
-                        fontSize = 18.sp,
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
-                        color = JournalInk
+                        color = JournalInk,
+                        style = androidx.compose.ui.text.TextStyle(platformStyle = NoFontPadding)
                     )
                     Text(
                         text = currencySuffix,
-                        fontFamily = ManropeFamily,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = JournalMutedInk
+                        fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
+                        fontSize = if (isLatinSuffix) 14.sp else 12.sp,
+                        fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.SemiBold,
+                        color = JournalMutedInk,
+                        style = androidx.compose.ui.text.TextStyle(platformStyle = NoFontPadding)
                     )
                 }
             }

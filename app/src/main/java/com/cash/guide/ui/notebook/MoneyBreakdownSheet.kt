@@ -1,4 +1,4 @@
-﻿package com.cash.guide.ui.notebook
+package com.cash.guide.ui.notebook
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -9,32 +9,43 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -56,8 +67,8 @@ private object BanknoteImageCache {
         if (existing != null) return existing
         return runCatching {
             val options = BitmapFactory.Options().apply {
-                inSampleSize = 2
-                inPreferredConfig = Bitmap.Config.RGB_565
+                inSampleSize = 1
+                inPreferredConfig = Bitmap.Config.ARGB_8888
             }
             context.assets.open(path).use { stream ->
                 BitmapFactory.decodeStream(stream, null, options)?.asImageBitmap()
@@ -79,12 +90,29 @@ private fun rememberBanknoteImage(path: String?): ImageBitmap? {
     return bitmapState.value
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+private fun getRialEquivalent(denominationCentimes: Long): String? = when (denominationCentimes) {
+    20_000L -> "4 000 ريال"
+    10_000L -> "2 000 ريال"
+    5_000L -> "1 000 ريال"
+    2_000L -> "400 ريال"
+    1_000L -> "200 ريال"
+    500L -> "100 ريال"
+    200L -> "40 ريال"
+    100L -> "20 ريال"
+    50L -> "10 ريال"
+    20L -> "4 ريال"
+    10L -> "2 ريال"
+    5L -> "ريال واحد"
+    else -> null
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun MoneyBreakdownSheet(
     totalCentimes: Long,
     onDismiss: () -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val pieces = remember(totalCentimes) { MoneyMath.breakdown(totalCentimes) }
     val remainderCentimes = remember(totalCentimes, pieces) {
         val accounted = pieces.sumOf { it.denomination.valueCentimes * it.count }
@@ -94,134 +122,222 @@ fun MoneyBreakdownSheet(
     val dirhamFormatted = MoneyMath.fromCentimes(totalCentimes, MoneyUnit.DIRHAM)
     val rialFormatted = MoneyMath.fromCentimes(totalCentimes, MoneyUnit.RIAL)
 
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val layoutDirection = LocalLayoutDirection.current
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = JournalPaper,
-        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+        shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
         tonalElevation = 0.dp,
         dragHandle = {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(24.dp),
+                    .padding(top = 10.dp, bottom = 4.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .width(36.dp)
-                        .height(4.dp)
-                        .background(JournalRule.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
+                        .width(48.dp)
+                        .height(5.dp)
+                        .background(HighlighterPink.copy(alpha = 0.65f), RoundedCornerShape(2.5.dp))
                 )
             }
-        }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.74f)
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
+        CompositionLocalProvider(
+            LocalContext provides context,
+            LocalConfiguration provides configuration,
+            LocalLayoutDirection provides layoutDirection
         ) {
-            item {
-                Text(
-                    text = stringResource(R.string.breakdown_title),
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalInk,
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .drawBehind {
+                        val spacingPx = JournalRuleSpacing.toPx()
+                        val lineCount = (size.height / spacingPx).toInt() + 1
+                        val stroke = 0.6.dp.toPx()
+                        val lineColor = JournalRule.copy(alpha = 0.32f)
+                        for (i in 1..lineCount) {
+                            val y = i * spacingPx
+                            drawLine(
+                                color = lineColor,
+                                start = Offset(0f, y),
+                                end = Offset(size.width, y),
+                                strokeWidth = stroke
+                            )
+                        }
+                    }
+            ) {
+                LazyColumn(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                )
-            }
-
-            // Summary Conversion Band
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(58.dp)
-                        .background(JournalDockBg, RoundedCornerShape(8.dp))
-                        .border(BorderStroke(0.65.dp, JournalRule.copy(alpha = 0.72f)), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 14.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                        .fillMaxSize()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(bottom = 28.dp)
                 ) {
-                    Text(
-                        text = "$dirhamFormatted ${stringResource(R.string.currency_dirham)}",
-                        fontFamily = ManropeFamily,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ColorOrange
-                    )
-                    Text(
-                        text = "  =  ",
-                        fontFamily = ManropeFamily,
-                        color = JournalMutedInk,
-                        fontSize = 15.sp
-                    )
-                    Text(
-                        text = "$rialFormatted ${stringResource(R.string.currency_rial)}",
-                        fontFamily = ManropeFamily,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ColorOrange
-                    )
-                }
-            }
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp, bottom = 4.dp)
+                        ) {
+                            NotebookHighlightedBadge(
+                                text = stringResource(R.string.breakdown_title),
+                                highlighterColor = HighlighterPink.copy(alpha = 0.65f),
+                                fontSize = 18.sp,
+                                horizontalPadding = 12.dp,
+                                verticalPadding = 3.5.dp
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(R.string.breakdown_subtitle),
+                                fontFamily = TajawalFamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = JournalMutedInk,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        }
+                        Spacer(Modifier.height(10.dp))
+                    }
 
-            item {
-                Spacer(Modifier.height(14.dp))
-                HorizontalDivider(color = JournalRule.copy(alpha = 0.54f), thickness = 0.55.dp)
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.breakdown_distribution),
-                    fontFamily = ManropeFamily,
-                    color = JournalWritingInk,
-                    fontSize = 14.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(4.dp))
-            }
-
-            pieces.forEach { piece ->
-                item(key = piece.denomination.label) {
-                    BreakdownRow(piece = piece)
-                }
-            }
-
-            if (remainderCentimes > 0) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(58.dp)
-                            .drawBehind {
-                                drawLine(
-                                    color = JournalRule.copy(alpha = 0.54f),
-                                    start = Offset(0f, size.height),
-                                    end = Offset(size.width, size.height),
-                                    strokeWidth = 0.55.dp.toPx()
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(JournalDockBg, RoundedCornerShape(8.dp))
+                                .border(
+                                    BorderStroke(0.7.dp, JournalRule.copy(alpha = 0.70f)),
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.Bottom,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = dirhamFormatted,
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 21.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ColorOrange
+                                )
+                                Text(
+                                    text = stringResource(R.string.currency_dirham),
+                                    fontFamily = TajawalFamily,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = JournalInk,
+                                    modifier = Modifier.padding(bottom = 1.dp)
                                 )
                             }
-                            .padding(horizontal = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "${stringResource(R.string.breakdown_remainder)} (< 10 centimes):",
-                            fontFamily = ManropeFamily,
-                            color = JournalInk,
-                            fontSize = 13.5.sp
-                        )
-                        Text(
-                            text = "$remainderCentimes c",
-                            fontFamily = ManropeFamily,
-                            fontSize = 14.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ColorOrange
-                        )
+
+                            Text(
+                                text = "=",
+                                fontFamily = PatrickHandFamily,
+                                color = JournalMutedInk,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Row(
+                                verticalAlignment = Alignment.Bottom,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = rialFormatted,
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 21.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ColorOrange
+                                )
+                                Text(
+                                    text = stringResource(R.string.currency_rial),
+                                    fontFamily = TajawalFamily,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = JournalInk,
+                                    modifier = Modifier.padding(bottom = 1.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(14.dp))
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(6.dp)
+                                    .height(14.dp)
+                                    .background(HighlighterYellow.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
+                            )
+                            Text(
+                                text = stringResource(R.string.breakdown_distribution),
+                                fontFamily = TajawalFamily,
+                                color = JournalWritingInk,
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(0.6.dp)
+                                    .background(JournalRule.copy(alpha = 0.6f))
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    pieces.forEach { piece ->
+                        item(key = piece.denomination.label) {
+                            BreakdownDenominationBlock(piece = piece)
+                        }
+                    }
+
+                    if (remainderCentimes > 0) {
+                        item {
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(JournalDockBg, RoundedCornerShape(6.dp))
+                                    .border(BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.5f)), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "${stringResource(R.string.breakdown_remainder)} (< 10 centimes):",
+                                    fontFamily = TajawalFamily,
+                                    color = JournalInk,
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = "$remainderCentimes c",
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ColorOrange
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -229,63 +345,144 @@ fun MoneyBreakdownSheet(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun BreakdownRow(piece: MoneyPiece) {
+private fun BreakdownDenominationBlock(piece: MoneyPiece) {
+    val isBanknote = piece.denomination.valueCentimes >= 2_000L
     val bitmap = rememberBanknoteImage(piece.denomination.assetPath)
+    val rialText = getRialEquivalent(piece.denomination.valueCentimes)
 
-    Row(
+    val pieceTotalCentimes = piece.denomination.valueCentimes * piece.count
+    val pieceTotalDh = MoneyMath.fromCentimes(pieceTotalCentimes, MoneyUnit.DIRHAM)
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(58.dp)
-            .drawBehind {
-                drawLine(
-                    color = JournalRule.copy(alpha = 0.54f),
-                    start = Offset(0f, size.height),
-                    end = Offset(size.width, size.height),
-                    strokeWidth = 0.55.dp.toPx()
-                )
-            }
-            .padding(horizontal = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(vertical = 6.dp)
+            .background(JournalPaper.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
+            .border(BorderStroke(0.55.dp, JournalRule.copy(alpha = 0.45f)), RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
         Row(
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(
+                            if (isBanknote) HighlighterPink.copy(alpha = 0.25f) else HighlighterYellow.copy(alpha = 0.35f)
+                        )
+                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "${piece.count} ×",
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isBanknote) ColorCoral else ColorOrange,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+
+                Text(
+                    text = piece.denomination.label,
+                    fontFamily = TajawalFamily,
+                    color = JournalInk,
+                    fontSize = 14.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    style = TextStyle(platformStyle = NoFontPadding)
+                )
+
+                if (rialText != null) {
+                    Text(
+                        text = "($rialText)",
+                        fontFamily = TajawalFamily,
+                        color = JournalMutedInk,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+            }
+
             Text(
-                text = "${piece.count}",
-                fontFamily = ManropeFamily,
-                fontSize = 18.sp,
+                text = "$pieceTotalDh ${stringResource(R.string.currency_dirham)}",
+                fontFamily = PatrickHandFamily,
+                fontSize = 15.5.sp,
                 fontWeight = FontWeight.Bold,
-                color = ColorOrange
-            )
-            Text(
-                text = "×",
-                fontFamily = ManropeFamily,
-                color = JournalMutedInk,
-                fontSize = 14.sp
-            )
-            Text(
-                text = piece.denomination.label,
-                fontFamily = TajawalFamily,
-                color = JournalInk,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium
+                color = JournalWritingInk,
+                style = TextStyle(platformStyle = NoFontPadding)
             )
         }
 
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap,
-                contentDescription = piece.denomination.label,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .height(42.dp)
-                    .width(68.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .border(BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.7f)), RoundedCornerShape(3.dp))
-            )
+        Spacer(Modifier.height(8.dp))
+
+        val displayCount = piece.count.toInt().coerceAtMost(30)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            repeat(displayCount) {
+                if (bitmap != null) {
+                    if (isBanknote) {
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = "${piece.denomination.label} #${it + 1}",
+                            contentScale = ContentScale.FillBounds,
+                            modifier = Modifier
+                                .width(110.dp)
+                                .height(66.dp)
+                                .shadow(1.5.dp, RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(4.dp))
+                                .border(
+                                    BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.65f)),
+                                    RoundedCornerShape(4.dp)
+                                )
+                        )
+                    } else {
+                        Image(
+                            bitmap = bitmap,
+                            contentDescription = "${piece.denomination.label} #${it + 1}",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .size(54.dp)
+                                .shadow(1.5.dp, CircleShape)
+                                .clip(CircleShape)
+                                .border(
+                                    BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.65f)),
+                                    CircleShape
+                                )
+                        )
+                    }
+                }
+            }
+
+            if (piece.count > 30) {
+                Box(
+                    modifier = Modifier
+                        .height(if (isBanknote) 60.dp else 52.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(JournalDockBg)
+                        .border(BorderStroke(0.5.dp, JournalRule.copy(alpha = 0.5f)), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "+ ${piece.count - 30} أخرى",
+                        fontFamily = TajawalFamily,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = JournalMutedInk
+                    )
+                }
+            }
         }
     }
 }

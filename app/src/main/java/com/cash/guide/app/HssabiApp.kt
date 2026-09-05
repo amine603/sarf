@@ -29,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import java.util.Locale
 
 @Composable
@@ -102,7 +103,10 @@ fun HssabiApp() {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(JournalPaper)
-                    .padding(innerPadding)
+                    .padding(
+                        top = if (isTopLevel) innerPadding.calculateTopPadding() else 0.dp,
+                        bottom = if (isTopLevel) innerPadding.calculateBottomPadding() else 0.dp
+                    )
             ) {
                 HssabiNavHost(
                     navController = navController,

@@ -1,4 +1,4 @@
-﻿package com.cash.guide.data
+package com.cash.guide.data
 
 import com.cash.guide.data.db.CalculationDao
 import com.cash.guide.data.db.CalculationEntity
@@ -30,16 +30,27 @@ class CalculationRepository(private val dao: CalculationDao) {
     ) {
         val now = System.currentTimeMillis()
         val targetId = calculation.editingCalculationId ?: calculation.id
+        val existing = dao.getCalculation(targetId)
+        val originalCreatedAt = existing?.calculation?.createdAtEpochMs
+            ?: calculation.createdAtEpochMs.takeIf { it > 0 }
+            ?: now
+
         val savedEntity = calculation.copy(
             id = targetId,
             status = "SAVED",
+            createdAtEpochMs = originalCreatedAt,
             updatedAtEpochMs = now,
             editingCalculationId = null
         )
         val remappedItems = items.mapIndexed { index, item ->
+            val existingItem = existing?.items?.firstOrNull { it.id == item.id }
+            val itemCreatedAt = existingItem?.createdAtEpochMs
+                ?: item.createdAtEpochMs.takeIf { it > 0 }
+                ?: now
             item.copy(
                 calculationId = targetId,
                 position = index,
+                createdAtEpochMs = itemCreatedAt,
                 updatedAtEpochMs = now
             )
         }

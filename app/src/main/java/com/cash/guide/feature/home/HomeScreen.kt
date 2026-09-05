@@ -1,26 +1,20 @@
 package com.cash.guide.feature.home
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,30 +22,33 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
-import com.cash.guide.ui.notebook.CalculationSummaryCard
+import com.cash.guide.domain.JournalLedgerManager
+import com.cash.guide.domain.MoneyUnit
 import com.cash.guide.ui.notebook.DeleteConfirmationDialog
 import com.cash.guide.ui.notebook.HisabiSketchIcon
 import com.cash.guide.ui.notebook.HisabiSymbol
 import com.cash.guide.ui.notebook.HighlighterPink
-import com.cash.guide.ui.notebook.JournalDockBg
+import com.cash.guide.ui.notebook.JournalBaselineHighlightedText
+import com.cash.guide.ui.notebook.JournalCalculationRow
+import com.cash.guide.ui.notebook.JournalDateRuleBand
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
-import com.cash.guide.ui.notebook.JournalPaper
-import com.cash.guide.ui.notebook.JournalRule
-import com.cash.guide.ui.notebook.JournalWritingInk
-import com.cash.guide.ui.notebook.ManropeFamily
-import com.cash.guide.ui.notebook.NotebookSearchField
+import com.cash.guide.ui.notebook.JournalNewCalculationButton
+import com.cash.guide.ui.notebook.JournalRecentHeader
+import com.cash.guide.ui.notebook.JournalRuleSpacing
+import com.cash.guide.ui.notebook.JournalRuledDocument
+import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.SavedCalculationActionsSheet
+import com.cash.guide.ui.notebook.TajawalFamily
 
 @Composable
 fun HomeScreen(
@@ -59,6 +56,7 @@ fun HomeScreen(
     onNewCalculation: () -> Unit,
     onOpenCalculation: (String) -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenStyleShowcase: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -68,187 +66,129 @@ fun HomeScreen(
         viewModel.loadRecent(context)
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(JournalPaper)
-    ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Header: Identity
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 4.dp)
+    Box(modifier = modifier.fillMaxSize()) {
+        JournalRuledDocument(modifier = Modifier.fillMaxSize()) {
+            // Line 1: Header Band (Brand name on left + Search on right)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Left: "حسابي • Hssabi" sitting directly on the ruled line
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = JournalInk
-                    )
-                    Text(
-                        text = stringResource(R.string.app_tagline),
-                        fontFamily = ManropeFamily,
-                        fontSize = 14.sp,
-                        color = JournalMutedInk
-                    )
-                }
-            }
-
-            // Search entry (tap navigates to History)
-            item {
-                NotebookSearchField(
-                    query = "",
-                    onQueryChange = {},
-                    readOnly = true,
-                    onClickWhenReadOnly = onOpenHistory
-                )
-            }
-
-            // Primary CTA: Nouveau calcul
-            item {
-                Button(
-                    onClick = onNewCalculation,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = HighlighterPink,
-                        contentColor = JournalInk
-                    ),
-                    border = BorderStroke(1.dp, JournalRule.copy(alpha = 0.8f)),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Plus,
-                            contentDescription = null,
-                            tint = JournalInk,
-                            size = 20.dp
-                        )
-                        Text(
-                            text = stringResource(R.string.home_new_calculation),
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-
-            // Recent calculations header
-            if (!state.isEmpty) {
-                item {
-                    Row(
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .offset(y = 2.0.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(HighlighterPink.copy(alpha = 0.40f))
+                            .padding(horizontal = 7.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.home_recent_title),
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 20.sp,
+                            text = "حسابي",
+                            fontFamily = TajawalFamily,
+                            fontSize = 16.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = JournalInk
-                        )
-
-                        Text(
-                            text = stringResource(R.string.home_see_all),
-                            fontFamily = ManropeFamily,
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = JournalMutedInk,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .clickable(role = Role.Button, onClick = onOpenHistory)
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                            color = JournalInk,
+                            style = TextStyle(platformStyle = NoFontPadding)
                         )
                     }
+                    Text(
+                        text = "Hssabi",
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 17.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.offset(y = 2.5.dp)
+                    )
                 }
 
-                // Date-grouped recent calculations
-                state.recentDateGroups.forEach { group ->
-                    item(key = "header_${group.header}") {
-                        Text(
-                            text = group.header,
-                            fontFamily = ManropeFamily,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalMutedInk,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
-                        )
-                    }
+                // Right: Hand-drawn Search icon sitting on the ruled line
+                Box(
+                    modifier = Modifier
+                        .size(width = 36.dp, height = JournalRuleSpacing)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = stringResource(R.string.home_search_placeholder),
+                            onClick = onOpenHistory
+                        ),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Search,
+                        contentDescription = null,
+                        tint = JournalInk,
+                        size = 18.dp,
+                        modifier = Modifier.offset(y = 3.5.dp)
+                    )
+                }
+            }
 
-                    items(group.calculations, key = { it.calculation.id }) { calc ->
-                        CalculationSummaryCard(
-                            calculationWithItems = calc,
+            // Line 2: "+ Nouveau calcul" sitting directly on the ruled line (matching + Ajouter une ligne)
+            JournalNewCalculationButton(onNewCalculation = onNewCalculation)
+
+            // Line 3: 1 empty notebook line
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Line 4: Recent calculations header sitting directly on the ruled line
+            if (!state.isEmpty) {
+                JournalRecentHeader(onOpenHistory = onOpenHistory)
+
+                // Date-grouped saved calculations (each calculation is exactly 1 ruled line, zero cards)
+                state.recentDateGroups.forEach { group ->
+                    JournalDateRuleBand(title = group.header)
+
+                    group.calculations.forEachIndexed { idx, calc ->
+                        val currency = runCatching { MoneyUnit.valueOf(calc.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
+                        val totalFormatted = JournalLedgerManager.formatTotal(calc.totalCentimes, currency)
+                        val currencySuffix = if (currency == MoneyUnit.DIRHAM) {
+                            stringResource(R.string.currency_dirham)
+                        } else {
+                            stringResource(R.string.currency_rial)
+                        }
+
+                        JournalCalculationRow(
+                            index = idx,
+                            title = calc.calculation.title,
+                            totalAmount = totalFormatted,
+                            currencySuffix = currencySuffix,
                             onClick = { onOpenCalculation(calc.calculation.id) },
                             onMoreClick = { viewModel.selectCalculationForAction(calc) }
                         )
                     }
+
+                    // 1 empty notebook line after each date group
+                    Spacer(modifier = Modifier.height(JournalRuleSpacing))
                 }
             } else if (!state.isLoading) {
-                // Empty state
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 40.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(64.dp),
-                            shape = CircleShape,
-                            color = JournalDockBg,
-                            border = BorderStroke(1.dp, JournalRule.copy(alpha = 0.6f))
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                HisabiSketchIcon(
-                                    symbol = HisabiSymbol.Page,
-                                    contentDescription = null,
-                                    tint = JournalMutedInk,
-                                    size = 28.dp
-                                )
-                            }
-                        }
-
-                        Text(
-                            text = stringResource(R.string.home_empty_title),
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Text(
-                            text = stringResource(R.string.home_empty_body),
-                            fontFamily = ManropeFamily,
-                            fontSize = 14.sp,
-                            color = JournalMutedInk,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 24.dp)
-                        )
-                    }
+                // Empty state sitting directly on the ruled line
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(JournalRuleSpacing),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_empty_title),
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 16.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = JournalMutedInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.offset(y = 5.7.dp)
+                    )
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            // Bottom Spacers: exactly 3 notebook lines
+            Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
         }
 
         // Action Sheet
@@ -284,3 +224,4 @@ fun HomeScreen(
         }
     }
 }
+

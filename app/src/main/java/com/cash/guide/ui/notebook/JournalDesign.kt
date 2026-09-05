@@ -6,10 +6,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
@@ -50,7 +54,7 @@ val JournalHandFamily = FontFamily(
 )
 
 // Authoritative geometry token for ruled paper rhythm and rows
-val JournalRuleSpacing = 48.dp
+val JournalRuleSpacing = 29.dp
 
 val NoFontPadding = PlatformTextStyle(includeFontPadding = false)
 
@@ -158,11 +162,11 @@ fun journalCategoryStyle() = TextStyle(
 )
 
 @Composable
-fun journalRowNumberStyle() = TextStyle(
+fun journalRowNumberStyle(color: Color = JournalMutedInk) = TextStyle(
     fontFamily = JournalHandFamily,
     fontSize = 16.5.sp,
     fontWeight = FontWeight.Normal,
-    color = JournalInk,
+    color = color,
     lineHeight = 20.sp,
     platformStyle = NoFontPadding
 )
@@ -366,4 +370,26 @@ fun JournalDoubleUnderline(
             cap = StrokeCap.Round
         )
     }
+}
+
+// Sketched dashed border for notebook CTA / add row buttons
+fun Modifier.journalDashedBorder(
+    color: Color = JournalInk.copy(alpha = 0.45f),
+    strokeWidth: Dp = 1.2.dp,
+    cornerRadius: Dp = 12.dp,
+    intervals: FloatArray = floatArrayOf(14f, 10f)
+): Modifier = drawBehind {
+    val sw = strokeWidth.toPx()
+    val halfSw = sw / 2f
+    val stroke = Stroke(
+        width = sw,
+        pathEffect = PathEffect.dashPathEffect(intervals, 0f)
+    )
+    drawRoundRect(
+        color = color,
+        topLeft = Offset(halfSw, halfSw),
+        size = Size(size.width - sw, size.height - sw),
+        cornerRadius = CornerRadius(cornerRadius.toPx()),
+        style = stroke
+    )
 }
