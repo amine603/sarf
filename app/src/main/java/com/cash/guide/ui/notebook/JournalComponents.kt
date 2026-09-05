@@ -824,7 +824,7 @@ fun JournalFavoritesHeader(
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
-    val markerColor = HighlighterYellow.copy(alpha = 0.65f)
+    val markerColor = HighlighterPink.copy(alpha = 0.55f)
 
     Row(
         modifier = modifier
@@ -903,8 +903,8 @@ fun getDateTimelineStyle(
         }
         else -> {
             DateTimelineStyle(
-                washColor = HighlighterPink.copy(alpha = 0.50f),
-                dotColor = Color(0xFFE27B97) // Soft Rose Pink matching pink date wash
+                washColor = HighlighterBlue.copy(alpha = 0.55f),
+                dotColor = Color(0xFF5B9EC9) // Soft Sky Blue matching blue date wash (distinct from pink categories)
             )
         }
     }
