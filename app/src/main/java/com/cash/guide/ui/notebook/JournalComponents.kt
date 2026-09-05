@@ -653,7 +653,7 @@ fun JournalCalculationRow(
                 text = totalAmount,
                 fontFamily = PatrickHandFamily,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
                 modifier = Modifier.offset(y = 5.5.dp)

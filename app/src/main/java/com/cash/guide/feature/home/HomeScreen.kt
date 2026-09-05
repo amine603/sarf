@@ -290,8 +290,10 @@ fun HomeScreen(
                     }
                 }
 
-                // "Voir tout" under the content on the right
+                // "Voir tout" under the content on the right (with 1 skipped line before it)
                 if (state.displayDateGroups.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
