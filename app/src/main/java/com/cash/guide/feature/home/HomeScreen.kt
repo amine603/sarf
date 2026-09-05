@@ -61,8 +61,13 @@ import com.cash.guide.domain.DateGroupHelper
 import com.cash.guide.ui.notebook.JournalPrimaryActionButton
 import com.cash.guide.ui.notebook.JournalFloatingActionButton
 import com.cash.guide.ui.notebook.JournalInlineSearchRow
-import com.cash.guide.ui.notebook.JournalTwoLineCalculationRow
 import com.cash.guide.ui.notebook.JournalFavoritesHeader
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.cash.guide.ui.notebook.MonthPickerDialog
+import java.text.SimpleDateFormat
+import java.util.Date
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -77,6 +82,7 @@ fun HomeScreen(
     onNewCalculation: () -> Unit,
     onOpenCalculation: (String) -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenMonthCalculations: (year: Int, month: Int) -> Unit = { _, _ -> },
     onOpenStyleShowcase: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -85,60 +91,110 @@ fun HomeScreen(
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
 
+    var showMonthPicker by remember { mutableStateOf(false) }
+    val currentMonthYear = remember(context) {
+        val locale = context.resources.configuration.locales[0]
+        SimpleDateFormat("MMMM yyyy", locale).format(Date()).replaceFirstChar {
+            if (it.isLowerCase()) it.titlecase(locale) else it.toString()
+        }
+    }
+
     LaunchedEffect(context) {
         viewModel.loadRecent(context)
     }
 
     Box(modifier = modifier.fillMaxSize()) {
         JournalRuledDocument(modifier = Modifier.fillMaxSize()) {
-            // Line 1: Greeting Band ("Bonjour Youssef" / "مرحباً يوسف" sitting directly on the ruled line)
+            // Line 1: Greeting Band ("Bonjour Youssef :)" / "صباح الخير يوسف :)" + Month Year sitting directly on the ruled line)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(JournalRuleSpacing)
                     .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    if (isRtl) {
+                        Text(
+                            text = "صباح الخير ",
+                            fontFamily = TajawalFamily,
+                            fontSize = 17.5.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = JournalInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.offset(y = 6.0.dp)
+                        )
+                        Text(
+                            text = "يوسف",
+                            fontFamily = TajawalFamily,
+                            fontSize = 17.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.offset(y = 6.0.dp)
+                        )
+                        Text(
+                            text = "  :)",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.offset(y = 5.5.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "Bonjour ",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = JournalInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.offset(y = 5.5.dp)
+                        )
+                        Text(
+                            text = "Youssef",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.offset(y = 5.5.dp)
+                        )
+                        Text(
+                            text = " :)",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.offset(y = 5.5.dp)
+                        )
+                    }
+                }
+
                 Text(
-                    text = stringResource(R.string.home_greeting),
+                    text = currentMonthYear,
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 18.5.sp else 21.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalInk,
+                    fontSize = if (isRtl) 14.5.sp else 16.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = JournalMutedInk.copy(alpha = 0.80f),
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
                 )
             }
 
-            // Line 2: Prominent Ruled-Line Search Row with attached thin line and Calendar icon
+            // Line 2: Prominent Ruled-Line Search Row with Calendar icon popup
             JournalInlineSearchRow(
                 query = state.searchQuery,
                 onQueryChange = { query -> viewModel.updateSearchQuery(query) },
-                onOpenCalendar = {
-                    val activity = context.findActivity() ?: return@JournalInlineSearchRow
-                    val cal = java.util.Calendar.getInstance()
-                    state.selectedDateEpoch?.let { cal.timeInMillis = it }
-                    android.app.DatePickerDialog(
-                        activity,
-                        { _, year, month, dayOfMonth ->
-                            val picked = java.util.Calendar.getInstance().apply {
-                                set(java.util.Calendar.YEAR, year)
-                                set(java.util.Calendar.MONTH, month)
-                                set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
-                                set(java.util.Calendar.HOUR_OF_DAY, 12)
-                                set(java.util.Calendar.MINUTE, 0)
-                                set(java.util.Calendar.SECOND, 0)
-                            }
-                            viewModel.filterByDate(picked.timeInMillis)
-                        },
-                        cal.get(java.util.Calendar.YEAR),
-                        cal.get(java.util.Calendar.MONTH),
-                        cal.get(java.util.Calendar.DAY_OF_MONTH)
-                    ).show()
-                },
+                onOpenCalendar = { showMonthPicker = true },
                 isDateFiltered = state.selectedDateEpoch != null,
-                showUnderline = true
+                showUnderline = false
             )
 
             // Lines 3 & 4: Skip 2 ruled lines ("na9ezz 2 stoura ta7t search")
@@ -158,21 +214,18 @@ fun HomeScreen(
                             } else {
                                 stringResource(R.string.currency_rial)
                             }
-                            val subtitle = DateGroupHelper.formatHomeCalculationSubtitle(
-                                epochMs = calc.calculation.updatedAtEpochMs,
-                                locale = context.resources.configuration.locales[0]
-                            )
 
-                            JournalTwoLineCalculationRow(
+                            JournalCalculationRow(
                                 index = idx,
                                 title = calc.calculation.title,
-                                subtitle = subtitle,
                                 totalAmount = totalFormatted,
                                 currencySuffix = currencySuffix,
-                                isPinned = false,
                                 onClick = { onOpenCalculation(calc.calculation.id) },
                                 onMoreClick = { viewModel.selectCalculationForAction(calc) }
                             )
+
+                            // 1 empty notebook line between calculations ("star khawi")
+                            Spacer(modifier = Modifier.height(JournalRuleSpacing))
                         }
                     } else {
                         // Subtle hint row sitting directly on the ruled line
@@ -187,26 +240,23 @@ fun HomeScreen(
                             Text(
                                 text = stringResource(R.string.home_favorites_empty_hint),
                                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                fontSize = if (isRtl) 13.5.sp else 14.5.sp,
+                                fontSize = if (isRtl) 14.sp else 15.sp,
                                 fontWeight = FontWeight.Normal,
                                 color = JournalMutedInk.copy(alpha = 0.65f),
                                 style = TextStyle(platformStyle = NoFontPadding),
-                                modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+                                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
                             )
                         }
-                    }
 
-                    // 1 empty notebook line before "Vos calculs"
-                    Spacer(modifier = Modifier.height(JournalRuleSpacing))
+                        // 1 empty notebook line before "Vos calculs"
+                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
+                    }
                 }
 
                 // Section header ("VOS CALCULS" / "حساباتك") with edge-to-edge flush highlight
                 JournalRecentHeader()
 
-                // Skip 1 line before Aujourd'hui ("na9ez star 3ad dir aujourduit")
-                Spacer(modifier = Modifier.height(JournalRuleSpacing))
-
-                // Date-grouped saved calculations (each calculation is exactly 2 ruled lines = 58dp, zero cards)
+                // Date-grouped saved calculations (moved up directly below header with zero extra spacer)
                 state.displayDateGroups.forEachIndexed { groupIndex, group ->
                     JournalDateRuleBand(title = group.header)
 
@@ -218,25 +268,22 @@ fun HomeScreen(
                         } else {
                             stringResource(R.string.currency_rial)
                         }
-                        val subtitle = DateGroupHelper.formatHomeCalculationSubtitle(
-                            epochMs = calc.calculation.updatedAtEpochMs,
-                            locale = context.resources.configuration.locales[0]
-                        )
 
-                        JournalTwoLineCalculationRow(
+                        JournalCalculationRow(
                             index = idx,
                             title = calc.calculation.title,
-                            subtitle = subtitle,
                             totalAmount = totalFormatted,
                             currencySuffix = currencySuffix,
-                            isPinned = false,
                             onClick = { onOpenCalculation(calc.calculation.id) },
                             onMoreClick = { viewModel.selectCalculationForAction(calc) }
                         )
+
+                        // 1 empty notebook line between calculations ("yban lina ghir lfar9 bina kol calcul o lakher bi star khawi")
+                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
                     }
 
-                    // 1 empty notebook line between date groups
-                    if (groupIndex < state.displayDateGroups.lastIndex) {
+                    // 1 empty notebook line between date groups if not already separated
+                    if (group.calculations.isEmpty() && groupIndex < state.displayDateGroups.lastIndex) {
                         Spacer(modifier = Modifier.height(JournalRuleSpacing))
                     }
                 }
@@ -260,7 +307,7 @@ fun HomeScreen(
                             style = TextStyle(platformStyle = NoFontPadding),
                             modifier = Modifier
                                 .clickable(role = Role.Button, onClick = onOpenHistory)
-                                .offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+                                .offset(y = if (isRtl) 6.0.dp else 5.5.dp)
                         )
                     }
                 }
@@ -284,7 +331,7 @@ fun HomeScreen(
                         fontWeight = FontWeight.Medium,
                         color = JournalMutedInk,
                         style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+                        modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
                     )
                 }
             }
@@ -327,6 +374,20 @@ fun HomeScreen(
             DeleteConfirmationDialog(
                 onConfirmDelete = { viewModel.confirmDelete() },
                 onDismiss = { viewModel.dismissDeleteDialog() }
+            )
+        }
+
+        // Month Picker Dialog Popup when calendar icon is clicked
+        if (showMonthPicker) {
+            val cal = remember { java.util.Calendar.getInstance() }
+            MonthPickerDialog(
+                initialYear = cal.get(java.util.Calendar.YEAR),
+                initialMonth = cal.get(java.util.Calendar.MONTH) + 1,
+                onDismiss = { showMonthPicker = false },
+                onSelectMonth = { year, month ->
+                    showMonthPicker = false
+                    onOpenMonthCalculations(year, month)
+                }
             )
         }
 

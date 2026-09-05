@@ -124,6 +124,7 @@ fun HssabiApp() {
                     homeViewModel = homeViewModel,
                     historyViewModel = historyViewModel,
                     settingsViewModel = settingsViewModel,
+                    calculationRepository = calculationRepository,
                     editorViewModelFactory = {
                         CalculationEditorViewModel(
                             calculationRepository = calculationRepository,

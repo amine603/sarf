@@ -582,6 +582,8 @@ fun JournalCalculationRow(
     onMoreClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
     val isLatinSuffix = currencySuffix.contains(Regex("[a-zA-Z]"))
 
     // Rotating soft pastel watercolor bullet dot colors per row (exact same palette as calculation page)
@@ -620,21 +622,21 @@ fun JournalCalculationRow(
             Canvas(
                 modifier = Modifier
                     .size(7.5.dp)
-                    .offset(y = 0.2.dp)
+                    .offset(y = if (isRtl) (-0.5).dp else 0.dp)
             ) {
                 drawCircle(color = dotColor)
             }
 
             Text(
                 text = title.ifBlank { stringResource(R.string.editor_new_title) },
-                fontFamily = PatrickHandFamily,
-                fontSize = 17.5.sp,
-                fontWeight = FontWeight.Normal,
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 16.5.sp else 17.5.sp,
+                fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
                 color = JournalInk,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 5.7.dp)
+                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
             )
         }
 
@@ -652,7 +654,7 @@ fun JournalCalculationRow(
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 5.7.dp)
+                modifier = Modifier.offset(y = 5.5.dp)
             )
 
             Text(
@@ -662,7 +664,7 @@ fun JournalCalculationRow(
                 fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.SemiBold,
                 color = JournalMutedInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isLatinSuffix) 5.8.dp else 5.0.dp)
+                modifier = Modifier.offset(y = if (isLatinSuffix) 5.5.dp else 5.8.dp)
             )
 
             // Three dots icon (⋮)
@@ -773,19 +775,19 @@ fun JournalRecentHeader(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.Start
     ) {
-        // Highlight starts flush at the screen edge (touches x = 0)
+        // Highlight starts flush at the screen edge (touches x = 0, sitting directly on the blue line)
         Box(
             modifier = Modifier
                 .width(24.dp)
-                .offset(y = (-3.5).dp)
-                .height(16.5.dp)
+                .offset(y = 0.dp)
+                .height(16.dp)
                 .clip(RoundedCornerShape(topStart = 0.dp, bottomStart = 0.dp, topEnd = 3.dp, bottomEnd = 3.dp))
                 .background(markerColor)
         )
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Uppercase Title text sitting on the ruled line, matching highlight vertically
+        // Uppercase Title text sitting directly on the blue ruled line
         Text(
             text = if (isRtl) stringResource(R.string.home_recent_title) else stringResource(R.string.home_recent_title).uppercase(),
             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
@@ -793,17 +795,17 @@ fun JournalRecentHeader(
             fontWeight = FontWeight.Bold,
             color = JournalInk,
             style = TextStyle(platformStyle = NoFontPadding),
-            modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+            modifier = Modifier.offset(y = if (isRtl) 6.2.dp else 5.8.dp)
         )
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Full-width Mildliner line extending all the way to opposite screen edge
+        // Full-width Mildliner line extending all the way to opposite screen edge sitting on the blue line
         Box(
             modifier = Modifier
                 .weight(1f)
-                .offset(y = (-3.5).dp)
-                .height(16.5.dp)
+                .offset(y = 0.dp)
+                .height(16.dp)
                 .clip(RoundedCornerShape(topStart = 3.dp, bottomStart = 3.dp, topEnd = 0.dp, bottomEnd = 0.dp))
                 .background(markerColor)
         )
@@ -829,19 +831,19 @@ fun JournalFavoritesHeader(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.Start
     ) {
-        // Highlight starts flush at the screen edge (touches x = 0)
+        // Highlight starts flush at the screen edge (touches x = 0, sitting directly on the blue line)
         Box(
             modifier = Modifier
                 .width(24.dp)
-                .offset(y = (-3.5).dp)
-                .height(16.5.dp)
+                .offset(y = 0.dp)
+                .height(16.dp)
                 .clip(RoundedCornerShape(topStart = 0.dp, bottomStart = 0.dp, topEnd = 3.dp, bottomEnd = 3.dp))
                 .background(markerColor)
         )
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Uppercase Title text sitting on the ruled line, matching highlight vertically
+        // Uppercase Title text sitting directly on the blue ruled line
         Text(
             text = if (isRtl) stringResource(R.string.home_favorites_title) else stringResource(R.string.home_favorites_title).uppercase(),
             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
@@ -849,17 +851,17 @@ fun JournalFavoritesHeader(
             fontWeight = FontWeight.Bold,
             color = JournalInk,
             style = TextStyle(platformStyle = NoFontPadding),
-            modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+            modifier = Modifier.offset(y = if (isRtl) 6.2.dp else 5.8.dp)
         )
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Full-width Mildliner line extending all the way to opposite screen edge
+        // Full-width Mildliner line extending all the way to opposite screen edge sitting on the blue line
         Box(
             modifier = Modifier
                 .weight(1f)
-                .offset(y = (-3.5).dp)
-                .height(16.5.dp)
+                .offset(y = 0.dp)
+                .height(16.dp)
                 .clip(RoundedCornerShape(topStart = 3.dp, bottomStart = 3.dp, topEnd = 0.dp, bottomEnd = 0.dp))
                 .background(markerColor)
         )
@@ -903,11 +905,11 @@ fun JournalDateRuleBand(
     ) {
         Box(
             modifier = Modifier.drawBehind {
-                // Soft highlighter wash behind the date word without disturbing the text baseline
+                // Soft highlighter wash behind the date word sitting directly above the blue line
                 val h = size.height
                 val w = size.width
-                val washY = h - (if (isRtl) 11.5.dp.toPx() else 10.5.dp.toPx())
-                val washHeight = 12.dp.toPx()
+                val washY = h - (if (isRtl) 10.dp.toPx() else 9.dp.toPx())
+                val washHeight = 13.dp.toPx()
                 val padH = 6.dp.toPx()
                 drawRoundRect(
                     color = highlighterWashColor,
@@ -920,11 +922,11 @@ fun JournalDateRuleBand(
             Text(
                 text = title,
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 14.5.sp else 15.sp,
+                fontSize = if (isRtl) 15.sp else 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
             )
         }
     }
@@ -1015,27 +1017,6 @@ fun JournalInlineSearchRow(
         .fillMaxWidth()
         .height(JournalRuleSpacing)
         .padding(horizontal = 14.dp)
-        .drawBehind {
-            if (showUnderline) {
-                // Drawn directly on top of the notebook blue ruled line (size.height)
-                val strokeW = 1.1.dp.toPx()
-                val inkColor = JournalInk.copy(alpha = 0.50f)
-                val lineY = size.height
-                if (isRtl) {
-                    val startX = 14.dp.toPx() + (if (onOpenCalendar != null) 30.dp.toPx() else 0f) + (if (query.isNotEmpty()) 24.dp.toPx() else 0f)
-                    val endX = size.width - 14.dp.toPx() - 20.dp.toPx()
-                    if (endX > startX) {
-                        drawLine(inkColor, Offset(startX, lineY), Offset(endX, lineY), strokeW, StrokeCap.Round)
-                    }
-                } else {
-                    val startX = 14.dp.toPx() + 20.dp.toPx()
-                    val endX = size.width - 14.dp.toPx() - (if (onOpenCalendar != null) 30.dp.toPx() else 0f) - (if (query.isNotEmpty()) 24.dp.toPx() else 0f)
-                    if (endX > startX) {
-                        drawLine(inkColor, Offset(startX, lineY), Offset(endX, lineY), strokeW, StrokeCap.Round)
-                    }
-                }
-            }
-        }
         .then(
             if (onClick != null && onQueryChange == null) {
                 Modifier.clickable(role = Role.Button, onClick = onClick)
@@ -1059,14 +1040,19 @@ fun JournalInlineSearchRow(
                     contentDescription = null,
                     tint = JournalInk,
                     size = 18.dp,
-                    modifier = Modifier.offset(y = 3.5.dp)
+                    modifier = Modifier.offset(y = 1.0.dp)
                 )
 
+                // Soft grey highlight capsule around the search input
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .offset(y = 5.7.dp),
-                    contentAlignment = Alignment.BottomStart
+                        .height(24.dp)
+                        .offset(y = (-1.0).dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFF6B7067).copy(alpha = 0.16f))
+                        .padding(horizontal = 8.dp),
+                    contentAlignment = Alignment.CenterStart
                 ) {
                     if (onQueryChange != null) {
                         BasicTextField(
@@ -1077,7 +1063,7 @@ fun JournalInlineSearchRow(
                             cursorBrush = SolidColor(JournalInk),
                             textStyle = TextStyle(
                                 fontFamily = TajawalFamily,
-                                fontSize = 16.sp,
+                                fontSize = 14.5.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = JournalInk,
                                 platformStyle = NoFontPadding
@@ -1087,9 +1073,9 @@ fun JournalInlineSearchRow(
                                     Text(
                                         text = placeholder,
                                         fontFamily = TajawalFamily,
-                                        fontSize = 15.5.sp,
-                                        fontWeight = FontWeight.Normal,
-                                        color = JournalMutedInk.copy(alpha = 0.55f),
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = JournalWritingInk.copy(alpha = 0.75f),
                                         style = TextStyle(platformStyle = NoFontPadding)
                                     )
                                 } else {
@@ -1101,9 +1087,9 @@ fun JournalInlineSearchRow(
                         Text(
                             text = placeholder,
                             fontFamily = TajawalFamily,
-                            fontSize = 15.5.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = JournalMutedInk.copy(alpha = 0.55f),
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = JournalWritingInk.copy(alpha = 0.75f),
                             style = TextStyle(platformStyle = NoFontPadding)
                         )
                     }
@@ -1114,7 +1100,7 @@ fun JournalInlineSearchRow(
             Row(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.offset(y = 3.5.dp)
+                modifier = Modifier.offset(y = 1.0.dp)
             ) {
                 if (onOpenCalendar != null) {
                     Box(
@@ -1163,14 +1149,19 @@ fun JournalInlineSearchRow(
                     contentDescription = null,
                     tint = JournalInk,
                     size = 18.dp,
-                    modifier = Modifier.offset(y = 3.5.dp)
+                    modifier = Modifier.offset(y = 1.0.dp)
                 )
 
+                // Soft grey highlight capsule around the search input
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .offset(y = 5.7.dp),
-                    contentAlignment = Alignment.BottomStart
+                        .height(24.dp)
+                        .offset(y = (-1.0).dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color(0xFF6B7067).copy(alpha = 0.16f))
+                        .padding(horizontal = 8.dp),
+                    contentAlignment = Alignment.CenterStart
                 ) {
                     if (onQueryChange != null) {
                         BasicTextField(
@@ -1181,7 +1172,7 @@ fun JournalInlineSearchRow(
                             cursorBrush = SolidColor(JournalInk),
                             textStyle = TextStyle(
                                 fontFamily = PatrickHandFamily,
-                                fontSize = 17.sp,
+                                fontSize = 15.5.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = JournalInk,
                                 platformStyle = NoFontPadding
@@ -1191,9 +1182,9 @@ fun JournalInlineSearchRow(
                                     Text(
                                         text = placeholder,
                                         fontFamily = PatrickHandFamily,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Normal,
-                                        color = JournalMutedInk.copy(alpha = 0.55f),
+                                        fontSize = 14.5.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = JournalWritingInk.copy(alpha = 0.75f),
                                         style = TextStyle(platformStyle = NoFontPadding)
                                     )
                                 } else {
@@ -1205,9 +1196,9 @@ fun JournalInlineSearchRow(
                         Text(
                             text = placeholder,
                             fontFamily = PatrickHandFamily,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = JournalMutedInk.copy(alpha = 0.55f),
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = JournalWritingInk.copy(alpha = 0.75f),
                             style = TextStyle(platformStyle = NoFontPadding)
                         )
                     }
@@ -1218,7 +1209,7 @@ fun JournalInlineSearchRow(
             Row(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.offset(y = 3.5.dp)
+                modifier = Modifier.offset(y = 1.0.dp)
             ) {
                 if (!query.isEmpty() && onQueryChange != null) {
                     Box(
@@ -1260,8 +1251,8 @@ fun JournalInlineSearchRow(
 }
 
 /**
- * Notebook ledger primary action button positioned at the bottom-right ("+ Nouveau calcul" / "+ حساب جديد").
- * Matches the exact aesthetic of the soft pink highlighter pill button with paper shadow.
+ * Notebook ledger primary action button positioned at the bottom-right.
+ * Circular button with handwritten '+' in notebook sketch style with soft pink highlighter.
  */
 @Composable
 fun JournalFloatingActionButton(
@@ -1269,54 +1260,36 @@ fun JournalFloatingActionButton(
     modifier: Modifier = Modifier,
     text: String = stringResource(R.string.home_new_calculation)
 ) {
-    val layoutDirection = LocalLayoutDirection.current
-    val isRtl = layoutDirection == LayoutDirection.Rtl
-
     Box(
         modifier = modifier
+            .size(52.dp)
             .shadow(
                 elevation = 4.dp,
-                shape = RoundedCornerShape(22.dp),
-                ambientColor = JournalInk.copy(alpha = 0.20f),
-                spotColor = JournalInk.copy(alpha = 0.25f)
+                shape = CircleShape,
+                ambientColor = JournalInk.copy(alpha = 0.22f),
+                spotColor = JournalInk.copy(alpha = 0.28f)
             )
-            .clip(RoundedCornerShape(22.dp))
-            .background(HighlighterPink.copy(alpha = 0.60f))
+            .clip(CircleShape)
+            .background(HighlighterPink.copy(alpha = 0.80f))
             .border(
-                width = 0.85.dp,
-                color = JournalInk.copy(alpha = 0.20f),
-                shape = RoundedCornerShape(22.dp)
+                width = 1.dp,
+                color = JournalInk.copy(alpha = 0.30f),
+                shape = CircleShape
             )
             .clickable(
                 role = Role.Button,
                 onClickLabel = text,
                 onClick = onClick
-            )
-            .padding(horizontal = 20.dp, vertical = 11.dp),
+            ),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Canvas(modifier = Modifier.size(13.dp)) {
-                val strokeW = 1.9.dp.toPx()
-                val ink = JournalInk
-                val midX = size.width / 2f
-                val midY = size.height / 2f
-                drawLine(ink, Offset(1.dp.toPx(), midY), Offset(size.width - 1.dp.toPx(), midY), strokeW, StrokeCap.Round)
-                drawLine(ink, Offset(midX, 1.dp.toPx()), Offset(midX, size.height - 1.dp.toPx()), strokeW, StrokeCap.Round)
-            }
-
-            Text(
-                text = text,
-                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 16.5.sp else 17.5.sp,
-                fontWeight = FontWeight.Bold,
-                color = JournalInk,
-                style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) (-0.5).dp else 0.dp)
-            )
+        Canvas(modifier = Modifier.size(18.dp)) {
+            val strokeW = 2.4.dp.toPx()
+            val ink = JournalInk
+            val midX = size.width / 2f
+            val midY = size.height / 2f
+            drawLine(ink, Offset(1.5.dp.toPx(), midY), Offset(size.width - 1.5.dp.toPx(), midY), strokeW, StrokeCap.Round)
+            drawLine(ink, Offset(midX, 1.5.dp.toPx()), Offset(midX, size.height - 1.5.dp.toPx()), strokeW, StrokeCap.Round)
         }
     }
 }

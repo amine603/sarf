@@ -11,4 +11,9 @@ sealed class AppDestination(val route: String) {
             const val ROUTE_PATTERN = "calculation/{calculationId}"
         }
     }
+    data class MonthCalculations(val year: Int, val month: Int) : AppDestination("month_calculations/$year/$month") {
+        companion object {
+            const val ROUTE_PATTERN = "month_calculations/{year}/{month}"
+        }
+    }
 }

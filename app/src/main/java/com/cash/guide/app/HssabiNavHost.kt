@@ -18,12 +18,17 @@ import com.cash.guide.feature.settings.SettingsViewModel
 
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+import com.cash.guide.data.CalculationRepository
+import com.cash.guide.feature.history.MonthCalculationsScreen
+import java.util.Calendar
+
 @Composable
 fun HssabiNavHost(
     navController: NavHostController,
     homeViewModel: HomeViewModel,
     historyViewModel: HistoryViewModel,
     settingsViewModel: SettingsViewModel,
+    calculationRepository: CalculationRepository,
     editorViewModelFactory: () -> CalculationEditorViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -38,6 +43,9 @@ fun HssabiNavHost(
                 onNewCalculation = { navController.navigate(AppDestination.NewCalculation.route) },
                 onOpenCalculation = { id -> navController.navigate("calculation/$id") },
                 onOpenHistory = { navController.navigate(AppDestination.History.route) },
+                onOpenMonthCalculations = { year, month ->
+                    navController.navigate("month_calculations/$year/$month")
+                },
                 onOpenStyleShowcase = { navController.navigate(AppDestination.StyleShowcase.route) }
             )
         }
@@ -89,6 +97,24 @@ fun HssabiNavHost(
             CalculationEditorScreen(
                 viewModel = editorViewModel,
                 calculationId = calcId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = AppDestination.MonthCalculations.ROUTE_PATTERN,
+            arguments = listOf(
+                navArgument("year") { type = NavType.IntType },
+                navArgument("month") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val year = backStackEntry.arguments?.getInt("year") ?: Calendar.getInstance().get(Calendar.YEAR)
+            val month = backStackEntry.arguments?.getInt("month") ?: (Calendar.getInstance().get(Calendar.MONTH) + 1)
+            MonthCalculationsScreen(
+                year = year,
+                month = month,
+                repository = calculationRepository,
+                onOpenCalculation = { id -> navController.navigate("calculation/$id") },
                 onNavigateBack = { navController.popBackStack() }
             )
         }

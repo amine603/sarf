@@ -162,21 +162,33 @@ fun HisabiSketchIcon(
                 drawLine(tint, point(8f, 19f), point(13f, 19f), u(1.1f), StrokeCap.Round)
             }
             HisabiSymbol.Home -> {
-                val house = Path().apply {
-                    moveTo(u(3.5f), u(11f))
-                    lineTo(u(12f), u(4f))
-                    lineTo(u(20.5f), u(11f))
-                    lineTo(u(19f), u(11f))
-                    lineTo(u(19f), u(20f))
-                    lineTo(u(14.5f), u(20f))
-                    lineTo(u(14.5f), u(14f))
-                    lineTo(u(9.5f), u(14f))
-                    lineTo(u(9.5f), u(20f))
-                    lineTo(u(5f), u(20f))
-                    lineTo(u(5f), u(11f))
-                    close()
+                // Sleek sketched architectural home with roof, chimney, walls, and arched door
+                // Roof
+                val roof = Path().apply {
+                    moveTo(u(3f), u(11f))
+                    lineTo(u(12f), u(4.2f))
+                    lineTo(u(21f), u(11f))
                 }
-                drawPath(house, tint, style = pen)
+                drawPath(roof, tint, style = pen)
+                // Chimney
+                drawLine(tint, point(16.5f, 7.5f), point(16.5f, 4.8f), u(1.3f), StrokeCap.Round)
+                drawLine(tint, point(15.5f, 4.8f), point(17.5f, 4.8f), u(1.2f), StrokeCap.Round)
+                // House body
+                val walls = Path().apply {
+                    moveTo(u(5.5f), u(10.5f))
+                    lineTo(u(5.5f), u(19f))
+                    lineTo(u(18.5f), u(19f))
+                    lineTo(u(18.5f), u(10.5f))
+                }
+                drawPath(walls, tint, style = fine)
+                // Arched door
+                val door = Path().apply {
+                    moveTo(u(9.5f), u(19f))
+                    lineTo(u(9.5f), u(14.5f))
+                    quadraticBezierTo(u(12f), u(12.5f), u(14.5f), u(14.5f))
+                    lineTo(u(14.5f), u(19f))
+                }
+                drawPath(door, tint, style = fine)
             }
             HisabiSymbol.Search -> {
                 drawCircle(tint, u(6.5f), point(10f, 10f), style = pen)
@@ -205,22 +217,53 @@ fun HisabiSketchIcon(
                 drawCircle(tint, u(0.75f), point(16f, 15.5f))
             }
             HisabiSymbol.Clock -> {
-                drawCircle(tint, u(8.5f), point(12f, 12f), style = pen)
-                drawLine(tint, point(12f, 12f), point(12f, 7f), u(1.5f), StrokeCap.Round)
+                // Sketched time & history dial with open backward circular arrow
+                val arcPath = Path().apply {
+                    // 280 degree arc
+                    arcTo(
+                        rect = androidx.compose.ui.geometry.Rect(u(3.5f), u(3.5f), u(20.5f), u(20.5f)),
+                        startAngleDegrees = -75f,
+                        sweepAngleDegrees = 320f,
+                        forceMoveTo = true
+                    )
+                }
+                drawPath(arcPath, tint, style = pen)
+                // Backward arrow head at the top-left opening
+                val arrowHead = Path().apply {
+                    moveTo(u(6.8f), u(2.2f))
+                    lineTo(u(10.5f), u(3.8f))
+                    lineTo(u(8.8f), u(7.2f))
+                }
+                drawPath(arrowHead, tint, style = pen)
+                // Clock hands (hour & minute)
+                drawLine(tint, point(12f, 12f), point(12f, 7.5f), u(1.4f), StrokeCap.Round)
                 drawLine(tint, point(12f, 12f), point(15.5f, 12f), u(1.4f), StrokeCap.Round)
-                drawCircle(tint, u(1.1f), point(12f, 12f))
+                drawCircle(tint, u(1.2f), point(12f, 12f))
             }
             HisabiSymbol.Gear -> {
-                val outerRadius = 8f
-                val innerRadius = 3.5f
-                drawCircle(tint, u(innerRadius), point(12f, 12f), style = pen)
-                drawCircle(tint, u(outerRadius), point(12f, 12f), style = fine)
-                for (i in 0 until 6) {
-                    val angle = (i * 60.0) * Math.PI / 180.0
-                    val cx = 12f + (outerRadius * kotlin.math.cos(angle)).toFloat()
-                    val cy = 12f + (outerRadius * kotlin.math.sin(angle)).toFloat()
-                    drawCircle(tint, u(1.4f), point(cx, cy))
+                // Sleek authentic 6-tooth mechanical gear
+                val rInner = 6.2f
+                val rOuter = 8.8f
+                val gearPath = Path().apply {
+                    for (i in 0 until 6) {
+                        val a0 = ((i * 60f - 14f) * Math.PI / 180.0).toFloat()
+                        val a1 = ((i * 60f - 7f) * Math.PI / 180.0).toFloat()
+                        val a2 = ((i * 60f + 7f) * Math.PI / 180.0).toFloat()
+                        val a3 = ((i * 60f + 14f) * Math.PI / 180.0).toFloat()
+                        val p0 = Offset(u(12f + rInner * kotlin.math.cos(a0)), u(12f + rInner * kotlin.math.sin(a0)))
+                        val p1 = Offset(u(12f + rOuter * kotlin.math.cos(a1)), u(12f + rOuter * kotlin.math.sin(a1)))
+                        val p2 = Offset(u(12f + rOuter * kotlin.math.cos(a2)), u(12f + rOuter * kotlin.math.sin(a2)))
+                        val p3 = Offset(u(12f + rInner * kotlin.math.cos(a3)), u(12f + rInner * kotlin.math.sin(a3)))
+                        if (i == 0) moveTo(p0.x, p0.y) else lineTo(p0.x, p0.y)
+                        lineTo(p1.x, p1.y)
+                        lineTo(p2.x, p2.y)
+                        lineTo(p3.x, p3.y)
+                    }
+                    close()
                 }
+                drawPath(gearPath, tint, style = fine)
+                // Center axle hole
+                drawCircle(tint, u(3.2f), point(12f, 12f), style = pen)
             }
             HisabiSymbol.Lightbulb -> {
                 val bulb = Path().apply {

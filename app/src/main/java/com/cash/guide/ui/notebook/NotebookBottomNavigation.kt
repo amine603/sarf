@@ -51,8 +51,8 @@ fun NotebookBottomNavigation(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(68.dp)
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                    .height(52.dp)
+                    .padding(horizontal = 10.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
@@ -102,11 +102,11 @@ private fun BottomNavItem(
 
     Box(
         modifier = modifier
-            .height(58.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (isSelected) HighlighterPink.copy(alpha = 0.40f) else Color.Transparent)
+            .height(44.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isSelected) HighlighterPink.copy(alpha = 0.35f) else Color.Transparent)
             .clickable(role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
             .semantics {
                 contentDescription = "$label, $selectedDesc"
             },
@@ -114,19 +114,19 @@ private fun BottomNavItem(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             HisabiSketchIcon(
                 symbol = symbol,
                 contentDescription = null,
                 tint = if (isSelected) JournalInk else JournalMutedInk,
-                size = 22.dp
+                size = 19.dp
             )
 
             Text(
                 text = label,
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 12.5.sp else 13.5.sp,
+                fontSize = if (isRtl) 11.5.sp else 12.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 color = if (isSelected) JournalInk else JournalMutedInk,
                 maxLines = 1
