@@ -39,7 +39,8 @@ enum class HisabiSymbol {
     Lightbulb,
     Pencil,
     Copy,
-    Calendar
+    Calendar,
+    Pin
 }
 
 @Composable
@@ -285,6 +286,31 @@ fun HisabiSketchIcon(
                 drawCircle(tint, u(0.85f), point(16f, 13f))
                 drawCircle(tint, u(0.85f), point(8f, 16.5f))
                 drawCircle(tint, u(0.85f), point(12f, 16.5f))
+            }
+            HisabiSymbol.Pin -> {
+                // Pin needle pointing down
+                drawLine(tint, point(12f, 15f), point(12f, 21.5f), u(1.4f), StrokeCap.Round)
+                // Bottom flange / base of pin head
+                drawLine(tint, point(8f, 15f), point(16f, 15f), u(1.5f), StrokeCap.Round)
+                // Pin body tapered sides
+                val bodyPath = Path().apply {
+                    moveTo(u(9f), u(8.5f))
+                    lineTo(u(8.2f), u(15f))
+                    moveTo(u(15f), u(8.5f))
+                    lineTo(u(15.8f), u(15f))
+                    // Top ridge
+                    moveTo(u(8f), u(8.5f))
+                    lineTo(u(16f), u(8.5f))
+                }
+                drawPath(bodyPath, tint, style = pen)
+                // Top knob of pin
+                drawRoundRect(
+                    tint,
+                    topLeft = point(9.5f, 4f),
+                    size = Size(u(5f), u(4.5f)),
+                    cornerRadius = CornerRadius(u(2f)),
+                    style = pen
+                )
             }
         }
     }

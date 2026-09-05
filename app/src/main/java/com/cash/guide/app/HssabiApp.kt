@@ -65,7 +65,7 @@ fun HssabiApp() {
     }
     val layoutDirection = if (appLanguage == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr
 
-    val homeViewModel = viewModel { HomeViewModel(calculationRepository) }
+    val homeViewModel = viewModel { HomeViewModel(calculationRepository, settingsRepository) }
     val historyViewModel = viewModel { HistoryViewModel(calculationRepository) }
     val settingsViewModel = viewModel { SettingsViewModel(settingsRepository) }
 

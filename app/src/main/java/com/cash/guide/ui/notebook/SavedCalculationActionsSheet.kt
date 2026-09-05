@@ -39,6 +39,8 @@ import com.cash.guide.R
 @Composable
 fun SavedCalculationActionsSheet(
     calculationTitle: String,
+    isPinned: Boolean = false,
+    onTogglePin: () -> Unit = {},
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
@@ -93,7 +95,20 @@ fun SavedCalculationActionsSheet(
 
             HorizontalDivider(color = JournalRule.copy(alpha = 0.45f), thickness = 0.6.dp)
 
-            // Action 1: Modifier
+            // Action 1: Épingler / Désépingler (Pin)
+            ActionSheetItem(
+                label = stringResource(if (isPinned) R.string.action_unpin else R.string.action_pin),
+                symbol = HisabiSymbol.Pin,
+                badgeColor = HighlighterBlue.copy(alpha = 0.50f),
+                onClick = {
+                    onDismiss()
+                    onTogglePin()
+                }
+            )
+
+            HorizontalDivider(color = JournalRule.copy(alpha = 0.35f), thickness = 0.5.dp)
+
+            // Action 2: Modifier
             ActionSheetItem(
                 label = stringResource(R.string.action_edit),
                 symbol = HisabiSymbol.Pencil,

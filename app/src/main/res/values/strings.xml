@@ -12,6 +12,10 @@
     <string name="home_search_placeholder">Rechercher un calcul</string>
     <string name="home_new_calculation">Nouveau calcul</string>
     <string name="home_recent_title">Vos calculs</string>
+    <string name="home_favorites_title">Vos favoris</string>
+    <string name="home_favorites_empty_hint">Épinglez vos calculs importants ici (⋮)</string>
+    <string name="action_pin">Épingler</string>
+    <string name="action_unpin">Désépingler</string>
     <string name="home_pick_date">Choisir une date</string>
     <string name="home_clear_date_filter">Effacer le filtre</string>
     <string name="home_no_results_for_date">Aucun calcul pour cette date</string>

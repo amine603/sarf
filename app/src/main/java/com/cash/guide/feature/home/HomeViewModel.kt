@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cash.guide.R
+import com.cash.guide.data.SettingsRepository
 import com.cash.guide.data.CalculationRepository
 import com.cash.guide.data.db.CalculationWithItems
 import com.cash.guide.domain.DateGroupHelper
@@ -14,7 +15,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val repository: CalculationRepository
+    private val repository: CalculationRepository,
+    private val settingsRepository: SettingsRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -22,6 +24,23 @@ class HomeViewModel(
 
     private var allItems: List<CalculationWithItems> = emptyList()
     private var lastContext: Context? = null
+
+    init {
+        if (settingsRepository != null) {
+            viewModelScope.launch {
+                settingsRepository.pinnedCalculationIds.collect { pinned ->
+                    _uiState.update { it.copy(pinnedCalculationIds = pinned) }
+                    lastContext?.let { applyFilters(it) }
+                }
+            }
+        }
+    }
+
+    fun togglePin(calculationId: String) {
+        viewModelScope.launch {
+            settingsRepository?.togglePinCalculation(calculationId)
+        }
+    }
 
     fun loadRecent(context: Context) {
         lastContext = context
@@ -51,6 +70,8 @@ class HomeViewModel(
     private fun applyFilters(context: Context) {
         val query = _uiState.value.searchQuery.trim()
         val selectedDate = _uiState.value.selectedDateEpoch
+        val pinnedIds = _uiState.value.pinnedCalculationIds
+        val favorites = allItems.filter { it.calculation.id in pinnedIds }
 
         val recentGroups = DateGroupHelper.groupByDate(
             items = allItems.take(10),
@@ -65,6 +86,7 @@ class HomeViewModel(
                 it.copy(
                     recentDateGroups = recentGroups,
                     filteredDateGroups = emptyList(),
+                    favoriteCalculations = favorites,
                     isLoading = false
                 )
             }
@@ -92,6 +114,7 @@ class HomeViewModel(
                 it.copy(
                     recentDateGroups = recentGroups,
                     filteredDateGroups = filteredGroups,
+                    favoriteCalculations = favorites,
                     isLoading = false
                 )
             }

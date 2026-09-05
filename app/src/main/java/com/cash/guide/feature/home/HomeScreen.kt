@@ -61,6 +61,7 @@ import com.cash.guide.ui.notebook.JournalPrimaryActionButton
 import com.cash.guide.ui.notebook.JournalFloatingActionButton
 import com.cash.guide.ui.notebook.JournalInlineSearchRow
 import com.cash.guide.ui.notebook.JournalTwoLineCalculationRow
+import com.cash.guide.ui.notebook.JournalFavoritesHeader
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -142,9 +143,67 @@ fun HomeScreen(
             // Lines 3 & 4: Skip 2 ruled lines ("na9ezz 2 stoura ta7t search")
             Spacer(modifier = Modifier.height(JournalRuleSpacing * 2))
 
-            // Line 5+: Section header ("Vos calculs" / "حساباتك") sitting directly on the ruled line
+            // Section: Vos favoris ("o 9bel vos calculs dir vos favourites o hna ykouno l7issabat matalan li dayr lihom pin")
             if (!state.isEmpty) {
+                if (state.favoriteCalculations.isNotEmpty() || !state.isFiltering) {
+                    JournalFavoritesHeader()
+
+                    if (state.favoriteCalculations.isNotEmpty()) {
+                        state.favoriteCalculations.forEachIndexed { idx, calc ->
+                            val currency = runCatching { MoneyUnit.valueOf(calc.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
+                            val totalFormatted = JournalLedgerManager.formatTotal(calc.totalCentimes, currency)
+                            val currencySuffix = if (currency == MoneyUnit.DIRHAM) {
+                                stringResource(R.string.currency_dirham)
+                            } else {
+                                stringResource(R.string.currency_rial)
+                            }
+                            val subtitle = DateGroupHelper.formatHomeCalculationSubtitle(
+                                epochMs = calc.calculation.updatedAtEpochMs,
+                                locale = context.resources.configuration.locales[0]
+                            )
+
+                            JournalTwoLineCalculationRow(
+                                index = idx,
+                                title = calc.calculation.title,
+                                subtitle = subtitle,
+                                totalAmount = totalFormatted,
+                                currencySuffix = currencySuffix,
+                                isPinned = true,
+                                onClick = { onOpenCalculation(calc.calculation.id) },
+                                onMoreClick = { viewModel.selectCalculationForAction(calc) }
+                            )
+                        }
+                    } else {
+                        // Subtle hint row sitting directly on the ruled line
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(JournalRuleSpacing)
+                                .padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Text(
+                                text = stringResource(R.string.home_favorites_empty_hint),
+                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                fontSize = if (isRtl) 13.5.sp else 14.5.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = JournalMutedInk.copy(alpha = 0.65f),
+                                style = TextStyle(platformStyle = NoFontPadding),
+                                modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+                            )
+                        }
+                    }
+
+                    // 1 empty notebook line before "Vos calculs"
+                    Spacer(modifier = Modifier.height(JournalRuleSpacing))
+                }
+
+                // Section header ("Vos calculs" / "حساباتك") with double underline ("2 stoura ta7tha")
                 JournalRecentHeader(onOpenHistory = onOpenHistory)
+
+                // Skip 1 line before Aujourd'hui ("na9ez star 3ad dir aujourduit")
+                Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
                 // Date-grouped saved calculations (each calculation is exactly 2 ruled lines = 58dp, zero cards)
                 state.displayDateGroups.forEach { group ->
@@ -169,6 +228,7 @@ fun HomeScreen(
                             subtitle = subtitle,
                             totalAmount = totalFormatted,
                             currencySuffix = currencySuffix,
+                            isPinned = calc.calculation.id in state.pinnedCalculationIds,
                             onClick = { onOpenCalculation(calc.calculation.id) },
                             onMoreClick = { viewModel.selectCalculationForAction(calc) }
                         )
@@ -197,7 +257,7 @@ fun HomeScreen(
                         fontWeight = FontWeight.Medium,
                         color = JournalMutedInk,
                         style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = 5.7.dp)
+                        modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
                     )
                 }
             }
@@ -209,8 +269,13 @@ fun HomeScreen(
         // Action Sheet
         val actionCalc = state.selectedCalculationForAction
         if (actionCalc != null) {
+            val isPinned = actionCalc.calculation.id in state.pinnedCalculationIds
             SavedCalculationActionsSheet(
                 calculationTitle = actionCalc.calculation.title,
+                isPinned = isPinned,
+                onTogglePin = {
+                    viewModel.togglePin(actionCalc.calculation.id)
+                },
                 onEdit = {
                     onOpenCalculation(actionCalc.calculation.id)
                     viewModel.selectCalculationForAction(null)

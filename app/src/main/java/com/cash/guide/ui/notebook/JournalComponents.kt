@@ -58,6 +58,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -754,12 +755,16 @@ fun JournalNewCalculationButton(
 
 /**
  * Header row for Recent Calculations on the Home Page, sitting on exactly 1 ruled line (29dp).
+ * Features a double underline under "Vos calculs" / "حساباتك" to make it stand out.
  */
 @Composable
 fun JournalRecentHeader(
     onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -768,32 +773,87 @@ fun JournalRecentHeader(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = stringResource(R.string.home_recent_title),
-            fontFamily = PatrickHandFamily,
-            fontSize = 17.5.sp,
-            fontWeight = FontWeight.Bold,
-            color = JournalInk,
-            style = TextStyle(platformStyle = NoFontPadding),
-            modifier = Modifier.offset(y = 5.7.dp)
-        )
+        // Title with double underline ("2 stoura ta7tha") to make it distinct
+        Box(
+            modifier = Modifier.drawBehind {
+                val strokeW = 1.0.dp.toPx()
+                val inkColor = JournalInk.copy(alpha = 0.70f)
+                val line1Y = size.height
+                val line2Y = size.height + 2.8.dp.toPx()
+                drawLine(inkColor, Offset(0f, line1Y), Offset(size.width, line1Y), strokeW, StrokeCap.Round)
+                drawLine(inkColor, Offset(0f, line2Y), Offset(size.width, line2Y), strokeW, StrokeCap.Round)
+            }
+        ) {
+            Text(
+                text = stringResource(R.string.home_recent_title),
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 17.5.sp else 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = JournalInk,
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+            )
+        }
 
         Text(
             text = stringResource(R.string.home_see_all),
-            fontFamily = PatrickHandFamily,
-            fontSize = 14.5.sp,
+            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+            fontSize = if (isRtl) 14.sp else 14.5.sp,
             fontWeight = FontWeight.Normal,
             color = JournalMutedInk,
             style = TextStyle(platformStyle = NoFontPadding),
             modifier = Modifier
                 .clickable(role = Role.Button, onClick = onOpenHistory)
-                .offset(y = 5.7.dp)
+                .offset(y = if (isRtl) 5.7.dp else 2.5.dp)
         )
     }
 }
 
 /**
+ * Header row for Pinned / Favorite Calculations on the Home Page, sitting on exactly 1 ruled line (29dp).
+ */
+@Composable
+fun JournalFavoritesHeader(
+    modifier: Modifier = Modifier
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            HisabiSketchIcon(
+                symbol = HisabiSymbol.Pin,
+                contentDescription = null,
+                tint = JournalInk,
+                size = 17.dp,
+                modifier = Modifier.offset(y = if (isRtl) 3.5.dp else 1.0.dp)
+            )
+            Text(
+                text = stringResource(R.string.home_favorites_title),
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 17.5.sp else 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = JournalInk,
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+            )
+        }
+    }
+}
+
+/**
  * Date separator on the Home Page, sitting on exactly 1 ruled line (29dp).
+ * The text sits DIRECTLY ON the blue ruled line, with a soft highlighter wash behind the text bounds.
  */
 @Composable
 fun JournalDateRuleBand(
@@ -803,15 +863,15 @@ fun JournalDateRuleBand(
     val todayText = stringResource(R.string.date_today)
     val yesterdayText = stringResource(R.string.date_yesterday)
 
-    val pillColor = when {
+    val highlighterWashColor = when {
         title.contains(todayText, ignoreCase = true) || title.contains("اليوم") -> {
-            HighlighterYellow.copy(alpha = 0.65f)
+            HighlighterYellow.copy(alpha = 0.55f)
         }
         title.contains(yesterdayText, ignoreCase = true) || title.contains("أمس") || title.contains("البارح") -> {
-            HighlighterGreen.copy(alpha = 0.55f)
+            HighlighterGreen.copy(alpha = 0.50f)
         }
         else -> {
-            HighlighterPink.copy(alpha = 0.45f)
+            HighlighterPink.copy(alpha = 0.40f)
         }
     }
 
@@ -827,19 +887,29 @@ fun JournalDateRuleBand(
         horizontalArrangement = Arrangement.Start
     ) {
         Box(
-            modifier = Modifier
-                .offset(y = 2.0.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(pillColor)
-                .padding(horizontal = 8.dp, vertical = 2.dp)
+            modifier = Modifier.drawBehind {
+                // Soft highlighter wash behind the date word without disturbing the text baseline
+                val h = size.height
+                val w = size.width
+                val washY = h - (if (isRtl) 11.5.dp.toPx() else 10.5.dp.toPx())
+                val washHeight = 12.dp.toPx()
+                val padH = 6.dp.toPx()
+                drawRoundRect(
+                    color = highlighterWashColor,
+                    topLeft = Offset(-padH, washY),
+                    size = Size(w + padH * 2, washHeight),
+                    cornerRadius = CornerRadius(4.dp.toPx())
+                )
+            }
         ) {
             Text(
                 text = title,
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 13.sp else 13.5.sp,
+                fontSize = if (isRtl) 14.5.sp else 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
-                style = TextStyle(platformStyle = NoFontPadding)
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
             )
         }
     }
@@ -932,9 +1002,10 @@ fun JournalInlineSearchRow(
         .padding(horizontal = 14.dp)
         .drawBehind {
             if (showUnderline) {
-                val strokeW = 1.0.dp.toPx()
-                val inkColor = JournalInk.copy(alpha = 0.32f)
-                val lineY = size.height - 2.5.dp.toPx()
+                // Drawn directly on top of the notebook blue ruled line (size.height)
+                val strokeW = 1.1.dp.toPx()
+                val inkColor = JournalInk.copy(alpha = 0.50f)
+                val lineY = size.height
                 if (isRtl) {
                     val startX = 14.dp.toPx() + (if (onOpenCalendar != null) 30.dp.toPx() else 0f) + (if (query.isNotEmpty()) 24.dp.toPx() else 0f)
                     val endX = size.width - 14.dp.toPx() - 20.dp.toPx()
@@ -1250,6 +1321,7 @@ fun JournalTwoLineCalculationRow(
     currencySuffix: String,
     onClick: () -> Unit,
     onMoreClick: () -> Unit,
+    isPinned: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val layoutDirection = LocalLayoutDirection.current
@@ -1302,6 +1374,16 @@ fun JournalTwoLineCalculationRow(
                     drawCircle(color = dotColor)
                 }
 
+                if (isPinned) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Pin,
+                        contentDescription = null,
+                        tint = JournalInk.copy(alpha = 0.75f),
+                        size = 14.dp,
+                        modifier = Modifier.offset(y = if (isRtl) 3.5.dp else 1.0.dp)
+                    )
+                }
+
                 Text(
                     text = title.ifBlank { stringResource(R.string.editor_new_title) },
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
@@ -1311,7 +1393,7 @@ fun JournalTwoLineCalculationRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = 5.7.dp)
+                    modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
                 )
             }
 

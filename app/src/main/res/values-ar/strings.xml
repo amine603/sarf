@@ -12,6 +12,10 @@
     <string name="home_search_placeholder">ابحث عن حساب</string>
     <string name="home_new_calculation">حساب جديد</string>
     <string name="home_recent_title">حساباتك</string>
+    <string name="home_favorites_title">حساباتك المفضلة</string>
+    <string name="home_favorites_empty_hint">ثبّت حساباتك المهمة هنا (⋮)</string>
+    <string name="action_pin">تثبيت</string>
+    <string name="action_unpin">إلغاء التثبيت</string>
     <string name="home_pick_date">اختيار تاريخ</string>
     <string name="home_clear_date_filter">مسح الفلتر</string>
     <string name="home_no_results_for_date">ما كاين حتى حساب فهاد النهار</string>

@@ -6,6 +6,8 @@ import com.cash.guide.domain.CalculationDateGroup
 data class HomeUiState(
     val recentDateGroups: List<CalculationDateGroup> = emptyList(),
     val filteredDateGroups: List<CalculationDateGroup> = emptyList(),
+    val favoriteCalculations: List<CalculationWithItems> = emptyList(),
+    val pinnedCalculationIds: Set<String> = emptySet(),
     val searchQuery: String = "",
     val selectedDateEpoch: Long? = null,
     val isLoading: Boolean = true,
