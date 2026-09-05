@@ -581,17 +581,13 @@ fun JournalCalculationRow(
     onClick: () -> Unit,
     onMoreClick: () -> Unit,
     modifier: Modifier = Modifier,
-    hasTimeline: Boolean = false,
-    isFirstInTimeline: Boolean = false,
-    isLastInTimeline: Boolean = false,
-    timelineDotColor: Color = HighlighterGreen,
-    timelineLineColor: Color = Color(0xFF6B8E3D).copy(alpha = 0.70f)
+    dotColorOverride: Color? = null
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
     val isLatinSuffix = currencySuffix.contains(Regex("[a-zA-Z]"))
 
-    // Rotating soft pastel watercolor bullet dot colors per row (used when hasTimeline is false)
+    // Rotating soft pastel watercolor bullet dot colors per row (used when dotColorOverride is null)
     val rowDotColors = remember {
         listOf(
             Color(0xFF5B9EC9), // Soft Sky Blue
@@ -602,7 +598,8 @@ fun JournalCalculationRow(
             Color(0xFFE28862)  // Soft Peach Coral
         )
     }
-    val dotColor = rowDotColors[index.coerceAtLeast(0) % rowDotColors.size]
+    val defaultDotColor = rowDotColors[index.coerceAtLeast(0) % rowDotColors.size]
+    val dotColor = dotColorOverride ?: defaultDotColor
 
     Row(
         modifier = modifier
@@ -617,76 +614,19 @@ fun JournalCalculationRow(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Start: Bullet dot on line (or timeline node + vertical line) + Title on line
+        // Start: Bullet dot on line + Title on line
         Row(
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.weight(1f, fill = false)
         ) {
-            if (hasTimeline) {
-                // Continuous vertical timeline with circular node (Timeline Style)
-                Canvas(
-                    modifier = Modifier
-                        .width(16.dp)
-                        .height(JournalRuleSpacing) // 29.dp
-                ) {
-                    val midX = size.width / 2f
-                    val nodeY = size.height - (if (isRtl) 7.0.dp.toPx() else 6.5.dp.toPx())
-                    val strokeW = 1.8.dp.toPx()
-
-                    // Top connector line coming into the node
-                    // First item starts slightly below the top rule line to avoid colliding with date text
-                    val startY = if (isFirstInTimeline) 4.5.dp.toPx() else 0f
-                    drawLine(
-                        color = timelineLineColor,
-                        start = Offset(midX, startY),
-                        end = Offset(midX, nodeY),
-                        strokeWidth = strokeW,
-                        cap = StrokeCap.Round
-                    )
-
-                    // Bottom connector line leaving the node
-                    // Last item terminates cleanly with rounded cap
-                    val bottomY = if (isLastInTimeline) (nodeY + 6.5.dp.toPx()).coerceAtMost(size.height) else size.height
-                    drawLine(
-                        color = timelineLineColor,
-                        start = Offset(midX, nodeY),
-                        end = Offset(midX, bottomY),
-                        strokeWidth = strokeW,
-                        cap = StrokeCap.Round
-                    )
-
-                    // Opaque paper background backing to prevent line show-through
-                    drawCircle(
-                        color = JournalPaper,
-                        radius = 4.8.dp.toPx(),
-                        center = Offset(midX, nodeY)
-                    )
-
-                    // Node fill using the date header background color
-                    drawCircle(
-                        color = timelineDotColor,
-                        radius = 4.2.dp.toPx(),
-                        center = Offset(midX, nodeY)
-                    )
-
-                    // Node outline stroke matching the timeline line color
-                    drawCircle(
-                        color = timelineLineColor,
-                        radius = 5.2.dp.toPx(),
-                        center = Offset(midX, nodeY),
-                        style = Stroke(width = 1.5.dp.toPx())
-                    )
-                }
-            } else {
-                // Little colored dot resting directly on the ruled line
-                Canvas(
-                    modifier = Modifier
-                        .size(7.5.dp)
-                        .offset(y = if (isRtl) (-0.5).dp else 0.dp)
-                ) {
-                    drawCircle(color = dotColor)
-                }
+            // Little colored dot resting directly on the ruled line (single solid color, no outline)
+            Canvas(
+                modifier = Modifier
+                    .size(7.5.dp)
+                    .offset(y = if (isRtl) (-0.5).dp else 0.dp)
+            ) {
+                drawCircle(color = dotColor)
             }
 
             Text(
@@ -936,12 +876,12 @@ fun JournalFavoritesHeader(
 data class DateTimelineStyle(
     val washColor: Color,
     val dotColor: Color,
-    val lineColor: Color
+    val lineColor: Color = Color.Transparent
 )
 
 /**
  * Maps date header titles ("Aujourd'hui", "Hier", "Cette semaine", etc.)
- * to their respective pastel wash, node fill, and timeline connector line colors.
+ * to their respective pastel wash and matching solid dot colors.
  */
 fun getDateTimelineStyle(
     title: String,
@@ -952,22 +892,19 @@ fun getDateTimelineStyle(
         title.contains(todayText, ignoreCase = true) || title.contains("اليوم") -> {
             DateTimelineStyle(
                 washColor = HighlighterYellow.copy(alpha = 0.60f),
-                dotColor = HighlighterYellow,
-                lineColor = Color(0xFFC49A24).copy(alpha = 0.80f)
+                dotColor = Color(0xFFE0B038) // Warm Amber matching yellow date wash
             )
         }
         title.contains(yesterdayText, ignoreCase = true) || title.contains("أمس") || title.contains("البارح") -> {
             DateTimelineStyle(
                 washColor = HighlighterGreen.copy(alpha = 0.55f),
-                dotColor = HighlighterGreen,
-                lineColor = Color(0xFF6B8E3D).copy(alpha = 0.80f)
+                dotColor = Color(0xFF7FA85B) // Soft Sage Green matching green date wash
             )
         }
         else -> {
             DateTimelineStyle(
                 washColor = HighlighterPink.copy(alpha = 0.50f),
-                dotColor = HighlighterPink,
-                lineColor = Color(0xFFC95B75).copy(alpha = 0.80f)
+                dotColor = Color(0xFFE27B97) // Soft Rose Pink matching pink date wash
             )
         }
     }

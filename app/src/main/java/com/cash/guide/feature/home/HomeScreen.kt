@@ -263,7 +263,6 @@ fun HomeScreen(
                     val todayText = stringResource(R.string.date_today)
                     val yesterdayText = stringResource(R.string.date_yesterday)
                     val timelineStyle = getDateTimelineStyle(group.header, todayText, yesterdayText)
-                    val calcsCount = group.calculations.size
 
                     group.calculations.forEachIndexed { idx, calc ->
                         val currency = runCatching { MoneyUnit.valueOf(calc.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
@@ -281,11 +280,7 @@ fun HomeScreen(
                             currencySuffix = currencySuffix,
                             onClick = { onOpenCalculation(calc.calculation.id) },
                             onMoreClick = { viewModel.selectCalculationForAction(calc) },
-                            hasTimeline = true,
-                            isFirstInTimeline = idx == 0,
-                            isLastInTimeline = idx == calcsCount - 1,
-                            timelineDotColor = timelineStyle.dotColor,
-                            timelineLineColor = timelineStyle.lineColor
+                            dotColorOverride = timelineStyle.dotColor
                         )
                     }
 
