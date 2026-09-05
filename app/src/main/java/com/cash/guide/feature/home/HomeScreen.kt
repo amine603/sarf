@@ -44,6 +44,7 @@ import com.cash.guide.ui.notebook.JournalCalculationRow
 import com.cash.guide.ui.notebook.JournalDateRuleBand
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
+import com.cash.guide.ui.notebook.JournalWritingInk
 import com.cash.guide.ui.notebook.JournalNewCalculationButton
 import com.cash.guide.ui.notebook.JournalRecentHeader
 import com.cash.guide.ui.notebook.JournalRuleSpacing
@@ -168,7 +169,7 @@ fun HomeScreen(
                                 subtitle = subtitle,
                                 totalAmount = totalFormatted,
                                 currencySuffix = currencySuffix,
-                                isPinned = true,
+                                isPinned = false,
                                 onClick = { onOpenCalculation(calc.calculation.id) },
                                 onMoreClick = { viewModel.selectCalculationForAction(calc) }
                             )
@@ -199,14 +200,14 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(JournalRuleSpacing))
                 }
 
-                // Section header ("Vos calculs" / "حساباتك") with double underline ("2 stoura ta7tha")
-                JournalRecentHeader(onOpenHistory = onOpenHistory)
+                // Section header ("VOS CALCULS" / "حساباتك") with edge-to-edge flush highlight
+                JournalRecentHeader()
 
                 // Skip 1 line before Aujourd'hui ("na9ez star 3ad dir aujourduit")
                 Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
                 // Date-grouped saved calculations (each calculation is exactly 2 ruled lines = 58dp, zero cards)
-                state.displayDateGroups.forEach { group ->
+                state.displayDateGroups.forEachIndexed { groupIndex, group ->
                     JournalDateRuleBand(title = group.header)
 
                     group.calculations.forEachIndexed { idx, calc ->
@@ -228,14 +229,40 @@ fun HomeScreen(
                             subtitle = subtitle,
                             totalAmount = totalFormatted,
                             currencySuffix = currencySuffix,
-                            isPinned = calc.calculation.id in state.pinnedCalculationIds,
+                            isPinned = false,
                             onClick = { onOpenCalculation(calc.calculation.id) },
                             onMoreClick = { viewModel.selectCalculationForAction(calc) }
                         )
                     }
 
-                    // 1 empty notebook line after each date group
-                    Spacer(modifier = Modifier.height(JournalRuleSpacing))
+                    // 1 empty notebook line between date groups
+                    if (groupIndex < state.displayDateGroups.lastIndex) {
+                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
+                    }
+                }
+
+                // "Voir tout" under the content on the right
+                if (state.displayDateGroups.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(JournalRuleSpacing)
+                            .padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = if (isRtl) Arrangement.Start else Arrangement.End
+                    ) {
+                        Text(
+                            text = if (isRtl) "← ${stringResource(R.string.home_see_all)}" else "${stringResource(R.string.home_see_all)} →",
+                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                            fontSize = if (isRtl) 15.sp else 16.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = JournalWritingInk.copy(alpha = 0.85f),
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier
+                                .clickable(role = Role.Button, onClick = onOpenHistory)
+                                .offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+                        )
+                    }
                 }
             } else if (!state.isLoading) {
                 // Empty state sitting directly on the ruled line

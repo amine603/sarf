@@ -629,7 +629,7 @@ fun JournalCalculationRow(
                 text = title.ifBlank { stringResource(R.string.editor_new_title) },
                 fontFamily = PatrickHandFamily,
                 fontSize = 17.5.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Normal,
                 color = JournalInk,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -755,87 +755,64 @@ fun JournalNewCalculationButton(
 
 /**
  * Header row for Recent Calculations on the Home Page, sitting on exactly 1 ruled line (29dp).
- * Features a double underline under "Vos calculs" / "حساباتك" to make it stand out.
+ * Features an edge-to-edge flush Mildliner pink highlighter bar flanking the uppercase title.
  */
 @Composable
 fun JournalRecentHeader(
-    onOpenHistory: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenHistory: () -> Unit = {}
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
     val markerColor = HighlighterPink.copy(alpha = 0.55f)
-    val swatchColor = HighlighterPink.copy(alpha = 0.80f)
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(JournalRuleSpacing)
-            .padding(horizontal = 14.dp),
+            .height(JournalRuleSpacing),
         verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.Start
     ) {
-        Row(
-            modifier = Modifier.weight(1f, fill = true),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.Start
-        ) {
-            // Swatch marker dab before title (like in bullet journal photo)
-            Box(
-                modifier = Modifier
-                    .offset(y = (-4.0).dp)
-                    .width(4.5.dp)
-                    .height(13.dp)
-                    .clip(RoundedCornerShape(1.5.dp))
-                    .background(swatchColor)
-            )
-
-            Spacer(modifier = Modifier.width(7.dp))
-
-            // Bold Title text sitting on the ruled line
-            Text(
-                text = stringResource(R.string.home_recent_title),
-                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 17.5.sp else 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = JournalInk,
-                style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Full-width bold Mildliner line with light color (chisel stroke)
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .offset(y = (-5.5).dp)
-                    .height(8.5.dp)
-                    .clip(RoundedCornerShape(2.5.dp))
-                    .background(markerColor)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        // "Voir tout" / "عرض الكل"
-        Text(
-            text = stringResource(R.string.home_see_all),
-            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-            fontSize = if (isRtl) 14.sp else 14.5.sp,
-            fontWeight = FontWeight.Normal,
-            color = JournalMutedInk,
-            style = TextStyle(platformStyle = NoFontPadding),
+        // Highlight starts flush at the screen edge (touches x = 0)
+        Box(
             modifier = Modifier
-                .clickable(role = Role.Button, onClick = onOpenHistory)
-                .offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+                .width(24.dp)
+                .offset(y = (-3.5).dp)
+                .height(16.5.dp)
+                .clip(RoundedCornerShape(topStart = 0.dp, bottomStart = 0.dp, topEnd = 3.dp, bottomEnd = 3.dp))
+                .background(markerColor)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Uppercase Title text sitting on the ruled line, matching highlight vertically
+        Text(
+            text = if (isRtl) stringResource(R.string.home_recent_title) else stringResource(R.string.home_recent_title).uppercase(),
+            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+            fontSize = if (isRtl) 19.sp else 19.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = JournalInk,
+            style = TextStyle(platformStyle = NoFontPadding),
+            modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Full-width Mildliner line extending all the way to opposite screen edge
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .offset(y = (-3.5).dp)
+                .height(16.5.dp)
+                .clip(RoundedCornerShape(topStart = 3.dp, bottomStart = 3.dp, topEnd = 0.dp, bottomEnd = 0.dp))
+                .background(markerColor)
         )
     }
 }
 
 /**
  * Header row for Pinned / Favorite Calculations on the Home Page, sitting on exactly 1 ruled line (29dp).
- * Features a bullet-journal Mildliner header: sketch pin icon + bold title + thick full-width pastel line.
+ * Features an edge-to-edge flush Mildliner yellow highlighter bar flanking the uppercase title.
  */
 @Composable
 fun JournalFavoritesHeader(
@@ -848,25 +825,27 @@ fun JournalFavoritesHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(JournalRuleSpacing)
-            .padding(horizontal = 14.dp),
+            .height(JournalRuleSpacing),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.Start
     ) {
-        HisabiSketchIcon(
-            symbol = HisabiSymbol.Pin,
-            contentDescription = null,
-            tint = JournalInk,
-            size = 17.dp,
-            modifier = Modifier.offset(y = if (isRtl) 3.5.dp else 1.0.dp)
+        // Highlight starts flush at the screen edge (touches x = 0)
+        Box(
+            modifier = Modifier
+                .width(24.dp)
+                .offset(y = (-3.5).dp)
+                .height(16.5.dp)
+                .clip(RoundedCornerShape(topStart = 0.dp, bottomStart = 0.dp, topEnd = 3.dp, bottomEnd = 3.dp))
+                .background(markerColor)
         )
 
-        Spacer(modifier = Modifier.width(6.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
+        // Uppercase Title text sitting on the ruled line, matching highlight vertically
         Text(
-            text = stringResource(R.string.home_favorites_title),
+            text = if (isRtl) stringResource(R.string.home_favorites_title) else stringResource(R.string.home_favorites_title).uppercase(),
             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-            fontSize = if (isRtl) 17.5.sp else 18.sp,
+            fontSize = if (isRtl) 19.sp else 19.5.sp,
             fontWeight = FontWeight.Bold,
             color = JournalInk,
             style = TextStyle(platformStyle = NoFontPadding),
@@ -875,13 +854,13 @@ fun JournalFavoritesHeader(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Full-width bold Mildliner line with light color (chisel stroke to margin)
+        // Full-width Mildliner line extending all the way to opposite screen edge
         Box(
             modifier = Modifier
                 .weight(1f)
-                .offset(y = (-5.5).dp)
-                .height(8.5.dp)
-                .clip(RoundedCornerShape(2.5.dp))
+                .offset(y = (-3.5).dp)
+                .height(16.5.dp)
+                .clip(RoundedCornerShape(topStart = 3.dp, bottomStart = 3.dp, topEnd = 0.dp, bottomEnd = 0.dp))
                 .background(markerColor)
         )
     }
@@ -1424,7 +1403,7 @@ fun JournalTwoLineCalculationRow(
                     text = title.ifBlank { stringResource(R.string.editor_new_title) },
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                     fontSize = if (isRtl) 16.5.sp else 17.5.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
                     color = JournalInk,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
