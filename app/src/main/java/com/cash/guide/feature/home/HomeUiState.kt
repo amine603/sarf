@@ -12,7 +12,8 @@ data class HomeUiState(
     val selectedDateEpoch: Long? = null,
     val isLoading: Boolean = true,
     val selectedCalculationForAction: CalculationWithItems? = null,
-    val calculationToDelete: CalculationWithItems? = null
+    val calculationToDelete: CalculationWithItems? = null,
+    val userName: String = "Youssef"
 ) {
     val isFiltering: Boolean
         get() = searchQuery.isNotBlank() || selectedDateEpoch != null

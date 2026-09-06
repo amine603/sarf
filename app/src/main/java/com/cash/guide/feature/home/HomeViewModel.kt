@@ -33,6 +33,11 @@ class HomeViewModel(
                     lastContext?.let { applyFilters(it) }
                 }
             }
+            viewModelScope.launch {
+                settingsRepository.userName.collect { name ->
+                    _uiState.update { it.copy(userName = name) }
+                }
+            }
         }
     }
 

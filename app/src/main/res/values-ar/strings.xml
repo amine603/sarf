@@ -8,10 +8,10 @@
     <string name="nav_settings">الإعدادات</string>
 
     <!-- Home -->
-    <string name="home_greeting">مرحباً يوسف</string>
+    <string name="home_greeting">أهلاً %1$s 😊</string>
     <string name="home_search_placeholder">ابحث عن حساب</string>
     <string name="home_new_calculation">حساب جديد</string>
-    <string name="home_recent_title">حساباتك</string>
+    <string name="home_recent_title">الحسابات الأخيرة</string>
     <string name="home_favorites_title">حساباتك المفضلة</string>
     <string name="home_favorites_empty_hint">ثبّت حساباتك المهمة هنا (⋮)</string>
     <string name="action_pin">تثبيت</string>
@@ -69,6 +69,7 @@
 
     <!-- History and search -->
     <string name="history_title">السجل</string>
+    <string name="history_section_title">جميع الحسابات</string>
     <string name="history_search_placeholder">البحث في الحسابات</string>
     <string name="history_filter_all">الكل</string>
     <string name="history_filter_today">اليوم</string>
@@ -96,9 +97,11 @@
 
     <!-- Settings -->
     <string name="settings_title">الإعدادات</string>
-    <string name="settings_tagline">إعدادات التطبيق</string>
-    <string name="settings_storage_title">تخزين البيانات</string>
-    <string name="settings_storage_badge">✓ Hors-ligne 100%</string>
+    <string name="settings_section_preferences">التفضيلات</string>
+    <string name="settings_section_data">البيانات</string>
+    <string name="settings_section_upcoming">قريباً</string>
+    <string name="settings_storage_title">التخزين المحلي</string>
+    <string name="settings_storage_badge">محلي 100% / بدون إنترنت</string>
     <string name="settings_storage_notice">البيانات ديالك محفوظة غير فهاد الهاتف فقط.</string>
     <string name="settings_language">اللغة</string>
     <string name="settings_language_description">اختار اللغة ديالك</string>

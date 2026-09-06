@@ -15,19 +15,23 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -37,11 +41,13 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +73,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -99,6 +106,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.TextFieldValue
+import com.cash.guide.data.db.CalculationWithItems
+import com.cash.guide.domain.DateGroupHelper
+import com.cash.guide.domain.MoneyUnit
 
 /**
  * Ruled document with tactile paper texture and 48dp horizontal rules that scroll with content.
@@ -107,12 +117,31 @@ import androidx.compose.ui.text.input.TextFieldValue
 fun JournalRuledDocument(
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
+    clearFocusOnTap: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress && clearFocusOnTap) {
+            focusManager.clearFocus()
+            keyboardController?.hide()
+        }
+    }
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(JournalPaper)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                enabled = clearFocusOnTap
+            ) {
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            }
     ) {
         val minimumHeight = maxHeight
         LazyColumn(
@@ -124,6 +153,14 @@ fun JournalRuledDocument(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = minimumHeight)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            enabled = clearFocusOnTap
+                        ) {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                        }
                         .drawBehind {
                             // 1. Subtle tactile paper grain / flecks
                             val dotColor = JournalInk.copy(alpha = 0.022f)
@@ -1035,6 +1072,7 @@ fun JournalPrimaryActionButton(
  * In RTL: text input on right (Start), search icon on left (End).
  * In LTR: search icon on left (Start), text input on right (End).
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun JournalInlineSearchRow(
     query: String,
@@ -1051,20 +1089,37 @@ fun JournalInlineSearchRow(
     var isFocused by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+    // Automatically clear focus and hide cursor if the keyboard is hidden
+    val isImeVisible = WindowInsets.isImeVisible
+    LaunchedEffect(isImeVisible) {
+        if (!isImeVisible && isFocused) {
+            focusManager.clearFocus()
+        }
+    }
+
+    // Intercept back button when search is focused: clear focus and hide keyboard
+    if (isFocused) {
+        BackHandler {
+            focusManager.clearFocus()
+            keyboardController?.hide()
+        }
+    }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(JournalRuleSpacing)
             .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.Bottom,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // The Search Box (Grey highlight capsule sitting directly on the blue line)
+        // The Search Box (Grey highlight capsule touching both top and bottom blue lines)
         Box(
             modifier = Modifier
                 .weight(1f)
-                .height(25.dp)
+                .height(JournalRuleSpacing)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFF6B7067).copy(alpha = 0.16f))
                 .clickable(
@@ -1090,7 +1145,7 @@ fun JournalInlineSearchRow(
                     symbol = HisabiSymbol.Search,
                     contentDescription = null,
                     tint = JournalInk.copy(alpha = 0.70f),
-                    size = 15.dp
+                    size = 16.dp
                 )
 
                 // Search Input with cursor and disappearing placeholder on focus
@@ -1103,10 +1158,21 @@ fun JournalInlineSearchRow(
                             .focusRequester(focusRequester)
                             .onFocusChanged { isFocused = it.isFocused },
                         singleLine = true,
-                        cursorBrush = SolidColor(JournalInk),
+                        cursorBrush = if (isFocused) SolidColor(JournalInk) else SolidColor(Color.Transparent),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(
+                            onSearch = {
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
+                            },
+                            onDone = {
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
+                            }
+                        ),
                         textStyle = TextStyle(
                             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                            fontSize = if (isRtl) 14.5.sp else 15.5.sp,
+                            fontSize = if (isRtl) 15.sp else 16.sp,
                             fontWeight = FontWeight.Medium,
                             color = JournalInk,
                             platformStyle = NoFontPadding
@@ -1116,7 +1182,7 @@ fun JournalInlineSearchRow(
                                 Text(
                                     text = placeholder,
                                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                    fontSize = if (isRtl) 13.sp else 14.sp,
+                                    fontSize = if (isRtl) 13.5.sp else 14.5.sp,
                                     fontWeight = FontWeight.Normal,
                                     color = JournalWritingInk.copy(alpha = 0.60f),
                                     style = TextStyle(platformStyle = NoFontPadding)
@@ -1129,7 +1195,7 @@ fun JournalInlineSearchRow(
                     Text(
                         text = placeholder,
                         fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        fontSize = if (isRtl) 13.sp else 14.sp,
+                        fontSize = if (isRtl) 13.5.sp else 14.5.sp,
                         fontWeight = FontWeight.Normal,
                         color = JournalWritingInk.copy(alpha = 0.60f),
                         style = TextStyle(platformStyle = NoFontPadding),
@@ -1141,8 +1207,12 @@ fun JournalInlineSearchRow(
                 if (query.isNotEmpty() && onQueryChange != null) {
                     Box(
                         modifier = Modifier
-                            .size(18.dp)
-                            .clickable(role = Role.Button, onClick = { onQueryChange("") }),
+                            .size(20.dp)
+                            .clickable(role = Role.Button, onClick = {
+                                onQueryChange("")
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
+                            }),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -1160,17 +1230,21 @@ fun JournalInlineSearchRow(
         // Generous breathing space before the calendar icon
         Spacer(modifier = Modifier.width(14.dp))
 
-        // Calendar Icon Button, sitting directly on the blue line aligned vertically with the search bar
+        // Calendar Icon Button, touching both top and bottom lines
         if (onOpenCalendar != null) {
             Box(
                 modifier = Modifier
-                    .size(25.dp)
-                    .clip(RoundedCornerShape(6.dp))
+                    .size(JournalRuleSpacing)
+                    .clip(RoundedCornerShape(8.dp))
                     .background(if (isDateFiltered) HighlighterYellow.copy(alpha = 0.50f) else Color.Transparent)
                     .clickable(
                         role = Role.Button,
                         onClickLabel = stringResource(R.string.home_pick_date),
-                        onClick = onOpenCalendar
+                        onClick = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            onOpenCalendar()
+                        }
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -1178,7 +1252,7 @@ fun JournalInlineSearchRow(
                     symbol = HisabiSymbol.Calendar,
                     contentDescription = stringResource(R.string.home_pick_date),
                     tint = if (isDateFiltered) JournalInk else JournalInk.copy(alpha = 0.85f),
-                    size = 25.dp
+                    size = 22.dp
                 )
             }
         }
@@ -1396,11 +1470,12 @@ fun JournalTwoLineCalculationRow(
 
 /**
  * Minimal ruled filter bar on Line 3 in HistoryScreen matching Mockup 2.
- * In RTL: "📅 هذا الشهر ∨" on right, "الكل ∨" on left.
- * In LTR: "Tout ∨" on left, "📅 Ce mois ∨" on right.
+ * Real, interactive filter pills for "Tout" and "Ce mois".
  */
 @Composable
 fun JournalFilterBar(
+    selectedFilter: com.cash.guide.feature.history.HistoryFilter = com.cash.guide.feature.history.HistoryFilter.ALL,
+    onFilterSelect: (com.cash.guide.feature.history.HistoryFilter) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val layoutDirection = LocalLayoutDirection.current
@@ -1412,112 +1487,570 @@ fun JournalFilterBar(
             .height(JournalRuleSpacing)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if (isRtl) {
+        // Pill 1: Tout / الكل
+        val isAll = selectedFilter == com.cash.guide.feature.history.HistoryFilter.ALL
+        Box(
+            modifier = Modifier
+                .offset(y = 2.0.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(if (isAll) HighlighterPink.copy(alpha = 0.45f) else Color(0xFF6B7067).copy(alpha = 0.12f))
+                .clickable(role = Role.RadioButton, onClick = { onFilterSelect(com.cash.guide.feature.history.HistoryFilter.ALL) })
+                .padding(horizontal = 10.dp, vertical = 2.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.history_filter_all),
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 13.5.sp else 14.5.sp,
+                fontWeight = if (isAll) FontWeight.Bold else FontWeight.Normal,
+                color = if (isAll) JournalInk else JournalMutedInk,
+                style = TextStyle(platformStyle = NoFontPadding)
+            )
+        }
+
+        // Pill 2: Ce mois / هذا الشهر
+        val isMonth = selectedFilter == com.cash.guide.feature.history.HistoryFilter.THIS_MONTH
+        Box(
+            modifier = Modifier
+                .offset(y = 2.0.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(if (isMonth) HighlighterPink.copy(alpha = 0.45f) else Color(0xFF6B7067).copy(alpha = 0.12f))
+                .clickable(role = Role.RadioButton, onClick = { onFilterSelect(com.cash.guide.feature.history.HistoryFilter.THIS_MONTH) })
+                .padding(horizontal = 10.dp, vertical = 2.dp)
+        ) {
             Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.offset(y = 5.7.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     text = "📅",
-                    fontSize = 12.sp,
-                    modifier = Modifier.offset(y = (-1).dp)
+                    fontSize = 11.sp
                 )
                 Text(
-                    text = "هذا الشهر",
-                    fontFamily = TajawalFamily,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = JournalInk,
-                    style = TextStyle(platformStyle = NoFontPadding)
-                )
-                Text(
-                    text = "∨",
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalMutedInk,
-                    style = TextStyle(platformStyle = NoFontPadding)
-                )
-            }
-
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.offset(y = 5.7.dp)
-            ) {
-                Text(
-                    text = "الكل",
-                    fontFamily = TajawalFamily,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = JournalInk,
-                    style = TextStyle(platformStyle = NoFontPadding)
-                )
-                Text(
-                    text = "∨",
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalMutedInk,
-                    style = TextStyle(platformStyle = NoFontPadding)
-                )
-            }
-        } else {
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.offset(y = 5.7.dp)
-            ) {
-                Text(
-                    text = "Tout",
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 15.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = JournalInk,
-                    style = TextStyle(platformStyle = NoFontPadding)
-                )
-                Text(
-                    text = "∨",
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalMutedInk,
-                    style = TextStyle(platformStyle = NoFontPadding)
-                )
-            }
-
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.offset(y = 5.7.dp)
-            ) {
-                Text(
-                    text = "📅",
-                    fontSize = 12.sp,
-                    modifier = Modifier.offset(y = (-1).dp)
-                )
-                Text(
-                    text = "Ce mois",
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 15.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = JournalInk,
-                    style = TextStyle(platformStyle = NoFontPadding)
-                )
-                Text(
-                    text = "∨",
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalMutedInk,
+                    text = stringResource(R.string.history_filter_month),
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 13.5.sp else 14.5.sp,
+                    fontWeight = if (isMonth) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isMonth) JournalInk else JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding)
                 )
             }
         }
     }
+}
+
+/**
+ * Notebook section header band occupying 1 rule line (29dp).
+ * Used for "Calculs récents" (centered with flanked highlighters) and Settings section bands (start-aligned pill).
+ */
+@Composable
+fun NotebookSectionBand(
+    title: String,
+    highlightColor: Color,
+    modifier: Modifier = Modifier,
+    isCentered: Boolean = false
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
+    if (isCentered) {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(16.dp)
+                    .clip(RoundedCornerShape(topStart = 0.dp, bottomStart = 0.dp, topEnd = 3.dp, bottomEnd = 3.dp))
+                    .background(highlightColor.copy(alpha = 0.55f))
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = if (isRtl) title else title.uppercase(),
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 18.sp else 18.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = JournalInk,
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(16.dp)
+                    .clip(RoundedCornerShape(topStart = 3.dp, bottomStart = 3.dp, topEnd = 0.dp, bottomEnd = 0.dp))
+                    .background(highlightColor.copy(alpha = 0.55f))
+            )
+        }
+    } else {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(start = 2.dp)
+                    .drawBehind {
+                        val h = size.height
+                        val w = size.width
+                        val washHeight = 22.dp.toPx()
+                        val washY = h - (if (isRtl) 16.0.dp.toPx() else 16.5.dp.toPx())
+                        val padH = 8.dp.toPx()
+                        drawRoundRect(
+                            color = highlightColor.copy(alpha = 0.50f),
+                            topLeft = Offset(-padH, washY),
+                            size = Size(w + padH * 2, washHeight),
+                            cornerRadius = CornerRadius(4.dp.toPx())
+                        )
+                    }
+            ) {
+                Text(
+                    text = title,
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 16.sp else 17.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Segmented toggle control for notebook settings (Language: FR/AR, Currency: DH/rial).
+ * Lightweight, soft pink pill highlight without heavy cards.
+ */
+@Composable
+fun <T> NotebookSegmentedControl(
+    options: List<Pair<T, String>>,
+    selectedOption: T,
+    onSelectOption: (T) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .height(26.dp)
+            .background(Color(0xFF6B7067).copy(alpha = 0.12f), RoundedCornerShape(7.dp))
+            .padding(horizontal = 2.dp, vertical = 1.5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val focusManager = LocalFocusManager.current
+        val keyboardController = LocalSoftwareKeyboardController.current
+        options.forEach { (value, label) ->
+            val isSelected = value == selectedOption
+            val isOptionArabic = isArabicScript(label)
+            Box(
+                modifier = Modifier
+                    .background(
+                        if (isSelected) HighlighterPink.copy(alpha = 0.50f) else Color.Transparent,
+                        RoundedCornerShape(5.dp)
+                    )
+                    .clickable(role = Role.RadioButton, onClick = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        onSelectOption(value)
+                    })
+                    .padding(horizontal = 10.dp, vertical = 1.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    fontFamily = if (isOptionArabic) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isOptionArabic) 14.5.sp else 15.5.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) JournalInk else JournalMutedInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isOptionArabic) 2.0.dp else 4.5.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Full-width pink "+ Nouveau calcul" primary button on Home.
+ * Occupies 1 notebook rule (29dp) with text and pink capsule sitting directly on the blue line.
+ */
+@Composable
+fun NotebookPrimaryActionButton(
+    text: String = stringResource(R.string.home_new_calculation),
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing)
+                .clip(RoundedCornerShape(8.dp))
+                .background(HighlighterPink.copy(alpha = 0.55f))
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = text,
+                    onClick = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        onClick()
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "+",
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = (-0.5).dp)
+                )
+                Text(
+                    text = text,
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 16.sp else 17.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isRtl) 0.5.dp else 0.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Standard 2-rule notebook calculation row (58dp).
+ * Line 1 (29dp): Bullet dot, Title, Amount, Currency, 3-dots menu icon.
+ * Line 2 (29dp): Time · count metadata or search snippet.
+ */
+@Composable
+fun NotebookCalculationRow(
+    index: Int,
+    title: String,
+    totalAmount: String,
+    currencySuffix: String,
+    onClick: () -> Unit,
+    onMoreClick: () -> Unit,
+    subtitle: String = "",
+    isPinned: Boolean = false,
+    dotColorOverride: Color? = null,
+    modifier: Modifier = Modifier
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val isLatinSuffix = currencySuffix.contains(Regex("[a-zA-Z]"))
+
+    val rowDotColors = remember {
+        listOf(
+            Color(0xFF5B9EC9), // Soft Sky Blue
+            Color(0xFFE27B97), // Soft Rose Pink
+            Color(0xFF7FA85B), // Soft Sage Green
+            Color(0xFFE0B038), // Soft Warm Amber
+            Color(0xFF9878C8), // Soft Lavender
+            Color(0xFFE28862)  // Soft Peach Coral
+        )
+    }
+    val defaultDotColor = rowDotColors[index.coerceAtLeast(0) % rowDotColors.size]
+    val dotColor = dotColorOverride ?: defaultDotColor
+
+    val hasSubtitle = subtitle.isNotBlank()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(if (hasSubtitle) JournalRuleSpacing * 2 else JournalRuleSpacing)
+            .clickable(
+                role = Role.Button,
+                onClickLabel = title,
+                onClick = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    onClick()
+                }
+            )
+    ) {
+        // Line 1: Bullet dot + Title on Start; Amount + Currency + 3-dots on End
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Start: Bullet dot + Title
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.widthIn(max = 200.dp)
+            ) {
+                Canvas(
+                    modifier = Modifier
+                        .size(7.5.dp)
+                        .offset(y = if (isRtl) (-0.5).dp else 0.dp)
+                ) {
+                    drawCircle(color = dotColor)
+                }
+
+                Text(
+                    text = title.ifBlank { stringResource(R.string.editor_new_title) },
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 16.5.sp else 17.5.sp,
+                    fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
+                    color = JournalInk,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                )
+            }
+
+            // Subtle connecting line directly on the blue notebook line between Title and Amount
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 6.dp)
+                    .drawBehind {
+                        val strokeW = 0.85.dp.toPx()
+                        val y = size.height
+                        drawLine(
+                            color = JournalWritingInk.copy(alpha = 0.28f),
+                            start = Offset(0f, y),
+                            end = Offset(size.width, y),
+                            strokeWidth = strokeW,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.5.dp.toPx()))
+                        )
+                    }
+            )
+
+            // End: Amount + Suffix + 3 dots (⋮)
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Text(
+                    text = totalAmount,
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 18.sp,
+                    fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
+                    color = JournalInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = 5.5.dp)
+                )
+
+                Text(
+                    text = currencySuffix,
+                    fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
+                    fontSize = if (isLatinSuffix) 15.sp else 12.5.sp,
+                    fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.SemiBold,
+                    color = JournalMutedInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isLatinSuffix) 5.5.dp else 5.8.dp)
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(width = 24.dp, height = JournalRuleSpacing)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = stringResource(R.string.cd_more_options),
+                            onClick = {
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
+                                onMoreClick()
+                            }
+                        ),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.More,
+                        contentDescription = null,
+                        tint = JournalMutedInk,
+                        size = 18.dp,
+                        modifier = Modifier.offset(y = 2.0.dp)
+                    )
+                }
+            }
+        }
+
+        // Line 2: Subtitle metadata on Rule 2 (if present)
+        if (hasSubtitle) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(start = if (isRtl) 14.dp else 29.5.dp, end = if (isRtl) 29.5.dp else 14.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = subtitle,
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 13.5.sp else 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = JournalMutedInk,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Date group container with date header and subtle vertical grouping guide
+ * connecting all rows strictly within this date group.
+ */
+@Composable
+fun NotebookDateGroupBlock(
+    header: String,
+    calculations: List<CalculationWithItems>,
+    onOpenCalculation: (String) -> Unit,
+    onMoreClick: (CalculationWithItems) -> Unit,
+    searchQuery: String = "",
+    pinnedCalculationIds: Set<String> = emptySet(),
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
+    val todayText = stringResource(R.string.date_today)
+    val yesterdayText = stringResource(R.string.date_yesterday)
+    val timelineStyle = getDateTimelineStyle(header, todayText, yesterdayText)
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Line 1: Date separator band (29dp)
+        JournalDateRuleBand(title = header)
+
+        // Calculation rows column with vertical grouping guide
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    if (calculations.size > 1) {
+                        val strokeW = 1.5.dp.toPx()
+                        val guideX = if (isRtl) size.width - 17.75.dp.toPx() else 17.75.dp.toPx()
+                        val rowHeightPx = (JournalRuleSpacing * 2).toPx() // 58dp
+                        val dotCenterY = 25.25.dp.toPx()
+                        val startY = dotCenterY
+                        val endY = (calculations.size - 1) * rowHeightPx + dotCenterY
+
+                        drawLine(
+                            color = timelineStyle.dotColor.copy(alpha = 0.40f),
+                            start = Offset(guideX, startY),
+                            end = Offset(guideX, endY),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
+                        )
+                    }
+                }
+        ) {
+            calculations.forEachIndexed { idx, calc ->
+                val currency = runCatching { MoneyUnit.valueOf(calc.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
+                val totalFormatted = JournalLedgerManager.formatTotal(calc.totalCentimes, currency)
+                val currencySuffix = if (currency == MoneyUnit.DIRHAM) {
+                    stringResource(R.string.currency_dirham)
+                } else {
+                    stringResource(R.string.currency_rial)
+                }
+
+                val subtitle = remember(calc, searchQuery, context) {
+                    val matchingItem = if (searchQuery.isNotBlank()) {
+                        calc.items.firstOrNull { it.label.contains(searchQuery, ignoreCase = true) }
+                    } else null
+
+                    if (matchingItem != null) {
+                        val itemAmt = JournalLedgerManager.formatTotal(matchingItem.amountCentimes, currency)
+                        "${matchingItem.label} — $itemAmt $currencySuffix"
+                    } else {
+                        val itemLabels = calc.items
+                            .map { it.label.trim() }
+                            .filter { it.isNotBlank() }
+
+                        if (itemLabels.isNotEmpty()) {
+                            itemLabels.joinToString(if (isRtl) "، " else ", ")
+                        } else if (calc.items.isNotEmpty()) {
+                            calc.items.indices.map { idx ->
+                                if (isRtl) "عنصر ${idx + 1}" else "Article ${idx + 1}"
+                            }.joinToString(if (isRtl) "، " else ", ")
+                        } else {
+                            if (isRtl) "بدون عناصر" else "Aucun article"
+                        }
+                    }
+                }
+
+                NotebookCalculationRow(
+                    index = idx,
+                    title = calc.calculation.title,
+                    totalAmount = totalFormatted,
+                    currencySuffix = currencySuffix,
+                    subtitle = subtitle,
+                    isPinned = false,
+                    dotColorOverride = timelineStyle.dotColor,
+                    onClick = { onOpenCalculation(calc.calculation.id) },
+                    onMoreClick = { onMoreClick(calc) }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Unified lightweight search field integrated with the notebook ruled grid.
+ */
+@Composable
+fun NotebookSearchField(
+    query: String,
+    onQueryChange: ((String) -> Unit)?,
+    placeholder: String = stringResource(R.string.home_search_placeholder),
+    onOpenCalendar: (() -> Unit)? = null,
+    isDateFiltered: Boolean = false,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    JournalInlineSearchRow(
+        query = query,
+        onQueryChange = onQueryChange,
+        placeholder = placeholder,
+        onOpenCalendar = onOpenCalendar,
+        isDateFiltered = isDateFiltered,
+        onClick = onClick,
+        modifier = modifier
+    )
 }
 
 /**
@@ -1555,7 +2088,7 @@ fun JournalUpcomingFeatureRow(
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 5.7.dp)
+                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
             )
 
             HisabiSketchIcon(
@@ -1563,7 +2096,7 @@ fun JournalUpcomingFeatureRow(
                 contentDescription = null,
                 tint = JournalMutedInk,
                 size = 17.dp,
-                modifier = Modifier.offset(y = 2.0.dp)
+                modifier = Modifier.offset(y = 1.0.dp)
             )
         }
 
@@ -1582,7 +2115,7 @@ fun JournalUpcomingFeatureRow(
                 fontWeight = FontWeight.Normal,
                 color = JournalMutedInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 5.7.dp)
+                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
             )
 
             Text(
@@ -1592,7 +2125,7 @@ fun JournalUpcomingFeatureRow(
                 fontWeight = FontWeight.Medium,
                 color = JournalMutedInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 5.7.dp)
+                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
             )
         }
     }

@@ -59,7 +59,11 @@ fun HssabiNavHost(
         composable(AppDestination.History.route) {
             HistoryScreen(
                 viewModel = historyViewModel,
-                onOpenCalculation = { id -> navController.navigate("calculation/$id") }
+                onOpenCalculation = { id -> navController.navigate("calculation/$id") },
+                onNewCalculation = { navController.navigate(AppDestination.NewCalculation.route) },
+                onOpenMonthCalculations = { year, month ->
+                    navController.navigate("month_calculations/$year/$month")
+                }
             )
         }
 

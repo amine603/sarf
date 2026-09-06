@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -35,6 +37,8 @@ fun NotebookBottomNavigation(
     onNavigateTo: (AppDestination) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -61,7 +65,11 @@ fun NotebookBottomNavigation(
                     label = stringResource(R.string.nav_home),
                     symbol = HisabiSymbol.Home,
                     isSelected = currentDestination == AppDestination.Home,
-                    onClick = { onNavigateTo(AppDestination.Home) },
+                    onClick = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        onNavigateTo(AppDestination.Home)
+                    },
                     modifier = Modifier.weight(1f)
                 )
 
@@ -70,7 +78,11 @@ fun NotebookBottomNavigation(
                     label = stringResource(R.string.nav_history),
                     symbol = HisabiSymbol.Clock,
                     isSelected = currentDestination == AppDestination.History,
-                    onClick = { onNavigateTo(AppDestination.History) },
+                    onClick = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        onNavigateTo(AppDestination.History)
+                    },
                     modifier = Modifier.weight(1f)
                 )
 
@@ -79,7 +91,11 @@ fun NotebookBottomNavigation(
                     label = stringResource(R.string.nav_settings),
                     symbol = HisabiSymbol.Gear,
                     isSelected = currentDestination == AppDestination.Settings,
-                    onClick = { onNavigateTo(AppDestination.Settings) },
+                    onClick = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        onNavigateTo(AppDestination.Settings)
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }

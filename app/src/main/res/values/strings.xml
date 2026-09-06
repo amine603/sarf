@@ -8,10 +8,10 @@
     <string name="nav_settings">Paramètres</string>
 
     <!-- Home -->
-    <string name="home_greeting">Bonjour Youssef</string>
+    <string name="home_greeting">Bonjour %1$s 😊</string>
     <string name="home_search_placeholder">Rechercher un calcul</string>
     <string name="home_new_calculation">Nouveau calcul</string>
-    <string name="home_recent_title">Vos calculs</string>
+    <string name="home_recent_title">Calculs récents</string>
     <string name="home_favorites_title">Vos favoris</string>
     <string name="home_favorites_empty_hint">Épinglez vos calculs importants ici (⋮)</string>
     <string name="action_pin">Épingler</string>
@@ -69,6 +69,7 @@
 
     <!-- History and search -->
     <string name="history_title">Historique</string>
+    <string name="history_section_title">Tous les calculs</string>
     <string name="history_search_placeholder">Rechercher dans les calculs</string>
     <string name="history_filter_all">Tout</string>
     <string name="history_filter_today">Aujourd’hui</string>
@@ -97,8 +98,11 @@
     <!-- Settings -->
     <string name="settings_title">Paramètres</string>
     <string name="settings_tagline">Réglages de l’app</string>
-    <string name="settings_storage_title">Stockage des données</string>
-    <string name="settings_storage_badge">✓ Hors-ligne 100%</string>
+    <string name="settings_section_preferences">Préférences</string>
+    <string name="settings_section_data">Données</string>
+    <string name="settings_section_upcoming">À venir</string>
+    <string name="settings_storage_title">Stockage local</string>
+    <string name="settings_storage_badge">100% local / Hors-ligne</string>
     <string name="settings_storage_notice">Vos données sont stockées uniquement sur cet appareil.</string>
     <string name="settings_language">Langue</string>
     <string name="settings_language_description">Choisissez votre langue</string>

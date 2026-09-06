@@ -26,10 +26,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
@@ -59,10 +64,11 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import com.cash.guide.app.LocalizedContextWrapper
 import com.cash.guide.domain.DateGroupHelper
-import com.cash.guide.ui.notebook.JournalPrimaryActionButton
-import com.cash.guide.ui.notebook.JournalFloatingActionButton
-import com.cash.guide.ui.notebook.JournalInlineSearchRow
-import com.cash.guide.ui.notebook.JournalFavoritesHeader
+import com.cash.guide.ui.notebook.HighlighterYellow
+import com.cash.guide.ui.notebook.NotebookDateGroupBlock
+import com.cash.guide.ui.notebook.NotebookPrimaryActionButton
+import com.cash.guide.ui.notebook.NotebookSearchField
+import com.cash.guide.ui.notebook.NotebookSectionBand
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -88,6 +94,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val state by viewModel.uiState.collectAsState()
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
@@ -105,8 +113,8 @@ fun HomeScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        JournalRuledDocument(modifier = Modifier.fillMaxSize()) {
-            // Line 1: Greeting Band ("Bonjour Youssef :)" / "صباح الخير يوسف :)" + Month Year sitting directly on the ruled line)
+        JournalRuledDocument(modifier = Modifier.fillMaxSize(), clearFocusOnTap = true) {
+            // Line 1: Header Band (Compact "Hssabi" / "حسابي" + Month Year sitting directly on the ruled line)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -115,174 +123,88 @@ fun HomeScreen(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (isRtl) {
-                        Text(
-                            text = "صباح الخير ",
-                            fontFamily = TajawalFamily,
-                            fontSize = 17.5.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = 6.0.dp)
-                        )
-                        Text(
-                            text = "يوسف",
-                            fontFamily = TajawalFamily,
-                            fontSize = 17.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = 6.0.dp)
-                        )
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Smile,
-                            contentDescription = null,
-                            tint = JournalInk,
-                            size = 18.dp,
-                            modifier = Modifier.offset(y = 1.0.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "Bonjour ",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = 5.5.dp)
-                        )
-                        Text(
-                            text = "Youssef",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = 5.5.dp)
-                        )
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Smile,
-                            contentDescription = null,
-                            tint = JournalInk,
-                            size = 18.dp,
-                            modifier = Modifier.offset(y = 1.0.dp)
-                        )
+                val greetingAnnotated = remember(isRtl, state.userName) {
+                    buildAnnotatedString {
+                        withStyle(
+                            SpanStyle(
+                                fontWeight = FontWeight.Light,
+                                color = JournalInk.copy(alpha = 0.72f)
+                            )
+                        ) {
+                            append(if (isRtl) "أهلاً " else "Bonjour ")
+                        }
+                        withStyle(
+                            SpanStyle(
+                                fontWeight = FontWeight.Bold,
+                                color = JournalInk
+                            )
+                        ) {
+                            append(state.userName)
+                        }
+                        append(" 😊")
                     }
                 }
+
+                Text(
+                    text = greetingAnnotated,
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 17.5.sp else 19.5.sp,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                )
 
                 Text(
                     text = currentMonthYear,
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                     fontSize = if (isRtl) 14.5.sp else 16.sp,
                     fontWeight = FontWeight.Normal,
-                    color = JournalMutedInk.copy(alpha = 0.80f),
+                    color = JournalMutedInk.copy(alpha = 0.85f),
                     style = TextStyle(platformStyle = NoFontPadding),
                     modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
                 )
             }
 
-            // Skip 1 ruled line ("na99ez star o dir search")
+            // Line 2: 1 rule spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Prominent Ruled-Line Search Row with Calendar icon popup
-            JournalInlineSearchRow(
+            // Line 3: Ruled-Line Search Row with Calendar icon popup
+            NotebookSearchField(
                 query = state.searchQuery,
                 onQueryChange = { query -> viewModel.updateSearchQuery(query) },
                 onOpenCalendar = { showMonthPicker = true },
-                isDateFiltered = state.selectedDateEpoch != null,
-                showUnderline = false
+                isDateFiltered = state.selectedDateEpoch != null
             )
 
-            // Skip 1 ruled line under search ("tale3 vos favoris lstar li lfo9")
+            // Line 4: 1 rule spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Section: Vos favoris ("o 9bel vos calculs dir vos favourites o hna ykouno l7issabat matalan li dayr lihom pin")
+            // Line 5: Full-width pink "+ Nouveau calcul" primary button (29dp)
+            NotebookPrimaryActionButton(
+                text = stringResource(R.string.home_new_calculation),
+                onClick = onNewCalculation
+            )
+
+            // Line 6: 1 rule spacer
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Section: Recent Calculations ("Calculs récents" / "الحسابات الأخيرة") in soft yellow band
             if (!state.isEmpty) {
-                if (state.favoriteCalculations.isNotEmpty() || !state.isFiltering) {
-                    JournalFavoritesHeader()
+                NotebookSectionBand(
+                    title = stringResource(R.string.home_recent_title),
+                    highlightColor = HighlighterYellow,
+                    isCentered = true
+                )
 
-                    if (state.favoriteCalculations.isNotEmpty()) {
-                        state.favoriteCalculations.forEachIndexed { idx, calc ->
-                            val currency = runCatching { MoneyUnit.valueOf(calc.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
-                            val totalFormatted = JournalLedgerManager.formatTotal(calc.totalCentimes, currency)
-                            val currencySuffix = if (currency == MoneyUnit.DIRHAM) {
-                                stringResource(R.string.currency_dirham)
-                            } else {
-                                stringResource(R.string.currency_rial)
-                            }
-
-                            JournalCalculationRow(
-                                index = idx,
-                                title = calc.calculation.title,
-                                totalAmount = totalFormatted,
-                                currencySuffix = currencySuffix,
-                                onClick = { onOpenCalculation(calc.calculation.id) },
-                                onMoreClick = { viewModel.selectCalculationForAction(calc) }
-                            )
-                        }
-
-                        // 1 empty notebook line after favorites before "Vos calculs"
-                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
-                    } else {
-                        // Subtle hint row sitting directly on the ruled line
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(JournalRuleSpacing)
-                                .padding(horizontal = 14.dp),
-                            verticalAlignment = Alignment.Bottom,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            Text(
-                                text = stringResource(R.string.home_favorites_empty_hint),
-                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                fontSize = if (isRtl) 14.sp else 15.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = JournalMutedInk.copy(alpha = 0.65f),
-                                style = TextStyle(platformStyle = NoFontPadding),
-                                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
-                            )
-                        }
-
-                        // 1 empty notebook line before "Vos calculs"
-                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
-                    }
-                }
-
-                // Section header ("VOS CALCULS" / "حساباتك") with edge-to-edge flush highlight
-                JournalRecentHeader()
-
-                // Date-grouped saved calculations (directly under each other without blank lines between items)
+                // Date-grouped saved calculations with vertical grouping guide
                 state.displayDateGroups.forEachIndexed { groupIndex, group ->
-                    JournalDateRuleBand(title = group.header)
-
-                    val todayText = stringResource(R.string.date_today)
-                    val yesterdayText = stringResource(R.string.date_yesterday)
-                    val timelineStyle = getDateTimelineStyle(group.header, todayText, yesterdayText)
-
-                    group.calculations.forEachIndexed { idx, calc ->
-                        val currency = runCatching { MoneyUnit.valueOf(calc.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
-                        val totalFormatted = JournalLedgerManager.formatTotal(calc.totalCentimes, currency)
-                        val currencySuffix = if (currency == MoneyUnit.DIRHAM) {
-                            stringResource(R.string.currency_dirham)
-                        } else {
-                            stringResource(R.string.currency_rial)
-                        }
-
-                        JournalCalculationRow(
-                            index = idx,
-                            title = calc.calculation.title,
-                            totalAmount = totalFormatted,
-                            currencySuffix = currencySuffix,
-                            onClick = { onOpenCalculation(calc.calculation.id) },
-                            onMoreClick = { viewModel.selectCalculationForAction(calc) },
-                            dotColorOverride = timelineStyle.dotColor
-                        )
-                    }
+                    NotebookDateGroupBlock(
+                        header = group.header,
+                        calculations = group.calculations,
+                        onOpenCalculation = onOpenCalculation,
+                        onMoreClick = { viewModel.selectCalculationForAction(it) },
+                        searchQuery = state.searchQuery,
+                        pinnedCalculationIds = state.pinnedCalculationIds
+                    )
 
                     // 1 empty notebook line between date groups
                     if (groupIndex < state.displayDateGroups.lastIndex) {
@@ -310,7 +232,11 @@ fun HomeScreen(
                             color = JournalWritingInk.copy(alpha = 0.85f),
                             style = TextStyle(platformStyle = NoFontPadding),
                             modifier = Modifier
-                                .clickable(role = Role.Button, onClick = onOpenHistory)
+                                .clickable(role = Role.Button, onClick = {
+                                    focusManager.clearFocus()
+                                    keyboardController?.hide()
+                                    onOpenHistory()
+                                })
                                 .offset(y = if (isRtl) 6.0.dp else 5.5.dp)
                         )
                     }
@@ -340,8 +266,8 @@ fun HomeScreen(
                 }
             }
 
-            // Bottom Spacers: 6 notebook lines for full scrolling clearance above dock and FAB
-            Spacer(modifier = Modifier.height(JournalRuleSpacing * 6))
+            // Bottom Spacers: 5 notebook lines for full scrolling clearance above dock
+            Spacer(modifier = Modifier.height(JournalRuleSpacing * 5))
         }
 
         // Action Sheet
@@ -394,19 +320,6 @@ fun HomeScreen(
                 }
             )
         }
-
-        // Floating Action Button at the bottom-right ("+ Nouveau calcul" / "+ حساب جديد")
-        // Anchored strictly to the physical right ("3la limen") in both French (LTR) and Arabic (RTL)
-        JournalFloatingActionButton(
-            onClick = onNewCalculation,
-            modifier = Modifier
-                .align(if (isRtl) Alignment.BottomStart else Alignment.BottomEnd)
-                .padding(
-                    start = if (isRtl) 18.dp else 0.dp,
-                    end = if (isRtl) 0.dp else 18.dp,
-                    bottom = 18.dp
-                )
-        )
     }
 }
 

@@ -23,20 +23,49 @@ class HistoryViewModel(
 
     private var searchJob: Job? = null
 
+    private var rawItems: List<CalculationWithItems> = emptyList()
+    private var lastContext: Context? = null
+
     fun loadAll(context: Context) {
+        lastContext = context
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             repository.observeAllSaved().collect { items ->
-                val groups = DateGroupHelper.groupByDate(
-                    items = items,
-                    todayString = context.getString(R.string.date_today),
-                    yesterdayString = context.getString(R.string.date_yesterday),
-                    thisWeekString = context.getString(R.string.date_this_week),
-                    locale = context.resources.configuration.locales[0]
-                )
-                _uiState.update { it.copy(allDateGroups = groups, isLoading = false) }
+                rawItems = items
+                applyFilterAndGroup(context)
             }
         }
+    }
+
+    fun setFilter(filter: HistoryFilter) {
+        _uiState.update { it.copy(selectedFilter = filter) }
+        lastContext?.let { applyFilterAndGroup(it) }
+    }
+
+    private fun applyFilterAndGroup(context: Context) {
+        val currentFilter = _uiState.value.selectedFilter
+        val filteredItems = if (currentFilter == HistoryFilter.THIS_MONTH) {
+            val now = java.time.LocalDate.now()
+            val currentYear = now.year
+            val currentMonth = now.monthValue
+            rawItems.filter { item ->
+                val itemDate = java.time.Instant.ofEpochMilli(item.calculation.updatedAtEpochMs)
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate()
+                itemDate.year == currentYear && itemDate.monthValue == currentMonth
+            }
+        } else {
+            rawItems
+        }
+
+        val groups = DateGroupHelper.groupByDate(
+            items = filteredItems,
+            todayString = context.getString(R.string.date_today),
+            yesterdayString = context.getString(R.string.date_yesterday),
+            thisWeekString = context.getString(R.string.date_this_week),
+            locale = context.resources.configuration.locales[0]
+        )
+        _uiState.update { it.copy(allDateGroups = groups, isLoading = false) }
     }
 
     fun updateSearchQuery(query: String) {

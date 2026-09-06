@@ -89,6 +89,14 @@ object HisabiMetrics {
     val KeypadDockHeight = 260.dp
 }
 
+object NotebookMetrics {
+    val ruleSpacing = JournalRuleSpacing // 29.dp
+    val baselineOffset = 5.5.dp
+    val baselineOffsetRtl = 6.0.dp
+    val ruleStroke = 0.6.dp
+    val verticalGuideThickness = 1.5.dp
+}
+
 // --- Bundled Offline Font Families ---
 val PatrickHandFamily = JournalHandFamily
 

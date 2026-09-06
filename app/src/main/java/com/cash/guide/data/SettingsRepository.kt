@@ -19,6 +19,11 @@ class SettingsRepository(private val context: Context) {
         val APP_LANGUAGE = stringPreferencesKey("app_language")
         val DEFAULT_CURRENCY = stringPreferencesKey("default_currency")
         val PINNED_CALCULATION_IDS = stringSetPreferencesKey("pinned_calculation_ids")
+        val USER_NAME = stringPreferencesKey("user_name")
+    }
+
+    val userName: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.USER_NAME] ?: "Youssef"
     }
 
     val appLanguage: Flow<String> = context.dataStore.data.map { preferences ->
