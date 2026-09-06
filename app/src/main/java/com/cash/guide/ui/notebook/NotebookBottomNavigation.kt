@@ -73,7 +73,20 @@ fun NotebookBottomNavigation(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Tab 2: History
+                // Tab 2: Groups
+                BottomNavItem(
+                    label = stringResource(R.string.nav_groups),
+                    symbol = HisabiSymbol.Folder,
+                    isSelected = currentDestination == AppDestination.Groups,
+                    onClick = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        onNavigateTo(AppDestination.Groups)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Tab 3: History
                 BottomNavItem(
                     label = stringResource(R.string.nav_history),
                     symbol = HisabiSymbol.Clock,
@@ -86,7 +99,7 @@ fun NotebookBottomNavigation(
                     modifier = Modifier.weight(1f)
                 )
 
-                // Tab 3: Settings
+                // Tab 4: Settings
                 BottomNavItem(
                     label = stringResource(R.string.nav_settings),
                     symbol = HisabiSymbol.Gear,

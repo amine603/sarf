@@ -19,6 +19,7 @@ import com.cash.guide.data.db.HssabiDatabase
 import com.cash.guide.feature.editor.CalculationEditorViewModel
 import com.cash.guide.feature.history.HistoryViewModel
 import com.cash.guide.feature.home.HomeViewModel
+import com.cash.guide.feature.groups.GroupsViewModel
 import com.cash.guide.feature.settings.SettingsViewModel
 import com.cash.guide.ui.notebook.JournalPaper
 import com.cash.guide.ui.notebook.NotebookBottomNavigation
@@ -44,7 +45,9 @@ class LocalizedContextWrapper(
 fun HssabiApp() {
     val context = LocalContext.current
     val database = remember { HssabiDatabase.getInstance(context) }
-    val calculationRepository = remember { CalculationRepository(database.calculationDao()) }
+    val calculationRepository = remember {
+        CalculationRepository(database.calculationDao(), database.calculationGroupDao())
+    }
     val settingsRepository = remember { SettingsRepository(context) }
 
     val appLanguage by settingsRepository.appLanguage.collectAsState(initial = "fr")
@@ -66,6 +69,7 @@ fun HssabiApp() {
     val layoutDirection = if (appLanguage == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr
 
     val homeViewModel = viewModel { HomeViewModel(calculationRepository, settingsRepository) }
+    val groupsViewModel = viewModel { GroupsViewModel(calculationRepository) }
     val historyViewModel = viewModel { HistoryViewModel(calculationRepository) }
     val settingsViewModel = viewModel { SettingsViewModel(settingsRepository) }
 
@@ -75,11 +79,13 @@ fun HssabiApp() {
 
     val isTopLevel = currentRoute in listOf(
         AppDestination.Home.route,
+        AppDestination.Groups.route,
         AppDestination.History.route,
         AppDestination.Settings.route
     )
 
     val currentDestination = when (currentRoute) {
+        AppDestination.Groups.route -> AppDestination.Groups
         AppDestination.History.route -> AppDestination.History
         AppDestination.Settings.route -> AppDestination.Settings
         else -> AppDestination.Home
@@ -122,9 +128,11 @@ fun HssabiApp() {
                 HssabiNavHost(
                     navController = navController,
                     homeViewModel = homeViewModel,
+                    groupsViewModel = groupsViewModel,
                     historyViewModel = historyViewModel,
                     settingsViewModel = settingsViewModel,
                     calculationRepository = calculationRepository,
+                    settingsRepository = settingsRepository,
                     editorViewModelFactory = {
                         CalculationEditorViewModel(
                             calculationRepository = calculationRepository,

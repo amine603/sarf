@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class HistoryViewModel(
-    private val repository: CalculationRepository
+    val repository: CalculationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HistoryUiState())

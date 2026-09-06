@@ -41,7 +41,9 @@ enum class HisabiSymbol {
     Copy,
     Calendar,
     Pin,
-    Smile
+    Smile,
+    Folder,
+    Share
 }
 
 @Composable
@@ -368,6 +370,38 @@ fun HisabiSketchIcon(
                     quadraticTo(u(12f), u(17.5f), u(16.5f), u(13.5f))
                 }
                 drawPath(smilePath, tint, style = pen)
+            }
+            HisabiSymbol.Folder -> {
+                val folderOutline = Path().apply {
+                    moveTo(u(3.5f), u(7f))
+                    lineTo(u(8.5f), u(7f))
+                    lineTo(u(10.5f), u(9f))
+                    lineTo(u(20.5f), u(9f))
+                    quadraticTo(u(21.5f), u(9f), u(21.5f), u(10f))
+                    lineTo(u(21.5f), u(18.5f))
+                    quadraticTo(u(21.5f), u(19.5f), u(20.5f), u(19.5f))
+                    lineTo(u(3.5f), u(19.5f))
+                    quadraticTo(u(2.5f), u(19.5f), u(2.5f), u(18.5f))
+                    lineTo(u(2.5f), u(8f))
+                    quadraticTo(u(2.5f), u(7f), u(3.5f), u(7f))
+                    close()
+                }
+                drawPath(folderOutline, tint, style = pen)
+                drawLine(tint, point(2.5f, 12.5f), point(21.5f, 12.5f), u(1.2f), StrokeCap.Round)
+            }
+            HisabiSymbol.Share -> {
+                val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
+                val xSource = if (isRtl) 18f else 6f
+                val xBranch = if (isRtl) 6f else 18f
+                val nodeR = 2.1f
+                // Three circular nodes
+                drawCircle(tint, u(nodeR), point(xSource, 12f), style = pen)
+                drawCircle(tint, u(nodeR), point(xBranch, 6f), style = pen)
+                drawCircle(tint, u(nodeR), point(xBranch, 18f), style = pen)
+                // Connecting lines between node perimeters
+                val dx = if (isRtl) -1f else 1f
+                drawLine(tint, point(xSource + dx * 1.9f, 11f), point(xBranch - dx * 1.9f, 7f), u(1.35f), StrokeCap.Round)
+                drawLine(tint, point(xSource + dx * 1.9f, 13f), point(xBranch - dx * 1.9f, 17f), u(1.35f), StrokeCap.Round)
             }
         }
     }

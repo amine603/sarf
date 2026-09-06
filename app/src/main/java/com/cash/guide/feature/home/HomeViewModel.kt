@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val repository: CalculationRepository,
+    val repository: CalculationRepository,
     private val settingsRepository: SettingsRepository? = null
 ) : ViewModel() {
 

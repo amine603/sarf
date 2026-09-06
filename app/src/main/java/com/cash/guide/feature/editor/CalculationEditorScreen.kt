@@ -41,6 +41,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -89,6 +92,9 @@ fun CalculationEditorScreen(
     val state by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
 
     LaunchedEffect(calculationId) {
         viewModel.loadCalculation(calculationId)
@@ -117,6 +123,7 @@ fun CalculationEditorScreen(
                 },
                 onCalculatorClick = { viewModel.openCalculatorPopup(state.activeRowId) },
                 onSaveClick = { viewModel.saveCalculation(onSuccess = onNavigateBack) },
+                onShareClick = { viewModel.shareAsImage(context, isRtl) },
                 onBackClick = { viewModel.handleBackPress(onNavigateBack) }
             )
 
@@ -261,6 +268,7 @@ private fun EditorTopBar(
     onCurrencyToggle: () -> Unit,
     onCalculatorClick: () -> Unit,
     onSaveClick: () -> Unit,
+    onShareClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     Surface(
@@ -275,7 +283,7 @@ private fun EditorTopBar(
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 4.dp)
         ) {
-            // --- Line 1 (Navigation Back + Calculation Title) ---
+            // --- Line 1 (Navigation Back + Calculation Title + Share Button) ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -340,8 +348,21 @@ private fun EditorTopBar(
                     )
                 }
 
-                // Balance the Back Button for perfect horizontal centering of Title
-                Spacer(modifier = Modifier.size(42.dp))
+                // Share Button (42dp touch target)
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .clickable(role = Role.Button, onClick = onShareClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Share,
+                        contentDescription = stringResource(R.string.action_share_image),
+                        tint = JournalInk,
+                        size = 20.dp
+                    )
+                }
             }
 
             // --- Line 2 (Editor Tools: Currency + Calculator + Save) ---

@@ -1,15 +1,18 @@
 package com.cash.guide.feature.editor
 
+import android.content.Context
 import android.os.SystemClock
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cash.guide.R
 import com.cash.guide.data.CalculationRepository
 import com.cash.guide.data.SettingsRepository
 import com.cash.guide.data.db.CalculationEntity
 import com.cash.guide.data.db.CalculationItemEntity
 import com.cash.guide.domain.AndroidIcuGraphemeSegmenter
+import com.cash.guide.domain.CalculationImageShareHelper
 import com.cash.guide.domain.GraphemeSegmenter
 import com.cash.guide.domain.JournalKeyboardController
 import com.cash.guide.domain.JournalKeyboardLanguage
@@ -765,6 +768,47 @@ class CalculationEditorViewModel(
             )
 
             calculationRepository.saveDraft(draftEntity, itemEntities)
+        }
+    }
+
+    fun shareAsImage(context: Context, isRtl: Boolean) {
+        val state = _uiState.value
+        val titleText = state.title.text.trim().ifBlank { context.getString(R.string.editor_new_title) }
+        val targetId = state.editingSavedId ?: state.calculationId ?: UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+
+        val populatedRows = state.rows.filter { it.isPopulated }
+        val itemEntities = populatedRows.mapIndexed { idx, row ->
+            val centimes = MoneyMath.toCentimes(row.amount.text, state.currency) ?: 0L
+            CalculationItemEntity(
+                id = UUID.randomUUID().toString(),
+                calculationId = targetId,
+                label = row.title.text.trim(),
+                amountCentimes = centimes,
+                rawExpression = row.amount.text.trim(),
+                position = idx,
+                createdAtEpochMs = now,
+                updatedAtEpochMs = now
+            )
+        }
+        val totalCentimes = itemEntities.sumOf { it.amountCentimes }
+
+        viewModelScope.launch {
+            val existing = targetId.let { calculationRepository.getCalculation(it) }
+            val groupName = existing?.calculation?.groupId?.let { gid ->
+                calculationRepository.getGroup(gid)?.name
+            }
+            CalculationImageShareHelper.shareCalculation(
+                context = context,
+                calculationId = targetId,
+                title = titleText,
+                currency = state.currency,
+                items = itemEntities,
+                totalCentimes = totalCentimes,
+                groupName = groupName,
+                createdAtEpochMs = state.createdAtEpochMs ?: now,
+                isRtl = isRtl
+            )
         }
     }
 }

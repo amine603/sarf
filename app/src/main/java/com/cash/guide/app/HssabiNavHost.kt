@@ -16,22 +16,32 @@ import com.cash.guide.feature.home.HomeViewModel
 import com.cash.guide.feature.settings.SettingsScreen
 import com.cash.guide.feature.settings.SettingsViewModel
 
+import com.cash.guide.feature.groups.GroupsScreen
+import com.cash.guide.feature.groups.GroupsViewModel
+import com.cash.guide.feature.groups.GroupDetailScreen
+import com.cash.guide.feature.groups.GroupDetailViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-
+import androidx.compose.runtime.rememberCoroutineScope
 import com.cash.guide.data.CalculationRepository
+import com.cash.guide.data.SettingsRepository
 import com.cash.guide.feature.history.MonthCalculationsScreen
+import kotlinx.coroutines.launch
 import java.util.Calendar
 
 @Composable
 fun HssabiNavHost(
     navController: NavHostController,
     homeViewModel: HomeViewModel,
+    groupsViewModel: GroupsViewModel,
     historyViewModel: HistoryViewModel,
     settingsViewModel: SettingsViewModel,
     calculationRepository: CalculationRepository,
+    settingsRepository: SettingsRepository,
     editorViewModelFactory: () -> CalculationEditorViewModel,
     modifier: Modifier = Modifier
 ) {
+    val coroutineScope = rememberCoroutineScope()
+
     NavHost(
         navController = navController,
         startDestination = AppDestination.Home.route,
@@ -47,6 +57,39 @@ fun HssabiNavHost(
                     navController.navigate("month_calculations/$year/$month")
                 },
                 onOpenStyleShowcase = { navController.navigate(AppDestination.StyleShowcase.route) }
+            )
+        }
+
+        composable(AppDestination.Groups.route) {
+            GroupsScreen(
+                viewModel = groupsViewModel,
+                settingsRepository = settingsRepository,
+                onOpenGroup = { groupId -> navController.navigate("group/$groupId") }
+            )
+        }
+
+        composable(
+            route = AppDestination.GroupDetail.ROUTE_PATTERN,
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: return@composable
+            val groupDetailViewModel: GroupDetailViewModel = viewModel(
+                viewModelStoreOwner = backStackEntry,
+                key = "group_detail_$groupId"
+            ) {
+                GroupDetailViewModel(groupId, calculationRepository)
+            }
+            GroupDetailScreen(
+                viewModel = groupDetailViewModel,
+                settingsRepository = settingsRepository,
+                onBack = { navController.popBackStack() },
+                onOpenCalculation = { id -> navController.navigate("calculation/$id") },
+                onNewCalculationInGroup = { gid ->
+                    coroutineScope.launch {
+                        calculationRepository.createDraftInGroup(gid)
+                        navController.navigate(AppDestination.NewCalculation.route)
+                    }
+                }
             )
         }
 

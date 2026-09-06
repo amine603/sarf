@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.border
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ import com.cash.guide.ui.notebook.NotebookSectionBand
 import com.cash.guide.ui.notebook.NotebookSegmentedControl
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
+import com.cash.guide.ui.notebook.NotebookMetrics
 
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -78,7 +80,7 @@ fun SettingsScreen(
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                 )
 
                 val context = LocalContext.current
@@ -96,7 +98,7 @@ fun SettingsScreen(
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk.copy(alpha = 0.85f),
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                 )
             }
 
@@ -144,7 +146,7 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Bold,
                             color = JournalInk,
                             style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                            modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                         )
                     }
 
@@ -173,7 +175,7 @@ fun SettingsScreen(
                         fontWeight = FontWeight.Normal,
                         color = JournalMutedInk,
                         style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                        modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                     )
                 }
             }
@@ -212,7 +214,7 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Bold,
                             color = JournalInk,
                             style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                            modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                         )
                     }
 
@@ -241,15 +243,15 @@ fun SettingsScreen(
                         fontWeight = FontWeight.Normal,
                         color = JournalMutedInk,
                         style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                        modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                     )
                 }
             }
 
-            // Line 8: 1 empty notebook line spacer
+            // 1 empty notebook line spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Line 9: Section 2 Header - Données (soft green band)
+            // Section 2 Header - Données (soft green band)
             NotebookSectionBand(
                 title = stringResource(R.string.settings_section_data),
                 highlightColor = HighlighterGreen,
@@ -290,7 +292,7 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Bold,
                             color = JournalInk,
                             style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                            modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                         )
                     }
 
@@ -327,7 +329,7 @@ fun SettingsScreen(
                         fontWeight = FontWeight.Normal,
                         color = JournalMutedInk,
                         style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                        modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                     )
                 }
             }

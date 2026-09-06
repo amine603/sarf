@@ -33,7 +33,7 @@
     <!-- Editor -->
     <string name="editor_new_title">حساب جديد</string>
     <string name="editor_title_placeholder">عنوان الحساب</string>
-    <string name="editor_item_placeholder">البيان</string>
+    <string name="editor_item_placeholder">اسم العنصر…</string>
     <string name="editor_amount_placeholder">المبلغ</string>
     <string name="editor_add_row">زيد سطر</string>
     <string name="editor_total">المجموع</string>
@@ -82,6 +82,12 @@
     <string name="action_edit">تعديل</string>
     <string name="action_duplicate">نسخ الحساب</string>
     <string name="action_share_image">مشاركة كصورة</string>
+    <string name="share_chooser_title">مشاركة الحساب</string>
+    <string name="share_footer_watermark">صُنع بواسطة حسابي</string>
+    <string name="share_total_label">المجموع</string>
+    <string name="share_empty_items">بدون عناصر</string>
+    <string name="share_article_prefix">عنصر</string>
+    <string name="share_error">تعذر مشاركة الحساب</string>
     <string name="action_export_pdf">تصدير PDF</string>
     <string name="action_export_csv">تصدير CSV</string>
     <string name="action_delete">حذف</string>
@@ -136,4 +142,30 @@
     <string name="cd_clear_search">مسح البحث</string>
     <string name="cd_selected">محدد</string>
     <string name="cd_not_selected">غير محدد</string>
+    <!-- Groups feature -->
+    <string name="nav_groups">مجموعاتي</string>
+    <string name="groups_title">مجموعاتي</string>
+    <string name="groups_new_action">مجموعة جديدة</string>
+    <string name="groups_empty_title">لا توجد مجموعات</string>
+    <string name="groups_empty_desc">أنشئ مجموعة باش تنظم الحسابات ديالك.</string>
+    <string name="groups_count_badge">%d مجموعات</string>
+    <string name="group_calculations_count">%d حسابات</string>
+    <string name="group_calculations_count_single">حساب واحد</string>
+    <string name="group_calculations_count_zero">0 حساب</string>
+    <string name="group_total_label">المجموع :</string>
+    <string name="action_add_to_group">إضافة إلى مجموعة</string>
+    <string name="action_change_group">تغيير المجموعة</string>
+    <string name="action_remove_from_group">إزالة من المجموعة</string>
+    <string name="group_dialog_create_title">مجموعة جديدة</string>
+    <string name="group_dialog_edit_title">تعديل المجموعة</string>
+    <string name="group_dialog_name_hint">اسم المجموعة (مثال: الدار، السفر...)</string>
+    <string name="group_dialog_color_label">لون الهايلايتر</string>
+    <string name="group_dialog_save">حفظ</string>
+    <string name="group_dialog_cancel">إلغاء</string>
+    <string name="group_dialog_delete_title">حذف المجموعة ؟</string>
+    <string name="group_dialog_delete_body">الحسابات اللي فهاد المجموعة ماغاديش يتمسحو، غايوليو غير مصنفين.</string>
+    <string name="group_detail_new_calc">حساب جديد فهاد المجموعة</string>
+    <string name="group_detail_empty">ما كاين حتى حساب فهاد المجموعة دابا.</string>
+    <string name="group_assign_dialog_title">اختر مجموعة</string>
+    <string name="group_none">بدون مجموعة (غير مصنف)</string>
 </resources>

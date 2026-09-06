@@ -21,7 +21,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.cash.guide.domain.CalculationImageShareHelper
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -61,6 +64,8 @@ import com.cash.guide.ui.notebook.NotebookSegmentedControl
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.SavedCalculationActionsSheet
 import com.cash.guide.ui.notebook.TajawalFamily
+import com.cash.guide.ui.notebook.NotebookMetrics
+import com.cash.guide.feature.groups.AssignToGroupDialog
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -81,7 +86,9 @@ fun HistoryScreen(
     val state by viewModel.uiState.collectAsState()
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
+    val coroutineScope = rememberCoroutineScope()
     var showMonthPicker by remember { mutableStateOf(false) }
+    var calcToAssignToGroup by remember { mutableStateOf<com.cash.guide.data.db.CalculationWithItems?>(null) }
 
     val currentMonthYear = remember(context) {
         val locale = context.resources.configuration.locales[0]
@@ -115,7 +122,7 @@ fun HistoryScreen(
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                 )
 
                 Text(
@@ -125,7 +132,7 @@ fun HistoryScreen(
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk.copy(alpha = 0.85f),
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                 )
             }
 
@@ -175,7 +182,7 @@ fun HistoryScreen(
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                        modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                     )
                 }
 
@@ -212,7 +219,7 @@ fun HistoryScreen(
                                 itemLabels.joinToString(if (isRtl) "، " else ", ")
                             } else if (calc.items.isNotEmpty()) {
                                 calc.items.indices.map { idx ->
-                                    if (isRtl) "عنصر ${idx + 1}" else "Article ${idx + 1}"
+                                    if (isRtl) "عنصر \u200E${idx + 1}\u200F" else "Article ${idx + 1}"
                                 }.joinToString(if (isRtl) "، " else ", ")
                             } else {
                                 if (isRtl) "بدون عناصر" else "Aucun article"
@@ -245,7 +252,7 @@ fun HistoryScreen(
                             fontWeight = FontWeight.Medium,
                             color = JournalMutedInk,
                             style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                            modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                         )
                     }
                 }
@@ -281,7 +288,7 @@ fun HistoryScreen(
                             fontWeight = FontWeight.Medium,
                             color = JournalMutedInk,
                             style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                            modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                         )
                     }
                 }
@@ -306,11 +313,43 @@ fun HistoryScreen(
                     }
                     viewModel.selectCalculationForAction(null)
                 },
+                onShareImage = {
+                    val calcToShare = actionCalc
+                    coroutineScope.launch {
+                        val groupName = calcToShare.calculation.groupId?.let { gid ->
+                            viewModel.repository.getGroup(gid)?.name
+                        }
+                        CalculationImageShareHelper.shareCalculation(
+                            context = context,
+                            calculationWithItems = calcToShare,
+                            groupName = groupName,
+                            isRtl = isRtl
+                        )
+                    }
+                    viewModel.selectCalculationForAction(null)
+                },
+                onAssignToGroup = {
+                    calcToAssignToGroup = actionCalc
+                },
                 onDelete = {
                     viewModel.requestDelete(actionCalc)
                 },
                 onDismiss = {
                     viewModel.selectCalculationForAction(null)
+                }
+            )
+        }
+
+        // Assign to Group Dialog
+        calcToAssignToGroup?.let { calc ->
+            AssignToGroupDialog(
+                calculationId = calc.calculation.id,
+                currentGroupId = calc.calculation.groupId,
+                calculationRepository = viewModel.repository,
+                onDismiss = { calcToAssignToGroup = null },
+                onAssigned = {
+                    calcToAssignToGroup = null
+                    viewModel.loadAll(context)
                 }
             )
         }

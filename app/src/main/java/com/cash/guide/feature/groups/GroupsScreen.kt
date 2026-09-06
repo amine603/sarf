@@ -1,0 +1,600 @@
+package com.cash.guide.feature.groups
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.cash.guide.R
+import com.cash.guide.data.SettingsRepository
+import com.cash.guide.data.db.CalculationGroupEntity
+import com.cash.guide.data.db.CalculationGroupWithCalculations
+import com.cash.guide.domain.JournalLedgerManager
+import com.cash.guide.domain.MoneyUnit
+import com.cash.guide.ui.notebook.HisabiSketchIcon
+import com.cash.guide.ui.notebook.HisabiSymbol
+import com.cash.guide.ui.notebook.HighlighterYellow
+import com.cash.guide.ui.notebook.JournalActionDelete
+import com.cash.guide.ui.notebook.JournalInk
+import com.cash.guide.ui.notebook.JournalMutedInk
+import com.cash.guide.ui.notebook.JournalPaper
+import com.cash.guide.ui.notebook.JournalRuleSpacing
+import com.cash.guide.ui.notebook.JournalRuledDocument
+import com.cash.guide.ui.notebook.JournalWritingInk
+import com.cash.guide.ui.notebook.NoFontPadding
+import com.cash.guide.ui.notebook.NotebookPrimaryActionButton
+import com.cash.guide.ui.notebook.PatrickHandFamily
+import com.cash.guide.ui.notebook.TajawalFamily
+import com.cash.guide.ui.notebook.NotebookMetrics
+
+val GroupPalette = listOf(
+    "#F4D66D", // Pastel Yellow
+    "#F3A7B9", // Pastel Pink
+    "#C9DDA0", // Pastel Green
+    "#A8CFE3", // Pastel Blue
+    "#D3C5E5", // Pastel Lavender
+    "#F7BDAB"  // Pastel Peach
+)
+
+fun parseGroupColor(hex: String): Color {
+    return runCatching {
+        Color(android.graphics.Color.parseColor(hex))
+    }.getOrDefault(HighlighterYellow)
+}
+
+@Composable
+fun GroupsScreen(
+    viewModel: GroupsViewModel,
+    settingsRepository: SettingsRepository,
+    onOpenGroup: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val state by viewModel.uiState.collectAsState()
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val defaultCurrency by settingsRepository.defaultCurrency.collectAsState(initial = MoneyUnit.DIRHAM)
+    val currencySuffix = if (defaultCurrency == MoneyUnit.DIRHAM) {
+        stringResource(R.string.currency_dirham)
+    } else {
+        stringResource(R.string.currency_rial)
+    }
+
+    JournalRuledDocument(
+        modifier = modifier.fillMaxSize(),
+        clearFocusOnTap = true
+    ) {
+        // Line 1: Header Band ("Mes groupes" / "مجموعاتي" on Start, count on End)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.groups_title),
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 17.5.sp else 19.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = JournalInk,
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+            )
+
+            Text(
+                text = stringResource(R.string.groups_count_badge, state.groups.size),
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 14.5.sp else 16.sp,
+                fontWeight = FontWeight.Normal,
+                color = JournalMutedInk.copy(alpha = 0.85f),
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+            )
+        }
+
+        // Line 2: 1-rule spacer
+        Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+        // Line 3: "+ Nouveau groupe" action button
+        Box(modifier = Modifier.padding(horizontal = 14.dp)) {
+            NotebookPrimaryActionButton(
+                text = stringResource(R.string.groups_new_action),
+                onClick = { viewModel.openCreateDialog() }
+            )
+        }
+
+        // Line 4: 1-rule spacer
+        Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+        // Line 5+: Groups list or empty state
+        if (state.groups.isEmpty() && !state.isLoading) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing * 4)
+                    .padding(horizontal = 14.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                HisabiSketchIcon(
+                    symbol = HisabiSymbol.Folder,
+                    contentDescription = null,
+                    tint = JournalMutedInk.copy(alpha = 0.50f),
+                    size = 32.dp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.groups_empty_title),
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 16.sp else 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalMutedInk
+                )
+                Text(
+                    text = stringResource(R.string.groups_empty_desc),
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 13.sp else 15.sp,
+                    color = JournalMutedInk.copy(alpha = 0.75f)
+                )
+            }
+        } else {
+            state.groups.forEachIndexed { index, groupItem ->
+                NotebookGroupRow(
+                    groupItem = groupItem,
+                    currencySuffix = currencySuffix,
+                    defaultCurrency = defaultCurrency,
+                    onClick = { onOpenGroup(groupItem.group.id) },
+                    onEdit = { viewModel.openEditDialog(groupItem.group) },
+                    onDelete = { viewModel.promptDeleteGroup(groupItem.group) }
+                )
+            }
+        }
+
+        // Bottom breathing space
+        Spacer(modifier = Modifier.height(JournalRuleSpacing * 5))
+    }
+
+    // Create / Edit Dialog
+    if (state.isCreateOrEditDialogOpen) {
+        CreateOrEditGroupDialog(
+            isEditing = state.editingGroup != null,
+            name = state.groupNameInput,
+            onNameChange = { viewModel.updateGroupNameInput(it) },
+            selectedColorHex = state.selectedColorHex,
+            onColorSelect = { viewModel.selectColorHex(it) },
+            onConfirm = { viewModel.saveGroup() },
+            onDismiss = { viewModel.dismissCreateOrEditDialog() }
+        )
+    }
+
+    // Delete Confirmation Dialog
+    state.groupToDelete?.let { group ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissDeleteDialog() },
+            containerColor = JournalPaper,
+            title = {
+                Text(
+                    text = stringResource(R.string.group_dialog_delete_title),
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalInk
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.group_dialog_delete_body),
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = 15.sp,
+                    color = JournalWritingInk
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmDeleteGroup() }) {
+                    Text(
+                        text = stringResource(R.string.delete_confirm),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalActionDelete
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
+                    Text(
+                        text = stringResource(R.string.delete_cancel),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        color = JournalMutedInk
+                    )
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun NotebookGroupRow(
+    groupItem: CalculationGroupWithCalculations,
+    currencySuffix: String,
+    defaultCurrency: MoneyUnit,
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val groupColor = remember(groupItem.group.colorHex) {
+        parseGroupColor(groupItem.group.colorHex)
+    }
+
+    val totalFormatted = JournalLedgerManager.formatTotal(groupItem.totalCentimes, defaultCurrency)
+    val calculationsCount = groupItem.calculationCount
+
+    val context = LocalContext.current
+    val subtitle = remember(groupItem, isRtl, context) {
+        val countStr = when (calculationsCount) {
+            0 -> context.getString(R.string.group_calculations_count_zero)
+            1 -> context.getString(R.string.group_calculations_count_single)
+            else -> context.getString(R.string.group_calculations_count, calculationsCount)
+        }
+        val titles = groupItem.calculations
+            .map { it.calculation.title.trim() }
+            .filter { it.isNotBlank() }
+            .take(3)
+        if (titles.isNotEmpty()) {
+            val joined = titles.joinToString(if (isRtl) "، " else ", ")
+            "$countStr · $joined"
+        } else {
+            countStr
+        }
+    }
+
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing * 2) // 58dp
+            .clickable(role = Role.Button, onClick = onClick)
+    ) {
+        // Line 1 (29dp): Folder badge + Group Name on Start, Total Amount + 3-dots on End
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Start: Folder Icon Badge + Group Name
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f, fill = false)
+            ) {
+                // Sketched folder badge with group highlight tint
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .offset(y = if (isRtl) 4.0.dp else 3.5.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(groupColor.copy(alpha = 0.45f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Folder,
+                        contentDescription = null,
+                        tint = JournalInk,
+                        size = 15.dp
+                    )
+                }
+
+                Text(
+                    text = groupItem.group.name,
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 17.5.sp else 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalInk,
+                    maxLines = 1,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                )
+            }
+
+            // End: Total Amount + Currency + 3-dots
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = totalFormatted,
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 17.sp else 18.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                )
+
+                Text(
+                    text = currencySuffix,
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = if (isRtl) 12.sp else 13.5.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = JournalMutedInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                )
+
+                Box {
+                    IconButton(
+                        onClick = { menuExpanded = true },
+                        modifier = Modifier
+                            .size(28.dp)
+                            .offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    ) {
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.More,
+                            contentDescription = stringResource(R.string.cd_more_options),
+                            tint = JournalMutedInk,
+                            size = 14.dp
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                        modifier = Modifier.background(JournalPaper)
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = stringResource(R.string.action_edit),
+                                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                    color = JournalInk
+                                )
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onEdit()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = stringResource(R.string.action_delete),
+                                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                    color = JournalActionDelete
+                                )
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onDelete()
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Line 2 (29dp): Subtitle (e.g. "3 calculs · Loyer, Électricité") sitting directly on the rule
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Text(
+                text = subtitle,
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 13.sp else 14.5.sp,
+                fontWeight = FontWeight.Normal,
+                color = JournalMutedInk.copy(alpha = 0.85f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start,
+                style = TextStyle(
+                    platformStyle = NoFontPadding,
+                    textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 32.dp)
+                    .offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CreateOrEditGroupDialog(
+    isEditing: Boolean,
+    name: String,
+    onNameChange: (String) -> Unit,
+    selectedColorHex: String,
+    onColorSelect: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val focusRequester = remember { FocusRequester() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = JournalPaper,
+        title = {
+            Text(
+                text = if (isEditing) stringResource(R.string.group_dialog_edit_title) else stringResource(R.string.group_dialog_create_title),
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+                color = JournalInk
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Name Input with notebook baseline
+                Column {
+                    Text(
+                        text = stringResource(R.string.group_dialog_name_hint),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = 13.sp,
+                        color = JournalMutedInk
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    BasicTextField(
+                        value = name,
+                        onValueChange = onNameChange,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester)
+                            .drawBehind {
+                                val strokeW = 1.2.dp.toPx()
+                                val y = size.height
+                                drawLine(
+                                    color = JournalInk.copy(alpha = 0.6f),
+                                    start = androidx.compose.ui.geometry.Offset(0f, y),
+                                    end = androidx.compose.ui.geometry.Offset(size.width, y),
+                                    strokeWidth = strokeW,
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                            .padding(vertical = 4.dp),
+                        singleLine = true,
+                        cursorBrush = SolidColor(JournalInk),
+                        textStyle = TextStyle(
+                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = JournalInk
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { onConfirm() })
+                    )
+                }
+
+                // Color picker
+                Column {
+                    Text(
+                        text = stringResource(R.string.group_dialog_color_label),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = 13.sp,
+                        color = JournalMutedInk
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        GroupPalette.forEach { hex ->
+                            val color = parseGroupColor(hex)
+                            val isSelected = selectedColorHex.equals(hex, ignoreCase = true)
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(color)
+                                    .clickable { onColorSelect(hex) }
+                                    .then(
+                                        if (isSelected) Modifier.border(2.dp, JournalInk, CircleShape)
+                                        else Modifier.border(0.5.dp, JournalMutedInk.copy(alpha = 0.3f), CircleShape)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected) {
+                                    HisabiSketchIcon(
+                                        symbol = HisabiSymbol.Check,
+                                        contentDescription = null,
+                                        tint = JournalInk,
+                                        size = 14.dp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = name.isNotBlank()
+            ) {
+                Text(
+                    text = stringResource(R.string.group_dialog_save),
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (name.isNotBlank()) JournalInk else JournalMutedInk.copy(alpha = 0.4f)
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = stringResource(R.string.group_dialog_cancel),
+                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontSize = 15.sp,
+                    color = JournalMutedInk
+                )
+            }
+        }
+    )
+}

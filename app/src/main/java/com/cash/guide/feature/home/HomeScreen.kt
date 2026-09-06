@@ -23,6 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import com.cash.guide.domain.CalculationImageShareHelper
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -59,6 +62,8 @@ import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.SavedCalculationActionsSheet
 import com.cash.guide.ui.notebook.TajawalFamily
+import com.cash.guide.ui.notebook.NotebookMetrics
+import com.cash.guide.feature.groups.AssignToGroupDialog
 
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -99,8 +104,10 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsState()
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
+    val coroutineScope = rememberCoroutineScope()
 
     var showMonthPicker by remember { mutableStateOf(false) }
+    var calcToAssignToGroup by remember { mutableStateOf<com.cash.guide.data.db.CalculationWithItems?>(null) }
     val currentMonthYear = remember(context) {
         val locale = context.resources.configuration.locales[0]
         SimpleDateFormat("MMMM yyyy", locale).format(Date()).replaceFirstChar {
@@ -150,7 +157,7 @@ fun HomeScreen(
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                     fontSize = if (isRtl) 17.5.sp else 19.5.sp,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                 )
 
                 Text(
@@ -160,7 +167,7 @@ fun HomeScreen(
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk.copy(alpha = 0.85f),
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                 )
             }
 
@@ -222,7 +229,7 @@ fun HomeScreen(
                             .height(JournalRuleSpacing)
                             .padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = if (isRtl) Arrangement.Start else Arrangement.End
+                        horizontalArrangement = Arrangement.End
                     ) {
                         Text(
                             text = if (isRtl) "← ${stringResource(R.string.home_see_all)}" else "${stringResource(R.string.home_see_all)} →",
@@ -237,7 +244,7 @@ fun HomeScreen(
                                     keyboardController?.hide()
                                     onOpenHistory()
                                 })
-                                .offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                                .offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                         )
                     }
                 }
@@ -261,7 +268,7 @@ fun HomeScreen(
                         fontWeight = FontWeight.Medium,
                         color = JournalMutedInk,
                         style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                        modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                     )
                 }
             }
@@ -290,11 +297,43 @@ fun HomeScreen(
                     }
                     viewModel.selectCalculationForAction(null)
                 },
+                onShareImage = {
+                    val calcToShare = actionCalc
+                    coroutineScope.launch {
+                        val groupName = calcToShare.calculation.groupId?.let { gid ->
+                            viewModel.repository.getGroup(gid)?.name
+                        }
+                        CalculationImageShareHelper.shareCalculation(
+                            context = context,
+                            calculationWithItems = calcToShare,
+                            groupName = groupName,
+                            isRtl = isRtl
+                        )
+                    }
+                    viewModel.selectCalculationForAction(null)
+                },
+                onAssignToGroup = {
+                    calcToAssignToGroup = actionCalc
+                },
                 onDelete = {
                     viewModel.requestDelete(actionCalc)
                 },
                 onDismiss = {
                     viewModel.selectCalculationForAction(null)
+                }
+            )
+        }
+
+        // Assign to Group Dialog
+        calcToAssignToGroup?.let { calc ->
+            AssignToGroupDialog(
+                calculationId = calc.calculation.id,
+                currentGroupId = calc.calculation.groupId,
+                calculationRepository = viewModel.repository,
+                onDismiss = { calcToAssignToGroup = null },
+                onAssigned = {
+                    calcToAssignToGroup = null
+                    viewModel.loadRecent(context)
                 }
             )
         }

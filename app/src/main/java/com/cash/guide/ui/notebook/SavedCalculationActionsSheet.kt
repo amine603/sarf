@@ -57,6 +57,8 @@ fun SavedCalculationActionsSheet(
     onTogglePin: () -> Unit = {},
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
+    onShareImage: (() -> Unit)? = null,
+    onAssignToGroup: (() -> Unit)? = null,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -164,6 +166,32 @@ fun SavedCalculationActionsSheet(
                     }
                 )
 
+                // Row: Partager en image (Share as Long Image)
+                if (onShareImage != null) {
+                    ActionSheetRuledItem(
+                        label = stringResource(R.string.action_share_image),
+                        symbol = HisabiSymbol.Share,
+                        badgeColor = HighlighterGreen.copy(alpha = 0.55f),
+                        onClick = {
+                            onDismiss()
+                            onShareImage()
+                        }
+                    )
+                }
+
+                // Row: Ajouter / Déplacer vers un groupe
+                if (onAssignToGroup != null) {
+                    ActionSheetRuledItem(
+                        label = stringResource(R.string.action_add_to_group),
+                        symbol = HisabiSymbol.Folder,
+                        badgeColor = HighlighterBlue.copy(alpha = 0.55f),
+                        onClick = {
+                            onDismiss()
+                            onAssignToGroup()
+                        }
+                    )
+                }
+
                 // Row 5: Supprimer (Delete - Destructive)
                 ActionSheetRuledItem(
                     label = stringResource(R.string.action_delete),
@@ -257,7 +285,7 @@ private fun ActionSheetRuledItem(
             fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
             color = tintColor,
             style = TextStyle(platformStyle = NoFontPadding),
-            modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+            modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
         )
     }
 }

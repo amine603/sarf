@@ -2,12 +2,20 @@ package com.cash.guide.data
 
 import com.cash.guide.data.db.CalculationDao
 import com.cash.guide.data.db.CalculationEntity
+import com.cash.guide.data.db.CalculationGroupDao
+import com.cash.guide.data.db.CalculationGroupEntity
+import com.cash.guide.data.db.CalculationGroupWithCalculations
 import com.cash.guide.data.db.CalculationItemEntity
 import com.cash.guide.data.db.CalculationWithItems
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import java.util.UUID
 
-class CalculationRepository(private val dao: CalculationDao) {
+class CalculationRepository(
+    private val dao: CalculationDao,
+    private val groupDao: CalculationGroupDao? = null
+) {
 
     fun observeRecentSaved(limit: Int = 10): Flow<List<CalculationWithItems>> =
         dao.observeRecentSaved(limit)
@@ -40,7 +48,8 @@ class CalculationRepository(private val dao: CalculationDao) {
             status = "SAVED",
             createdAtEpochMs = originalCreatedAt,
             updatedAtEpochMs = now,
-            editingCalculationId = null
+            editingCalculationId = null,
+            groupId = calculation.groupId ?: existing?.calculation?.groupId
         )
         val remappedItems = items.mapIndexed { index, item ->
             val existingItem = existing?.items?.firstOrNull { it.id == item.id }
@@ -93,5 +102,81 @@ class CalculationRepository(private val dao: CalculationDao) {
         val newId = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
         return dao.duplicateCalculation(sourceId, newId, now)
+    }
+
+    fun observeAllGroups(): Flow<List<CalculationGroupEntity>> =
+        groupDao?.observeAllGroups() ?: flowOf(emptyList())
+
+    fun observeAllGroupsWithCalculations(): Flow<List<CalculationGroupWithCalculations>> {
+        val groupsFlow = groupDao?.observeAllGroups() ?: flowOf(emptyList())
+        val calculationsFlow = dao.observeAllSaved()
+        return combine(groupsFlow, calculationsFlow) { groups, allSaved ->
+            groups.map { group ->
+                val groupCalculations = allSaved.filter { it.calculation.groupId == group.id }
+                CalculationGroupWithCalculations(group, groupCalculations)
+            }
+        }
+    }
+
+    fun observeGroupWithCalculations(groupId: String): Flow<CalculationGroupWithCalculations?> {
+        val groupFlow = groupDao?.observeGroup(groupId) ?: flowOf(null)
+        val calculationsFlow = dao.observeAllSaved()
+        return combine(groupFlow, calculationsFlow) { group, allSaved ->
+            if (group == null) null
+            else {
+                val groupCalculations = allSaved.filter { it.calculation.groupId == group.id }
+                CalculationGroupWithCalculations(group, groupCalculations)
+            }
+        }
+    }
+
+    suspend fun getGroup(groupId: String): CalculationGroupEntity? =
+        groupDao?.getGroup(groupId)
+
+    suspend fun createGroup(name: String, colorHex: String): String {
+        val id = UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+        val group = CalculationGroupEntity(
+            id = id,
+            name = name.trim(),
+            colorHex = colorHex,
+            createdAtEpochMs = now,
+            updatedAtEpochMs = now
+        )
+        groupDao?.insertGroup(group)
+        return id
+    }
+
+    suspend fun updateGroup(group: CalculationGroupEntity) {
+        groupDao?.updateGroup(group.copy(updatedAtEpochMs = System.currentTimeMillis()))
+    }
+
+    suspend fun deleteGroup(groupId: String) {
+        groupDao?.deleteGroupAndUngroupCalculations(groupId)
+    }
+
+    suspend fun assignCalculationToGroup(calculationId: String, groupId: String?) {
+        val now = System.currentTimeMillis()
+        groupDao?.assignCalculationToGroup(calculationId, groupId, now)
+    }
+
+    suspend fun createDraftInGroup(groupId: String): String {
+        val existingDraft = dao.getNewDraft()
+        if (existingDraft != null && existingDraft.calculation.title.isBlank() && existingDraft.items.isEmpty()) {
+            dao.deleteCalculation(existingDraft.calculation.id)
+        }
+        val id = UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+        val draftEntity = CalculationEntity(
+            id = id,
+            title = "",
+            currency = "DIRHAM",
+            createdAtEpochMs = now,
+            updatedAtEpochMs = now,
+            status = "DRAFT",
+            groupId = groupId
+        )
+        dao.upsertCalculationWithItems(draftEntity, emptyList())
+        return id
     }
 }

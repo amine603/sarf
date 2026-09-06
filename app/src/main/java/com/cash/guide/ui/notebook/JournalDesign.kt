@@ -92,19 +92,29 @@ object HisabiMetrics {
 object NotebookMetrics {
     val ruleSpacing = JournalRuleSpacing // 29.dp
     val baselineOffset = 5.5.dp
-    val baselineOffsetRtl = 6.0.dp
+    val baselineOffsetRtl = 6.0.dp // Calibrated specifically for Majaz on 29.dp ruled lines
     val ruleStroke = 0.6.dp
     val verticalGuideThickness = 1.5.dp
 }
 
+@Composable
+fun notebookBaselineOffset(isRtl: Boolean): Dp =
+    if (isRtl) NotebookMetrics.baselineOffsetRtl else NotebookMetrics.baselineOffset
+
 // --- Bundled Offline Font Families ---
 val PatrickHandFamily = JournalHandFamily
 
-val TajawalFamily = FontFamily(
-    Font(R.font.tajawal_regular, FontWeight.Normal),
-    Font(R.font.tajawal_medium, FontWeight.Medium),
-    Font(R.font.tajawal_bold, FontWeight.Bold)
+val MajazFamily = FontFamily(
+    Font(R.font.majaz_regular, FontWeight.Normal),
+    Font(R.font.majaz_regular, FontWeight.Medium),
+    Font(R.font.majaz_regular, FontWeight.Bold)
 )
+
+// Primary Arabic handwriting font used across the entire app
+val ArabicFamily: FontFamily = MajazFamily
+
+// Alias maintaining 100% compatibility with untouched CalculationEditorScreen
+val TajawalFamily: FontFamily = MajazFamily
 
 val ManropeFamily = FontFamily(
     Font(R.font.manrope_regular, FontWeight.Normal),

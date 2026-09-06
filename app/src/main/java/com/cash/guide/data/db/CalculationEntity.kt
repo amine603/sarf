@@ -1,4 +1,4 @@
-﻿package com.cash.guide.data.db
+package com.cash.guide.data.db
 
 import androidx.room.Entity
 import androidx.room.Index
@@ -9,7 +9,8 @@ import androidx.room.PrimaryKey
     indices = [
         Index("updatedAtEpochMs"),
         Index("status"),
-        Index("editingCalculationId")
+        Index("editingCalculationId"),
+        Index("groupId")
     ]
 )
 data class CalculationEntity(
@@ -20,5 +21,6 @@ data class CalculationEntity(
     val updatedAtEpochMs: Long,
     val status: String, // "DRAFT" or "SAVED"
     val note: String? = null,
-    val editingCalculationId: String? = null
+    val editingCalculationId: String? = null,
+    val groupId: String? = null
 )

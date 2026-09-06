@@ -58,11 +58,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import com.cash.guide.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Rect
@@ -85,6 +91,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -306,6 +313,26 @@ fun JournalEntryRow(
     }
 
     val keyboardController = LocalSoftwareKeyboardController.current
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    var titleLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var amountLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "journal_row_cursor")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 1000
+                1f at 0
+                1f at 499
+                0f at 500
+                0f at 999
+            },
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "cursor_blink"
+    )
 
     Row(
         modifier = modifier
@@ -346,6 +373,7 @@ fun JournalEntryRow(
             BasicTextField(
                 value = titleValue,
                 onValueChange = onTitleValueChange,
+                onTextLayout = { titleLayoutResult = it },
                 readOnly = true,
                 modifier = Modifier
                     .clickable(
@@ -363,17 +391,40 @@ fun JournalEntryRow(
                         }
                     }
                     .offset(y = 6.7.dp)
-                    .drawBehind {
+                    .drawWithContent {
+                        drawContent()
                         if (isTitleActive) {
-                            val sw = 1.2.dp.toPx()
+                            // Pink active underline
+                            val sw = 1.3.dp.toPx()
                             val y = size.height - 2.dp.toPx()
                             drawLine(
-                                color = HighlighterPink.copy(alpha = 0.75f),
+                                color = HighlighterPink.copy(alpha = 0.85f),
                                 start = Offset(0f, y),
-                                end = Offset(size.width.coerceAtLeast(30.dp.toPx()), y),
+                                end = Offset(size.width.coerceAtLeast(60.dp.toPx()), y),
                                 strokeWidth = sw,
                                 cap = StrokeCap.Round
                             )
+
+                            // Blinking cursor
+                            if (cursorAlpha > 0f) {
+                                val layout = titleLayoutResult
+                                val cursorX = if (layout != null && titleValue.text.isNotEmpty()) {
+                                    val offset = titleValue.selection.end.coerceIn(0, titleValue.text.length)
+                                    val rect = layout.getCursorRect(offset)
+                                    rect.left
+                                } else {
+                                    if (isRtl) size.width - 2.dp.toPx() else 1.dp.toPx()
+                                }
+                                val cursorH = 17.dp.toPx()
+                                val cursorTop = (size.height - cursorH) / 2f
+                                drawLine(
+                                    color = JournalInk.copy(alpha = cursorAlpha),
+                                    start = Offset(cursorX, cursorTop),
+                                    end = Offset(cursorX, cursorTop + cursorH),
+                                    strokeWidth = 1.8.dp.toPx(),
+                                    cap = StrokeCap.Round
+                                )
+                            }
                         }
                     }
                     .semantics { testTag = "tag_row_title_$rowNumber" },
@@ -389,16 +440,17 @@ fun JournalEntryRow(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { onConfirm() }),
                 decorationBox = { innerTextField ->
-                    if (titleValue.text.isEmpty() && !isTitleActive) {
-                        Text(
-                            text = stringResource(R.string.editor_item_placeholder),
-                            fontFamily = TajawalFamily,
-                            fontSize = 16.5.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = JournalMutedInk.copy(alpha = 0.45f),
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    } else {
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (titleValue.text.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.editor_item_placeholder),
+                                fontFamily = TajawalFamily,
+                                fontSize = 16.5.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = JournalMutedInk.copy(alpha = if (isTitleActive) 0.50f else 0.40f),
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        }
                         innerTextField()
                     }
                 }
@@ -416,6 +468,7 @@ fun JournalEntryRow(
             BasicTextField(
                 value = amountValue,
                 onValueChange = onAmountValueChange,
+                onTextLayout = { amountLayoutResult = it },
                 readOnly = true,
                 modifier = Modifier
                     .widthIn(min = 28.dp)
@@ -434,7 +487,8 @@ fun JournalEntryRow(
                         }
                     }
                     .offset(y = 5.7.dp)
-                    .drawBehind {
+                    .drawWithContent {
+                        drawContent()
                         if (isAmountActive) {
                             val sw = 1.2.dp.toPx()
                             val y1 = size.height - 3.dp.toPx()
@@ -453,6 +507,27 @@ fun JournalEntryRow(
                                 strokeWidth = sw,
                                 cap = StrokeCap.Round
                             )
+
+                            // Blinking cursor
+                            if (cursorAlpha > 0f) {
+                                val layout = amountLayoutResult
+                                val cursorX = if (layout != null && amountValue.text.isNotEmpty()) {
+                                    val offset = amountValue.selection.end.coerceIn(0, amountValue.text.length)
+                                    val rect = layout.getCursorRect(offset)
+                                    rect.left
+                                } else {
+                                    if (isRtl) size.width - 2.dp.toPx() else 1.dp.toPx()
+                                }
+                                val cursorH = 17.dp.toPx()
+                                val cursorTop = (size.height - cursorH) / 2f
+                                drawLine(
+                                    color = JournalInk.copy(alpha = cursorAlpha),
+                                    start = Offset(cursorX, cursorTop),
+                                    end = Offset(cursorX, cursorTop + cursorH),
+                                    strokeWidth = 1.8.dp.toPx(),
+                                    cap = StrokeCap.Round
+                                )
+                            }
                         }
                     }
                     .semantics { testTag = "tag_row_amount_$rowNumber" },
@@ -466,26 +541,29 @@ fun JournalEntryRow(
                     platformStyle = NoFontPadding
                 ),
                 decorationBox = { innerTextField ->
-                    if (amountValue.text.isEmpty() && !isAmountActive) {
-                        Text(
-                            text = "0",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalMutedInk.copy(alpha = 0.45f),
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    } else if (!isAmountActive && amountValue.text.isNotEmpty()) {
-                        Text(
-                            text = JournalLedgerManager.formatFrenchNumber(amountValue.text),
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = amountTextColor,
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    } else {
-                        innerTextField()
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (amountValue.text.isEmpty()) {
+                            Text(
+                                text = "0",
+                                fontFamily = PatrickHandFamily,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalMutedInk.copy(alpha = if (isAmountActive) 0.50f else 0.45f),
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        }
+                        if (!isAmountActive && amountValue.text.isNotEmpty()) {
+                            Text(
+                                text = JournalLedgerManager.formatFrenchNumber(amountValue.text),
+                                fontFamily = PatrickHandFamily,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = amountTextColor,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        } else {
+                            innerTextField()
+                        }
                     }
                 }
             )
@@ -675,7 +753,7 @@ fun JournalCalculationRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
             )
         }
 
@@ -999,7 +1077,7 @@ fun JournalDateRuleBand(
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
             )
         }
     }
@@ -1577,7 +1655,7 @@ fun NotebookSectionBand(
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Box(
@@ -1621,7 +1699,7 @@ fun NotebookSectionBand(
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                 )
             }
         }
@@ -1831,7 +1909,7 @@ fun NotebookCalculationRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                 )
             }
 
@@ -1910,7 +1988,7 @@ fun NotebookCalculationRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(JournalRuleSpacing)
-                    .padding(start = if (isRtl) 14.dp else 29.5.dp, end = if (isRtl) 29.5.dp else 14.dp),
+                    .padding(start = 29.5.dp, end = 14.dp),
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.Start
             ) {
@@ -1922,8 +2000,14 @@ fun NotebookCalculationRow(
                     color = JournalMutedInk,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                    textAlign = TextAlign.Start,
+                    style = TextStyle(
+                        platformStyle = NoFontPadding,
+                        textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
                 )
             }
         }
@@ -2005,7 +2089,7 @@ fun NotebookDateGroupBlock(
                             itemLabels.joinToString(if (isRtl) "، " else ", ")
                         } else if (calc.items.isNotEmpty()) {
                             calc.items.indices.map { idx ->
-                                if (isRtl) "عنصر ${idx + 1}" else "Article ${idx + 1}"
+                                if (isRtl) "عنصر \u200E${idx + 1}\u200F" else "Article ${idx + 1}"
                             }.joinToString(if (isRtl) "، " else ", ")
                         } else {
                             if (isRtl) "بدون عناصر" else "Aucun article"
@@ -2088,7 +2172,7 @@ fun JournalUpcomingFeatureRow(
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
             )
 
             HisabiSketchIcon(
@@ -2115,7 +2199,7 @@ fun JournalUpcomingFeatureRow(
                 fontWeight = FontWeight.Normal,
                 color = JournalMutedInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
             )
 
             Text(
@@ -2125,18 +2209,17 @@ fun JournalUpcomingFeatureRow(
                 fontWeight = FontWeight.Medium,
                 color = JournalMutedInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) 6.0.dp else 5.5.dp)
+                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
             )
         }
     }
 }
 
 /**
- * Single-line French bullet-journal total result band:
- * - Right: "المجموع" inside yellow highlighter pill with descender coverage
- * - Left: Large amount in Patrick Hand font + double pink pen underline beneath the line
+ * French bullet-journal total result band:
+ * - Centered yellow highlighter pill (~66% width) with "TOTAL" / "المجموع" on start and amount on end
+ * - Double pink pen underline centered beneath it
  * - Clickable to open denomination breakdown when valid and > 0.
- * Occupies exactly 1 rule line (29dp).
  */
 @Composable
 fun JournalTotalResultBand(
@@ -2158,41 +2241,104 @@ fun JournalTotalResultBand(
     }
 
     val totalColor = if (hasInvalidRows) ColorCoral else JournalInk
+    val totalLabel = stringResource(R.string.share_total_label)
+    val isArabic = isArabicScript(totalLabel)
     val isLatinSuffix = suffix.contains(Regex("[a-zA-Z]"))
 
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(JournalRuleSpacing) // exactly 29dp = 1 notebook rule
-            .padding(horizontal = 14.dp)
-            .then(clickModifier)
-            .semantics { testTag = "tag_total_result_band" },
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.Center
+            .padding(vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        Column(
+            modifier = Modifier.fillMaxWidth(0.66f),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = amount,
-                fontFamily = PatrickHandFamily,
-                fontSize = 21.sp,
-                fontWeight = FontWeight.Bold,
-                color = totalColor,
-                style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 6.0.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(HighlighterYellow.copy(alpha = 0.58f))
+                    .then(clickModifier)
+                    .padding(horizontal = 16.dp, vertical = 7.dp)
+                    .semantics { testTag = "tag_total_result_band" },
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = totalLabel,
+                        fontFamily = if (isArabic) MajazFamily else PatrickHandFamily,
+                        fontSize = if (isArabic) 18.sp else 16.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
 
-            Text(
-                text = suffix,
-                fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
-                fontSize = if (isLatinSuffix) 16.sp else 13.5.sp,
-                fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.SemiBold,
-                color = JournalMutedInk,
-                style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isLatinSuffix) 4.2.dp else 4.0.dp)
-            )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = amount,
+                            fontFamily = ManropeFamily,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = totalColor,
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+
+                        Text(
+                            text = suffix,
+                            fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
+                            fontSize = if (isLatinSuffix) 15.sp else 13.5.sp,
+                            fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.Medium,
+                            color = JournalMutedInk,
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.5.dp))
+
+            // Double Pink Pen Underline matching the card width exactly as in the shared receipt image
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(9.dp)
+            ) {
+                val strokeW = 1.6.dp.toPx()
+                val pinkColor = HighlighterPink.copy(alpha = 0.88f)
+
+                // Upper Line: spans nearly full width of the box (inset by 8.dp on each side)
+                val line1Start = 8.dp.toPx()
+                val line1End = size.width - 8.dp.toPx()
+                val y1 = 2.dp.toPx()
+                drawLine(
+                    color = pinkColor,
+                    start = Offset(line1Start, y1),
+                    end = Offset(line1End, y1),
+                    strokeWidth = strokeW,
+                    cap = StrokeCap.Round
+                )
+
+                // Lower Line: visibly stepped underline (inset by 18.dp on each side)
+                val line2Start = 18.dp.toPx()
+                val line2End = size.width - 18.dp.toPx()
+                val y2 = 6.2.dp.toPx()
+                drawLine(
+                    color = pinkColor,
+                    start = Offset(line2Start, y2),
+                    end = Offset(line2End, y2),
+                    strokeWidth = strokeW,
+                    cap = StrokeCap.Round
+                )
+            }
         }
     }
 }
