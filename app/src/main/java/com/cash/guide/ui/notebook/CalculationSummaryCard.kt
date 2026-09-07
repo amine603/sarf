@@ -177,7 +177,7 @@ fun CalculationSummaryCard(
                         text = currencySuffix,
                         fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
                         fontSize = if (isLatinSuffix) 14.sp else 12.sp,
-                        fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.SemiBold,
+                        fontWeight = FontWeight.Normal,
                         color = JournalMutedInk,
                         style = androidx.compose.ui.text.TextStyle(platformStyle = NoFontPadding)
                     )

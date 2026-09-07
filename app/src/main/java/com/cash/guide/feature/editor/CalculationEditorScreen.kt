@@ -1,11 +1,19 @@
 package com.cash.guide.feature.editor
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,7 +25,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -27,15 +37,19 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -43,16 +57,20 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
+import com.cash.guide.domain.JournalKeyboardLanguage
 import com.cash.guide.domain.JournalKeyboardMode
 import com.cash.guide.domain.MoneyMath
 import com.cash.guide.domain.MoneyUnit
@@ -87,6 +105,7 @@ import kotlinx.coroutines.launch
 fun CalculationEditorScreen(
     viewModel: CalculationEditorViewModel,
     calculationId: String? = null,
+    initialGroupId: String? = null,
     onNavigateBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -96,8 +115,8 @@ fun CalculationEditorScreen(
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
 
-    LaunchedEffect(calculationId) {
-        viewModel.loadCalculation(calculationId)
+    LaunchedEffect(calculationId, initialGroupId) {
+        viewModel.loadCalculation(calculationId, initialGroupId)
     }
 
     BackHandler {
@@ -114,13 +133,18 @@ fun CalculationEditorScreen(
         ) {
             // Top Bar
             EditorTopBar(
-                title = state.title.text,
-                onTitleChange = { viewModel.updateTitle(state.title.copy(text = it)) },
+                titleValue = state.title,
+                onTitleChange = { viewModel.updateTitle(it) },
+                isTitleActive = state.activeField == ActiveField.HEADER_TITLE,
+                onTitleClick = { viewModel.selectCalculationTitle() },
+                keyboardLanguage = state.keyboardLanguage,
                 currency = state.currency,
                 onCurrencyToggle = {
                     val next = if (state.currency == MoneyUnit.DIRHAM) MoneyUnit.RIAL else MoneyUnit.DIRHAM
                     viewModel.selectUnit(next)
                 },
+                canUndo = state.canUndo,
+                onUndoClick = { viewModel.undoDelete() },
                 onCalculatorClick = { viewModel.openCalculatorPopup(state.activeRowId) },
                 onSaveClick = { viewModel.saveCalculation(onSuccess = onNavigateBack) },
                 onShareClick = { viewModel.shareAsImage(context, isRtl) },
@@ -154,6 +178,9 @@ fun CalculationEditorScreen(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
+                // Breathing space above the first row, perfectly aligned with the ruled notebook grid
+                Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
                 state.rows.forEachIndexed { index, row ->
                     val rowNum = index + 1
                     val isTitleActive = state.activeRowId == row.id && state.activeField == ActiveField.TITLE
@@ -177,6 +204,9 @@ fun CalculationEditorScreen(
                     )
                 }
 
+                // 1 empty notebook line before Add Row to prevent accidental taps (faux clic)
+                Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
                 // Add Row Button
                 JournalAddRowButton(
                     onAddRow = {
@@ -187,8 +217,8 @@ fun CalculationEditorScreen(
                     }
                 )
 
-                // Exactly 3 empty notebook lines between Add Row and Total
-                Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
+                // Exactly 2 empty notebook lines between Add Row and Total
+                Spacer(modifier = Modifier.height(JournalRuleSpacing * 2))
 
                 // Total Result Band
                 val primaryFormatted = com.cash.guide.domain.JournalLedgerManager.formatTotal(state.totalCentimes, state.currency)
@@ -219,7 +249,13 @@ fun CalculationEditorScreen(
                             onInsertText = { viewModel.applyTextKey(it) },
                             onBackspace = { viewModel.applyTextBackspace() },
                             onSwitchToNumericMode = { viewModel.switchToNumericMode() },
-                            onConfirm = { state.activeRowId?.let { viewModel.confirmRowEdit(it) } }
+                            onConfirm = {
+                                if (state.activeField == ActiveField.HEADER_TITLE) {
+                                    viewModel.confirmCalculationTitle()
+                                } else {
+                                    state.activeRowId?.let { viewModel.confirmRowEdit(it) }
+                                }
+                            }
                         )
                     }
                     JournalKeyboardMode.NUMBER -> {
@@ -228,7 +264,13 @@ fun CalculationEditorScreen(
                             onToggleExpand = { viewModel.toggleKeyboardExpanded() },
                             onKey = { viewModel.applyCompactKey(it) },
                             onSwitchToTextMode = { viewModel.switchToTextMode() },
-                            onConfirm = { state.activeRowId?.let { viewModel.confirmRowEdit(it) } }
+                            onConfirm = {
+                                if (state.activeField == ActiveField.HEADER_TITLE) {
+                                    viewModel.confirmCalculationTitle()
+                                } else {
+                                    state.activeRowId?.let { viewModel.confirmRowEdit(it) }
+                                }
+                            }
                         )
                     }
                     JournalKeyboardMode.NONE -> {}
@@ -262,15 +304,48 @@ fun CalculationEditorScreen(
 
 @Composable
 private fun EditorTopBar(
-    title: String,
-    onTitleChange: (String) -> Unit,
+    titleValue: TextFieldValue,
+    onTitleChange: (TextFieldValue) -> Unit,
+    isTitleActive: Boolean,
+    onTitleClick: () -> Unit,
+    keyboardLanguage: JournalKeyboardLanguage,
     currency: MoneyUnit,
     onCurrencyToggle: () -> Unit,
+    canUndo: Boolean,
+    onUndoClick: () -> Unit,
     onCalculatorClick: () -> Unit,
     onSaveClick: () -> Unit,
     onShareClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val infiniteTransition = rememberInfiniteTransition(label = "editor_title_cursor")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 1000
+                1f at 0
+                1f at 499
+                0f at 500
+                0f at 999
+            },
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "cursor_blink"
+    )
+    var titleLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val titleScrollState = rememberScrollState()
+
+    LaunchedEffect(titleScrollState.maxValue, titleValue.text, isTitleActive) {
+        if (isTitleActive) {
+            titleScrollState.scrollTo(titleScrollState.maxValue)
+        }
+    }
+
+    val isArabicKeyboard = keyboardLanguage == JournalKeyboardLanguage.ARABIC
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -279,11 +354,14 @@ private fun EditorTopBar(
         tonalElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // --- Line 1 (Navigation Back + Calculation Title + Share Button) ---
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 6.dp)
+            ) {
+                // --- Line 1 (Navigation Back + Calculation Title + Undo Button + Share Button) ---
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -310,41 +388,127 @@ private fun EditorTopBar(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 10.dp)
+                        .padding(horizontal = 6.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(HighlighterPink.copy(alpha = 0.35f))
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .background(
+                            if (isTitleActive) HighlighterPink.copy(alpha = 0.52f)
+                            else HighlighterPink.copy(alpha = 0.35f)
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            keyboardController?.hide()
+                            onTitleClick()
+                        }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    BasicTextField(
-                        value = title,
-                        onValueChange = onTitleChange,
+                    BoxWithConstraints(
                         modifier = Modifier.fillMaxWidth(),
-                        textStyle = TextStyle(
-                            fontFamily = TajawalFamily,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            textAlign = TextAlign.Center,
-                            platformStyle = NoFontPadding
-                        ),
-                        singleLine = true,
-                        cursorBrush = SolidColor(JournalInk),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        decorationBox = { innerTextField ->
-                            if (title.isEmpty()) {
-                                Text(
-                                    text = stringResource(R.string.editor_title_placeholder),
-                                    fontFamily = TajawalFamily,
-                                    fontSize = 17.sp,
-                                    color = JournalMutedInk.copy(alpha = 0.6f),
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    style = TextStyle(platformStyle = NoFontPadding)
-                                )
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val containerWidth = maxWidth
+                        CompositionLocalProvider(
+                            LocalLayoutDirection provides if (isArabicKeyboard) LayoutDirection.Rtl else LayoutDirection.Ltr
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .widthIn(min = containerWidth)
+                                    .horizontalScroll(titleScrollState),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (titleValue.text.isEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.editor_title_placeholder),
+                                        fontFamily = TajawalFamily,
+                                        fontSize = 17.sp,
+                                        color = JournalMutedInk.copy(alpha = 0.6f),
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        style = TextStyle(platformStyle = NoFontPadding)
+                                    )
+                                } else {
+                                    Text(
+                                        text = titleValue.text,
+                                        fontFamily = TajawalFamily,
+                                        fontSize = 17.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = JournalInk,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        style = TextStyle(platformStyle = NoFontPadding),
+                                        modifier = Modifier.drawWithContent {
+                                            drawContent()
+                                            if (isTitleActive && cursorAlpha > 0f) {
+                                                val layout = titleLayoutResult
+                                                val cursorX = if (layout != null && titleValue.text.isNotEmpty()) {
+                                                    val offset = titleValue.selection.end.coerceIn(0, titleValue.text.length)
+                                                    val rect = layout.getCursorRect(offset)
+                                                    rect.left
+                                                } else {
+                                                    size.width / 2f
+                                                }
+                                                val cursorH = 17.dp.toPx()
+                                                val cursorTop = (size.height - cursorH) / 2f
+                                                drawLine(
+                                                    color = JournalInk.copy(alpha = cursorAlpha),
+                                                    start = Offset(cursorX, cursorTop),
+                                                    end = Offset(cursorX, cursorTop + cursorH),
+                                                    strokeWidth = 1.8.dp.toPx(),
+                                                    cap = StrokeCap.Round
+                                                )
+                                            }
+                                        },
+                                        onTextLayout = { titleLayoutResult = it }
+                                    )
+                                }
+
+                                // Centered blinking cursor when empty and title is active
+                                if (titleValue.text.isEmpty() && isTitleActive && cursorAlpha > 0f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .widthIn(min = containerWidth)
+                                            .height(22.dp)
+                                            .drawWithContent {
+                                                val cursorX = size.width / 2f
+                                                val cursorH = 17.dp.toPx()
+                                                val cursorTop = (size.height - cursorH) / 2f
+                                                drawLine(
+                                                    color = JournalInk.copy(alpha = cursorAlpha),
+                                                    start = Offset(cursorX, cursorTop),
+                                                    end = Offset(cursorX, cursorTop + cursorH),
+                                                    strokeWidth = 1.8.dp.toPx(),
+                                                    cap = StrokeCap.Round
+                                                )
+                                            }
+                                    )
+                                }
                             }
-                            innerTextField()
                         }
+                    }
+                }
+
+                // Undo Button (42dp touch target)
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .clickable(
+                            role = Role.Button,
+                            enabled = canUndo,
+                            onClickLabel = stringResource(R.string.cd_undo),
+                            onClick = onUndoClick
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Undo,
+                        contentDescription = stringResource(R.string.cd_undo),
+                        tint = if (canUndo) JournalInk else JournalInk.copy(alpha = 0.25f),
+                        size = 20.dp
                     )
                 }
 
@@ -459,5 +623,14 @@ private fun EditorTopBar(
                 }
             }
         }
+
+        // Subtle edge-to-edge light black line beneath tools (Dirham, Calculator, Save)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(JournalInk.copy(alpha = 0.16f))
+        )
     }
+}
 }

@@ -43,7 +43,8 @@ enum class HisabiSymbol {
     Pin,
     Smile,
     Folder,
-    Share
+    Share,
+    Undo
 }
 
 @Composable
@@ -402,6 +403,29 @@ fun HisabiSketchIcon(
                 val dx = if (isRtl) -1f else 1f
                 drawLine(tint, point(xSource + dx * 1.9f, 11f), point(xBranch - dx * 1.9f, 7f), u(1.35f), StrokeCap.Round)
                 drawLine(tint, point(xSource + dx * 1.9f, 13f), point(xBranch - dx * 1.9f, 17f), u(1.35f), StrokeCap.Round)
+            }
+            HisabiSymbol.Undo -> {
+                val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
+                fun mx(x: Float) = if (isRtl) 24f - x else x
+
+                // 1. Smooth arch tail curving from bottom-right over the top to the arrowhead
+                val arch = Path().apply {
+                    moveTo(u(mx(18.5f)), u(17.5f))
+                    cubicTo(
+                        u(mx(18.5f)), u(10.5f),
+                        u(mx(14f)), u(5.5f),
+                        u(mx(7f)), u(9.5f)
+                    )
+                }
+                drawPath(arch, tint, style = pen)
+
+                // 2. Crisp, prominent arrowhead pointing backward (left in LTR, right in RTL)
+                val arrowHead = Path().apply {
+                    moveTo(u(mx(10.5f)), u(5.5f))
+                    lineTo(u(mx(5.5f)), u(9.5f))
+                    lineTo(u(mx(10.5f)), u(13.5f))
+                }
+                drawPath(arrowHead, tint, style = pen)
             }
         }
     }

@@ -186,8 +186,8 @@ fun JournalRuledDocument(
                             }
 
                             // 2. 29dp Horizontal Rules (matching Style Lab & Home)
-                            val grid = JournalRuleSpacing.toPx()
-                            var y = grid
+                            val rowHeightPx = JournalRuleSpacing.roundToPx().toFloat()
+                            var y = rowHeightPx
                             while (y <= size.height) {
                                 drawLine(
                                     color = JournalRule.copy(alpha = 0.35f),
@@ -195,7 +195,7 @@ fun JournalRuledDocument(
                                     end = Offset(size.width, y),
                                     strokeWidth = 0.6.dp.toPx()
                                 )
-                                y += grid
+                                y += rowHeightPx
                             }
                         },
                     content = content
@@ -342,39 +342,40 @@ fun JournalEntryRow(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Rotating soft pastel watercolor bullet dot colors per row
+        // Rotating watercolor palette for row numbers
         val rowDotColors = remember {
             listOf(
-                Color(0xFF5B9EC9), // Row 1: Soft Sky Blue
-                Color(0xFFE27B97), // Row 2: Soft Rose Pink
-                Color(0xFF7FA85B), // Row 3: Soft Sage Green
-                Color(0xFFE0B038), // Row 4: Soft Warm Amber
-                Color(0xFF9878C8), // Row 5: Soft Lavender
-                Color(0xFFE28862)  // Row 6: Soft Peach Coral
+                Color(0xFF3B82B6), // Row 1: Rich Sky Blue
+                Color(0xFFD65D82), // Row 2: Rich Rose Pink
+                Color(0xFF5E8C3B), // Row 3: Rich Sage Green
+                Color(0xFFC7881E), // Row 4: Warm Amber
+                Color(0xFF7E5AA8), // Row 5: Deep Lavender
+                Color(0xFFCC673B)  // Row 6: Warm Peach Coral
             )
         }
         val dotColor = rowDotColors[(rowNumber - 1).coerceAtLeast(0) % rowDotColors.size]
 
-        // Right side (RTL start): Colored Bullet Dot + Title Input
+        // Right side (RTL start): Colored Row Number + Title Input
         Row(
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.weight(1f, fill = false)
         ) {
-            // Little colored dot / circle resting directly on the line
-            Canvas(
+            // Handwritten colored row number sitting directly on the blue notebook line
+            Text(
+                text = "$rowNumber",
+                fontFamily = PatrickHandFamily,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = dotColor,
+                style = TextStyle(platformStyle = NoFontPadding),
                 modifier = Modifier
-                    .size(7.5.dp)
-                    .offset(y = 0.2.dp)
-            ) {
-                drawCircle(color = dotColor)
-            }
+                    .widthIn(min = 14.dp)
+                    .journalBaselineOnRule()
+            )
 
-            BasicTextField(
-                value = titleValue,
-                onValueChange = onTitleValueChange,
-                onTextLayout = { titleLayoutResult = it },
-                readOnly = true,
+            Box(
+                contentAlignment = Alignment.CenterStart,
                 modifier = Modifier
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -382,13 +383,6 @@ fun JournalEntryRow(
                     ) {
                         keyboardController?.hide()
                         onTitleFocused()
-                    }
-                    .then(titleFocusMod)
-                    .onFocusChanged { focusState ->
-                        if (focusState.isFocused) {
-                            keyboardController?.hide()
-                            onTitleFocused()
-                        }
                     }
                     .offset(y = 6.7.dp)
                     .drawWithContent {
@@ -427,34 +421,29 @@ fun JournalEntryRow(
                             }
                         }
                     }
-                    .semantics { testTag = "tag_row_title_$rowNumber" },
-                singleLine = true,
-                cursorBrush = SolidColor(JournalInk),
-                textStyle = TextStyle(
-                    fontFamily = TajawalFamily,
-                    fontSize = 16.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = JournalInk,
-                    platformStyle = NoFontPadding
-                ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { onConfirm() }),
-                decorationBox = { innerTextField ->
-                    Box(contentAlignment = Alignment.CenterStart) {
-                        if (titleValue.text.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.editor_item_placeholder),
-                                fontFamily = TajawalFamily,
-                                fontSize = 16.5.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = JournalMutedInk.copy(alpha = if (isTitleActive) 0.50f else 0.40f),
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        }
-                        innerTextField()
-                    }
+                    .semantics { testTag = "tag_row_title_$rowNumber" }
+            ) {
+                if (titleValue.text.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.editor_item_placeholder),
+                        fontFamily = TajawalFamily,
+                        fontSize = 16.5.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = JournalMutedInk.copy(alpha = if (isTitleActive) 0.50f else 0.40f),
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                } else {
+                    Text(
+                        text = titleValue.text,
+                        fontFamily = TajawalFamily,
+                        fontSize = 16.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = JournalInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        onTextLayout = { titleLayoutResult = it }
+                    )
                 }
-            )
+            }
         }
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -465,11 +454,8 @@ fun JournalEntryRow(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             // Editable Amount
-            BasicTextField(
-                value = amountValue,
-                onValueChange = onAmountValueChange,
-                onTextLayout = { amountLayoutResult = it },
-                readOnly = true,
+            Box(
+                contentAlignment = Alignment.CenterStart,
                 modifier = Modifier
                     .widthIn(min = 28.dp)
                     .clickable(
@@ -478,13 +464,6 @@ fun JournalEntryRow(
                     ) {
                         keyboardController?.hide()
                         onAmountFocused()
-                    }
-                    .then(amountFocusMod)
-                    .onFocusChanged { focusState ->
-                        if (focusState.isFocused) {
-                            keyboardController?.hide()
-                            onAmountFocused()
-                        }
                     }
                     .offset(y = 5.7.dp)
                     .drawWithContent {
@@ -530,43 +509,38 @@ fun JournalEntryRow(
                             }
                         }
                     }
-                    .semantics { testTag = "tag_row_amount_$rowNumber" },
-                singleLine = true,
-                cursorBrush = SolidColor(JournalInk),
-                textStyle = TextStyle(
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = amountTextColor,
-                    platformStyle = NoFontPadding
-                ),
-                decorationBox = { innerTextField ->
-                    Box(contentAlignment = Alignment.CenterStart) {
-                        if (amountValue.text.isEmpty()) {
-                            Text(
-                                text = "0",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalMutedInk.copy(alpha = if (isAmountActive) 0.50f else 0.45f),
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        }
-                        if (!isAmountActive && amountValue.text.isNotEmpty()) {
-                            Text(
-                                text = JournalLedgerManager.formatFrenchNumber(amountValue.text),
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = amountTextColor,
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        } else {
-                            innerTextField()
-                        }
-                    }
+                    .semantics { testTag = "tag_row_amount_$rowNumber" }
+            ) {
+                if (amountValue.text.isEmpty()) {
+                    Text(
+                        text = "0",
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = JournalMutedInk.copy(alpha = if (isAmountActive) 0.50f else 0.45f),
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                } else if (!isAmountActive && amountValue.text.isNotEmpty()) {
+                    Text(
+                        text = JournalLedgerManager.formatFrenchNumber(amountValue.text),
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = amountTextColor,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                } else {
+                    Text(
+                        text = amountValue.text,
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = amountTextColor,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        onTextLayout = { amountLayoutResult = it }
+                    )
                 }
-            )
+            }
 
             // Suffix ("درهم" / "ريال" / "DH")
             val isLatinSuffix = currencySuffix.contains(Regex("[a-zA-Z]"))
@@ -574,7 +548,7 @@ fun JournalEntryRow(
                 text = currencySuffix,
                 fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
                 fontSize = if (isLatinSuffix) 15.sp else 12.5.sp,
-                fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.SemiBold,
+                fontWeight = FontWeight.Normal,
                 color = JournalMutedInk,
                 style = TextStyle(platformStyle = NoFontPadding),
                 modifier = Modifier.offset(y = if (isLatinSuffix) 5.8.dp else 5.0.dp)
@@ -600,9 +574,11 @@ fun JournalEntryRow(
                         modifier = Modifier.offset(y = 1.7.dp)
                     )
                 } else {
-                    NotebookCross(
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Trash,
+                        contentDescription = stringResource(R.string.editor_delete_row),
+                        tint = JournalActionDelete.copy(alpha = 0.85f),
                         size = 16.dp,
-                        color = JournalActionDelete.copy(alpha = 0.85f),
                         modifier = Modifier.offset(y = 1.7.dp)
                     )
                 }
@@ -621,6 +597,9 @@ fun JournalAddRowButton(
     onAddRow: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -638,18 +617,18 @@ fun JournalAddRowButton(
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.padding(bottom = 0.dp)
         ) {
-            // Handwritten sketch '+' symbol with horizontal stroke resting directly on the notebook ruled line
+            // Handwritten sketch '+' symbol centered with handwriting text
             Canvas(
                 modifier = Modifier
                     .size(width = 13.dp, height = 13.dp)
-                    .offset(y = 6.0.dp)
+                    .offset(y = (-4.0).dp)
             ) {
                 val strokeW = 1.5.dp.toPx()
                 val ink = JournalWritingInk.copy(alpha = 0.8f)
                 val midX = size.width / 2f
                 val midY = size.height / 2f
 
-                // Horizontal stroke: sits directly on the notebook ruled line
+                // Horizontal stroke
                 drawLine(
                     color = ink,
                     start = Offset(1.dp.toPx(), midY),
@@ -657,7 +636,7 @@ fun JournalAddRowButton(
                     strokeWidth = strokeW,
                     cap = StrokeCap.Round
                 )
-                // Vertical stroke: crosses the horizontal stroke through the line
+                // Vertical stroke
                 drawLine(
                     color = ink,
                     start = Offset(midX, 1.dp.toPx()),
@@ -669,12 +648,12 @@ fun JournalAddRowButton(
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = stringResource(R.string.editor_add_row),
-                fontFamily = TajawalFamily,
-                fontSize = 15.sp,
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 15.sp else 16.5.sp,
                 fontWeight = FontWeight.Medium,
                 color = JournalWritingInk.copy(alpha = 0.8f),
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 5.8.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
         }
     }
@@ -748,12 +727,12 @@ fun JournalCalculationRow(
                 text = title.ifBlank { stringResource(R.string.editor_new_title) },
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                 fontSize = if (isRtl) 16.5.sp else 17.5.sp,
-                fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
+                fontWeight = FontWeight.Normal,
                 color = JournalInk,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
         }
 
@@ -768,20 +747,20 @@ fun JournalCalculationRow(
                 text = totalAmount,
                 fontFamily = PatrickHandFamily,
                 fontSize = 18.sp,
-                fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
+                fontWeight = FontWeight.Normal,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 5.5.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
 
             Text(
                 text = currencySuffix,
                 fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
                 fontSize = if (isLatinSuffix) 15.sp else 12.5.sp,
-                fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.SemiBold,
+                fontWeight = FontWeight.Normal,
                 color = JournalMutedInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isLatinSuffix) 5.5.dp else 5.8.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
 
             // Three dots icon (⋮)
@@ -816,6 +795,9 @@ fun JournalNewCalculationButton(
     onNewCalculation: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -834,14 +816,14 @@ fun JournalNewCalculationButton(
             Canvas(
                 modifier = Modifier
                     .size(width = 13.dp, height = 13.dp)
-                    .offset(y = 6.0.dp)
+                    .offset(y = (-4.0).dp)
             ) {
                 val strokeW = 1.5.dp.toPx()
                 val ink = JournalWritingInk.copy(alpha = 0.8f)
                 val midX = size.width / 2f
                 val midY = size.height / 2f
 
-                // Horizontal stroke: sits directly on the notebook ruled line
+                // Horizontal stroke
                 drawLine(
                     color = ink,
                     start = Offset(1.dp.toPx(), midY),
@@ -849,7 +831,7 @@ fun JournalNewCalculationButton(
                     strokeWidth = strokeW,
                     cap = StrokeCap.Round
                 )
-                // Vertical stroke: crosses the horizontal stroke through the line
+                // Vertical stroke
                 drawLine(
                     color = ink,
                     start = Offset(midX, 1.dp.toPx()),
@@ -861,12 +843,12 @@ fun JournalNewCalculationButton(
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = stringResource(R.string.home_new_calculation),
-                fontFamily = PatrickHandFamily,
-                fontSize = 17.sp,
+                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                fontSize = if (isRtl) 16.sp else 17.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = JournalWritingInk.copy(alpha = 0.85f),
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 5.8.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
         }
     }
@@ -1018,8 +1000,8 @@ fun getDateTimelineStyle(
         }
         else -> {
             DateTimelineStyle(
-                washColor = HighlighterBlue.copy(alpha = 0.55f),
-                dotColor = Color(0xFF5B9EC9) // Soft Sky Blue matching blue date wash (distinct from pink categories)
+                washColor = HighlighterPink.copy(alpha = 0.50f),
+                dotColor = Color(0xFFD66860) // Soft coral/rose matching pink date wash
             )
         }
     }
@@ -1056,11 +1038,12 @@ fun JournalDateRuleBand(
                 .padding(start = 2.dp)
                 .drawBehind {
                     // Soft highlighter wash centered vertically around the date text,
-                    // extending slightly below the notebook blue line so text is optically centered
+                    // with the blue notebook rule passing through the lower portion
                     val h = size.height
                     val w = size.width
                     val washHeight = 21.dp.toPx()
-                    val washY = h - (if (isRtl) 17.0.dp.toPx() else 17.5.dp.toPx())
+                    val washCenterY = h - 6.5.dp.toPx()
+                    val washY = washCenterY - (washHeight / 2f)
                     val padH = 8.dp.toPx()
                     drawRoundRect(
                         color = highlighterWashColor,
@@ -1074,10 +1057,10 @@ fun JournalDateRuleBand(
                 text = title,
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                 fontSize = if (isRtl) 17.5.sp else 19.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Normal,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
         }
     }
@@ -1426,7 +1409,7 @@ fun JournalTwoLineCalculationRow(
                 onClick = onClick
             )
     ) {
-        // Line 1: Bullet dot + Title on Start; Amount + Currency + 3-dots on End
+        // Line 1: Bullet dot + Title on Start; Connecting dotted line; Amount + Currency + 3-dots on End
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1443,8 +1426,8 @@ fun JournalTwoLineCalculationRow(
             ) {
                 Canvas(
                     modifier = Modifier
-                        .size(7.5.dp)
-                        .offset(y = 0.2.dp)
+                        .size(6.5.dp)
+                        .offset(y = (-5.5).dp)
                 ) {
                     drawCircle(color = dotColor)
                 }
@@ -1455,7 +1438,7 @@ fun JournalTwoLineCalculationRow(
                         contentDescription = null,
                         tint = JournalInk.copy(alpha = 0.75f),
                         size = 14.dp,
-                        modifier = Modifier.offset(y = if (isRtl) 3.5.dp else 1.0.dp)
+                        modifier = Modifier.offset(y = (-4.0).dp)
                     )
                 }
 
@@ -1463,16 +1446,33 @@ fun JournalTwoLineCalculationRow(
                     text = title.ifBlank { stringResource(R.string.editor_new_title) },
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                     fontSize = if (isRtl) 16.5.sp else 17.5.sp,
-                    fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
+                    fontWeight = FontWeight.Normal,
                     color = JournalInk,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 5.7.dp else 2.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            // Subtle connecting line directly on the blue notebook line between Title and Amount
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 6.dp)
+                    .drawBehind {
+                        val strokeW = 0.85.dp.toPx()
+                        val y = size.height
+                        drawLine(
+                            color = JournalWritingInk.copy(alpha = 0.28f),
+                            start = Offset(0f, y),
+                            end = Offset(size.width, y),
+                            strokeWidth = strokeW,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.5.dp.toPx()))
+                        )
+                    }
+            )
 
             // End: Amount + Suffix + 3 dots (⋮)
             Row(
@@ -1486,17 +1486,17 @@ fun JournalTwoLineCalculationRow(
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = 5.7.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
 
                 Text(
                     text = currencySuffix,
                     fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
                     fontSize = if (isLatinSuffix) 15.sp else 12.5.sp,
-                    fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.SemiBold,
+                    fontWeight = FontWeight.Normal,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isLatinSuffix) 5.8.dp else 5.0.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
 
                 Box(
@@ -1507,14 +1507,13 @@ fun JournalTwoLineCalculationRow(
                             onClickLabel = stringResource(R.string.cd_more_options),
                             onClick = onMoreClick
                         ),
-                    contentAlignment = Alignment.BottomCenter
+                    contentAlignment = Alignment.Center
                 ) {
                     HisabiSketchIcon(
                         symbol = HisabiSymbol.More,
                         contentDescription = null,
                         tint = JournalMutedInk,
-                        size = 18.dp,
-                        modifier = Modifier.offset(y = 2.0.dp)
+                        size = 14.dp
                     )
                 }
             }
@@ -1529,18 +1528,19 @@ fun JournalTwoLineCalculationRow(
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.Start
         ) {
-            Spacer(modifier = Modifier.width(15.5.dp))
-
             Text(
                 text = subtitle,
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                 fontSize = if (isRtl) 13.sp else 13.5.sp,
-                fontWeight = FontWeight.Normal,
+                fontWeight = FontWeight.Light,
                 color = JournalMutedInk.copy(alpha = 0.85f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 5.7.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 22.dp)
+                    .journalBaselineOnRule()
             )
         }
     }
@@ -1632,77 +1632,45 @@ fun NotebookSectionBand(
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
 
-    if (isCentered) {
-        Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(JournalRuleSpacing),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(16.dp)
-                    .clip(RoundedCornerShape(topStart = 0.dp, bottomStart = 0.dp, topEnd = 3.dp, bottomEnd = 3.dp))
-                    .background(highlightColor.copy(alpha = 0.55f))
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = if (isRtl) title else title.uppercase(),
-                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 18.sp else 18.5.sp,
-                fontWeight = FontWeight.Bold,
-                color = JournalInk,
-                style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(16.dp)
-                    .clip(RoundedCornerShape(topStart = 3.dp, bottomStart = 3.dp, topEnd = 0.dp, bottomEnd = 0.dp))
-                    .background(highlightColor.copy(alpha = 0.55f))
-            )
-        }
-    } else {
-        Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(JournalRuleSpacing)
-                .padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Box(
-                modifier = Modifier
-                    .padding(start = 2.dp)
-                    .drawBehind {
-                        val h = size.height
-                        val w = size.width
-                        val washHeight = 22.dp.toPx()
-                        val washY = h - (if (isRtl) 16.0.dp.toPx() else 16.5.dp.toPx())
-                        val padH = 8.dp.toPx()
-                        drawRoundRect(
-                            color = highlightColor.copy(alpha = 0.50f),
-                            topLeft = Offset(-padH, washY),
-                            size = Size(w + padH * 2, washHeight),
-                            cornerRadius = CornerRadius(4.dp.toPx())
-                        )
-                    }
-            ) {
-                Text(
-                    text = title,
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 16.sp else 17.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalInk,
-                    style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing)
+            .drawBehind {
+                // 1. Full-width highlight filling strictly between upper and lower rules
+                drawRect(
+                    color = highlightColor.copy(alpha = 0.42f),
+                    topLeft = Offset(0f, 0f),
+                    size = Size(size.width, size.height)
                 )
-            }
-        }
+
+                // 2. Crisp boundary rule strokes matching notebook grid exactly at top and bottom
+                val strokeW = 0.6.dp.toPx()
+                val ruleColor = JournalRule.copy(alpha = 0.35f)
+                drawLine(
+                    color = ruleColor,
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, 0f),
+                    strokeWidth = strokeW
+                )
+                drawLine(
+                    color = ruleColor,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = strokeW
+                )
+            },
+        contentAlignment = if (isCentered) Alignment.Center else Alignment.CenterStart
+    ) {
+        Text(
+            text = if (isRtl || !isCentered) title else title.uppercase(),
+            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+            fontSize = if (isRtl) 16.sp else 17.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = JournalInk,
+            style = TextStyle(platformStyle = NoFontPadding),
+            modifier = if (isCentered) Modifier else Modifier.padding(horizontal = 14.dp)
+        )
     }
 }
 
@@ -1717,31 +1685,45 @@ fun <T> NotebookSegmentedControl(
     onSelectOption: (T) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     Row(
         modifier = modifier
-            .height(26.dp)
-            .background(Color(0xFF6B7067).copy(alpha = 0.12f), RoundedCornerShape(7.dp))
-            .padding(horizontal = 2.dp, vertical = 1.5.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .height(JournalRuleSpacing)
+            .padding(horizontal = 2.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        val focusManager = LocalFocusManager.current
-        val keyboardController = LocalSoftwareKeyboardController.current
         options.forEach { (value, label) ->
             val isSelected = value == selectedOption
             val isOptionArabic = isArabicScript(label)
             Box(
                 modifier = Modifier
-                    .background(
-                        if (isSelected) HighlighterPink.copy(alpha = 0.50f) else Color.Transparent,
-                        RoundedCornerShape(5.dp)
-                    )
+                    .height(JournalRuleSpacing)
                     .clickable(role = Role.RadioButton, onClick = {
                         focusManager.clearFocus()
                         keyboardController?.hide()
                         onSelectOption(value)
                     })
-                    .padding(horizontal = 10.dp, vertical = 1.dp),
-                contentAlignment = Alignment.Center
+                    .drawBehind {
+                        if (isSelected) {
+                            val h = size.height
+                            val w = size.width
+                            val washHeight = 20.dp.toPx()
+                            val washCenterY = h - 6.dp.toPx()
+                            val washY = washCenterY - (washHeight / 2f)
+                            val padH = 7.dp.toPx()
+                            drawRoundRect(
+                                color = HighlighterPink.copy(alpha = 0.45f),
+                                topLeft = Offset(-padH, washY),
+                                size = Size(w + padH * 2, washHeight),
+                                cornerRadius = CornerRadius(6.dp.toPx())
+                            )
+                        }
+                    }
+                    .padding(horizontal = 7.dp),
+                contentAlignment = Alignment.BottomCenter
             ) {
                 Text(
                     text = label,
@@ -1750,7 +1732,7 @@ fun <T> NotebookSegmentedControl(
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = if (isSelected) JournalInk else JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isOptionArabic) 2.0.dp else 4.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
         }
@@ -1904,12 +1886,12 @@ fun NotebookCalculationRow(
                     text = title.ifBlank { stringResource(R.string.editor_new_title) },
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                     fontSize = if (isRtl) 16.5.sp else 17.5.sp,
-                    fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
+                    fontWeight = FontWeight.Normal,
                     color = JournalInk,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
 
@@ -1941,20 +1923,20 @@ fun NotebookCalculationRow(
                     text = totalAmount,
                     fontFamily = PatrickHandFamily,
                     fontSize = 18.sp,
-                    fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
+                    fontWeight = FontWeight.Normal,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = 5.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
 
                 Text(
                     text = currencySuffix,
                     fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
                     fontSize = if (isLatinSuffix) 15.sp else 12.5.sp,
-                    fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.SemiBold,
+                    fontWeight = FontWeight.Normal,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isLatinSuffix) 5.5.dp else 5.8.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
 
                 Box(
@@ -2007,7 +1989,7 @@ fun NotebookCalculationRow(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                        .journalBaselineOnRule()
                 )
             }
         }
@@ -2071,8 +2053,10 @@ fun NotebookDateGroupBlock(
                 } else {
                     stringResource(R.string.currency_rial)
                 }
+                val emptyItemsStr = stringResource(R.string.share_empty_items)
+                val articlePrefixStr = stringResource(R.string.share_article_prefix)
 
-                val subtitle = remember(calc, searchQuery, context) {
+                val subtitle = remember(calc, searchQuery, emptyItemsStr, articlePrefixStr) {
                     val matchingItem = if (searchQuery.isNotBlank()) {
                         calc.items.firstOrNull { it.label.contains(searchQuery, ignoreCase = true) }
                     } else null
@@ -2089,10 +2073,10 @@ fun NotebookDateGroupBlock(
                             itemLabels.joinToString(if (isRtl) "، " else ", ")
                         } else if (calc.items.isNotEmpty()) {
                             calc.items.indices.map { idx ->
-                                if (isRtl) "عنصر \u200E${idx + 1}\u200F" else "Article ${idx + 1}"
+                                if (isRtl) "$articlePrefixStr \u200E${idx + 1}\u200F" else "$articlePrefixStr ${idx + 1}"
                             }.joinToString(if (isRtl) "، " else ", ")
                         } else {
-                            if (isRtl) "بدون عناصر" else "Aucun article"
+                            emptyItemsStr
                         }
                     }
                 }
@@ -2168,11 +2152,11 @@ fun JournalUpcomingFeatureRow(
             Text(
                 text = title,
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 16.sp else 17.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = if (isRtl) 15.5.sp else 16.5.sp,
+                fontWeight = FontWeight.Normal,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
 
             HisabiSketchIcon(
@@ -2195,21 +2179,21 @@ fun JournalUpcomingFeatureRow(
             Text(
                 text = description,
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 13.sp else 14.sp,
-                fontWeight = FontWeight.Normal,
-                color = JournalMutedInk,
+                fontSize = if (isRtl) 11.5.sp else 12.sp,
+                fontWeight = FontWeight.Light,
+                color = JournalMutedInk.copy(alpha = 0.75f),
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
 
             Text(
                 text = stringResource(R.string.settings_upcoming_badge),
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 12.5.sp else 13.sp,
+                fontSize = if (isRtl) 11.5.sp else 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = JournalMutedInk,
+                color = JournalMutedInk.copy(alpha = 0.75f),
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
         }
     }
@@ -2259,7 +2243,7 @@ fun JournalTotalResultBand(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
-                    .background(HighlighterYellow.copy(alpha = 0.58f))
+                    .background(HighlighterYellow.copy(alpha = 0.35f))
                     .then(clickModifier)
                     .padding(horizontal = 16.dp, vertical = 7.dp)
                     .semantics { testTag = "tag_total_result_band" },
@@ -2272,7 +2256,7 @@ fun JournalTotalResultBand(
                 ) {
                     Text(
                         text = totalLabel,
-                        fontFamily = if (isArabic) MajazFamily else PatrickHandFamily,
+                        fontFamily = if (isArabic) ArabicFamily else PatrickHandFamily,
                         fontSize = if (isArabic) 18.sp else 16.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
@@ -2285,8 +2269,8 @@ fun JournalTotalResultBand(
                     ) {
                         Text(
                             text = amount,
-                            fontFamily = ManropeFamily,
-                            fontSize = 20.sp,
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = totalColor,
                             style = TextStyle(platformStyle = NoFontPadding)
@@ -2296,7 +2280,7 @@ fun JournalTotalResultBand(
                             text = suffix,
                             fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
                             fontSize = if (isLatinSuffix) 15.sp else 13.5.sp,
-                            fontWeight = if (isLatinSuffix) FontWeight.Normal else FontWeight.Medium,
+                            fontWeight = FontWeight.Normal,
                             color = JournalMutedInk,
                             style = TextStyle(platformStyle = NoFontPadding)
                         )

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand and navigation -->
+    <string name="app_name">حسابي</string>
+    <string name="app_tagline">دفتر الحسابات</string>
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_history">السجل</string>
+    <string name="nav_settings">الإعدادات</string>
+
+    <!-- Home -->
+    <string name="home_greeting">أهلاً %1$s 😊</string>
+    <string name="home_search_placeholder">قلب على حساب</string>
+    <string name="home_new_calculation">حساب جديد</string>
+    <string name="home_recent_title">الحسابات الأخيرة</string>
+    <string name="home_favorites_title">الحسابات المفضلة</string>
+    <string name="home_favorites_empty_hint">علّق الحسابات المهمة هنا (⋮)</string>
+    <string name="action_pin">تعليق</string>
+    <string name="action_unpin">حيد التعليق</string>
+    <string name="home_pick_date">عزل تاريخ</string>
+    <string name="home_clear_date_filter">مسح الفلتر</string>
+    <string name="home_no_results_for_date">ما كاين حتى حساب فهاد النهار</string>
+    <string name="home_empty_title">ما كاين حتى حساب محفوظ</string>
+    <string name="home_empty_body">دير أول حساب ديالك وغادي تلقاه هنا.</string>
+    <string name="home_see_all">عرض الكل</string>
+    <string name="card_lines_singular">سطر واحد</string>
+    <string name="card_lines_plural">%1$d سطور</string>
+
+    <!-- Date groups -->
+    <string name="date_today">اليوم</string>
+    <string name="date_yesterday">البارح</string>
+    <string name="date_this_week">هاد السيمانة</string>
+
+    <!-- Editor -->
+    <string name="editor_new_title">حساب جديد</string>
+    <string name="editor_title_placeholder">عنوان الحساب</string>
+    <string name="editor_item_placeholder">اسم العنصر…</string>
+    <string name="editor_amount_placeholder">المبلغ</string>
+    <string name="editor_add_row">زيد سطر</string>
+    <string name="editor_total">المجموع</string>
+    <string name="editor_save">حفظ</string>
+    <string name="editor_saving">كيتسجل…</string>
+    <string name="editor_saved">تم حفظ الحساب</string>
+    <string name="editor_invalid_amount">المبلغ ماشي صحيح</string>
+    <string name="editor_title_required">زيد عنوان للحساب</string>
+    <string name="editor_delete_row">مسح السطر</string>
+    <string name="editor_confirm_row">تأكيد السطر</string>
+    <string name="editor_open_calculator">فتح الحاسبة</string>
+    <string name="editor_show_money_breakdown">شوف الصرف</string>
+    <string name="action_undo">تراجع</string>
+    <string name="action_confirm">تأكيد</string>
+    <string name="cd_undo">تراجع على المسح</string>
+
+    <!-- Unsaved changes -->
+    <string name="unsaved_title">تغييرات ما تسجلوش</string>
+    <string name="unsaved_body">واش بغيتي تحفظ قبل ما تخرج؟</string>
+    <string name="unsaved_save">حفظ</string>
+    <string name="unsaved_discard">تجاهل التغييرات</string>
+    <string name="unsaved_continue">كمل الحساب</string>
+
+    <!-- Calculator popup and keyboards -->
+    <string name="calculator_title">الحاسبة</string>
+    <string name="calculator_confirm">تأكيد</string>
+    <string name="calculator_close">سد</string>
+    <string name="calculator_error">العملية ماشي صحيحة</string>
+    <string name="keyboard_numbers">أرقام</string>
+    <string name="keyboard_letters">حروف</string>
+    <string name="keyboard_space">مسافة</string>
+    <string name="keyboard_delete">مسح</string>
+    <string name="keyboard_shift">حرف كبير</string>
+    <string name="keyboard_validate">تأكيد</string>
+    <string name="keyboard_language">لغة الكلافيي</string>
+
+    <!-- History and search -->
+    <string name="history_title">السجل</string>
+    <string name="history_section_title">كاع الحسابات</string>
+    <string name="history_search_placeholder">قلب فالحسابات</string>
+    <string name="history_filter_all">الكل</string>
+    <string name="history_filter_today">اليوم</string>
+    <string name="history_filter_month">هاد الشهر</string>
+    <string name="history_no_results_title">ما كاين حتى نتيجة</string>
+    <string name="history_no_results_body">جرب كلمة خرى.</string>
+    <string name="history_search_hint">البحث كيشوف العناوين والسطور كاملين.</string>
+
+    <!-- Saved calculation actions -->
+    <string name="action_edit">تعديل</string>
+    <string name="action_duplicate">عاود الحساب</string>
+    <string name="action_share_image">مشاركة كصورة</string>
+    <string name="share_chooser_title">بارطاجي الحساب</string>
+    <string name="share_footer_watermark">صُنع بواسطة حسابي</string>
+    <string name="share_total_label">المجموع</string>
+    <string name="share_empty_items">بدون عناصر</string>
+    <string name="share_article_prefix">عنصر</string>
+    <string name="share_error">ما قدرناش نبارطاجيو الحساب</string>
+    <string name="action_export_pdf">تصدير PDF</string>
+    <string name="action_export_csv">تصدير CSV</string>
+    <string name="action_delete">مسح</string>
+    <string name="action_cancel">إلغاء</string>
+
+    <!-- Delete -->
+    <string name="delete_title">واش باغي تمسح هاد الحساب؟</string>
+    <string name="delete_body">غادي يتمسح الحساب والسطور ديالو كاملين.</string>
+    <string name="delete_confirm">مسح</string>
+    <string name="delete_cancel">إلغاء</string>
+    <string name="delete_undo_message">تمسح الحساب</string>
+    <string name="delete_undo_action">تراجع</string>
+
+    <!-- Settings -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_tagline">ضبط التطبيق</string>
+    <string name="settings_section_preferences">التفضيلات</string>
+    <string name="settings_section_data">البيانات</string>
+    <string name="settings_section_upcoming">قريباً</string>
+    <string name="settings_storage_title">التخزين فالتليفون</string>
+    <string name="settings_storage_badge">محلي 100% / بلا نت</string>
+    <string name="settings_storage_notice">البيانات ديالك محفوظة غير فهاد التليفون فقط.</string>
+    <string name="settings_language">اللغة</string>
+    <string name="settings_language_description">عزل لغة التطبيق</string>
+    <string name="settings_currency">العملة</string>
+    <string name="settings_currency_description">عزل العملة ديالك</string>
+    <string name="settings_french">Français</string>
+    <string name="settings_english">English</string>
+    <string name="settings_arabic">العربية</string>
+    <string name="settings_darija">الدارجة</string>
+    <string name="currency_dirham">درهم</string>
+    <string name="currency_rial">ريال</string>
+    <string name="settings_upcoming_title">مزايا مستقبلية</string>
+    <string name="settings_upcoming_badge">قريباً</string>
+    <string name="settings_backup_title">سوفغارد محلي</string>
+    <string name="settings_backup_desc">حفظ نسخة من حساباتك فالتليفون.</string>
+    <string name="settings_share_image_title">بارطاجي كصورة</string>
+    <string name="settings_share_image_desc">مشاركة الحساب على شكل صورة.</string>
+    <string name="settings_export_title">تصدير PDF / Excel</string>
+    <string name="settings_export_desc">خرج الحسابات ديالك فـ PDF ولا Excel.</string>
+    <string name="home_search_input_placeholder">قلب فالحسابات ديالك…</string>
+    <string name="calculation_lines_count">%d سطور</string>
+
+    <!-- Money breakdown -->
+    <string name="breakdown_title">صرف الفلوس</string>
+    <string name="breakdown_subtitle">تفكيك المجموع لأوراق وقطع نقدية</string>
+    <string name="breakdown_distribution">الأوراق والقطع النقدية</string>
+    <string name="breakdown_remainder">الصرف اللي شاط</string>
+    <string name="editor_breakdown_money">صرف الفلوس</string>
+
+    <!-- Accessibility descriptions -->
+    <string name="cd_back">رجوع</string>
+    <string name="cd_more_options">خيارات خرى</string>
+    <string name="cd_open_calculation">فتح الحساب</string>
+    <string name="cd_clear_search">مسح البحث</string>
+    <string name="cd_selected">معزول</string>
+    <string name="cd_not_selected">ما معزولش</string>
+    <!-- Groups feature -->
+    <string name="nav_groups">مجموعاتي</string>
+    <string name="groups_title">مجموعاتي</string>
+    <string name="groups_new_action">مجموعة جديدة</string>
+    <string name="groups_empty_title">ما كاين حتى مجموعة</string>
+    <string name="groups_empty_desc">صاوب مجموعة باش تنظم الحسابات ديالك.</string>
+    <string name="groups_count_badge">%d مجموعات</string>
+    <string name="group_calculations_count">%d حسابات</string>
+    <string name="group_calculations_count_single">حساب واحد</string>
+    <string name="group_calculations_count_zero">0 حساب</string>
+    <string name="group_total_label">المجموع :</string>
+    <string name="action_add_to_group">زيد لمجموعة</string>
+    <string name="action_change_group">بدل المجموعة</string>
+    <string name="action_remove_from_group">حيد من المجموعة</string>
+    <string name="group_dialog_create_title">مجموعة جديدة</string>
+    <string name="group_dialog_edit_title">تعديل المجموعة</string>
+    <string name="group_dialog_name_hint">سمية المجموعة (مثال: الدار، السفر...)</string>
+    <string name="group_dialog_color_label">لون الهايلايتر</string>
+    <string name="group_dialog_save">حفظ</string>
+    <string name="group_dialog_cancel">إلغاء</string>
+    <string name="group_dialog_delete_title">باغي تمسح المجموعة؟</string>
+    <string name="group_dialog_delete_body">الحسابات اللي فهاد المجموعة ماغاديش يتمسحو، غايوليو غير مصنفين.</string>
+    <string name="group_detail_new_calc">حساب جديد فهاد المجموعة</string>
+    <string name="group_detail_empty">ما كاين حتى حساب فهاد المجموعة دابا.</string>
+    <string name="group_assign_dialog_title">عزل مجموعة</string>
+    <string name="group_none">بلا مجموعة (غير مصنف)</string>
+
+    <!-- Backup and Restore (.calc) -->
+    <string name="settings_section_backup">النسخ الاحتياطي والاسترجاع</string>
+    <string name="settings_backup_action_export">تصدير سوفغارد (.calc)</string>
+    <string name="settings_backup_action_export_desc">حفظ ملف .calc فالهاتف ديالك أو على درايف.</string>
+    <string name="settings_backup_action_share">بارطاجي السوفغارد (.calc)</string>
+    <string name="settings_backup_action_share_desc">إرسال الملف عبر واتساب، درايف أو البلوتوث.</string>
+    <string name="settings_action_badge_share">بارطاجي</string>
+    <string name="settings_backup_action_restore">استرجاع سوفغارد (.calc)</string>
+    <string name="settings_backup_action_restore_desc">استيراد الحسابات من ملف .calc سابق.</string>
+    <string name="settings_action_badge_restore">استرجاع</string>
+    <string name="backup_dialog_restore_title">استرجاع البيانات</string>
+    <string name="backup_dialog_restore_info">تلقات نسخة بتاريخ %1$s فيها %2$d حساب و %3$d مجموعات.</string>
+    <string name="backup_dialog_option_merge">دمج مع الحسابات الحالية</string>
+    <string name="backup_dialog_option_replace">تعويض جميع البيانات</string>
+    <string name="backup_dialog_merge_desc">كيزيد الحسابات والمجموعات بلا ما يمسح اللي عندك دابا.</string>
+    <string name="backup_dialog_replace_desc">تنبيه: غادي يتمسحو كاع الحسابات الحالية ويتعوضو بهاد النسخة.</string>
+    <string name="backup_toast_export_success">تسجلات السوفغارد .calc بنجاح!</string>
+    <string name="backup_toast_restore_success">تم استرجاع البيانات بنجاح!</string>
+    <string name="backup_toast_error">وقع غلط فالعملية. تأكد من ملف .calc.</string>
+    <string name="backup_toast_share_title">بارطاجي نسخة حسابي الاحتياطية</string>
+    <string name="home_greeting_prefix">أهلاً </string>
+    <string name="share_watermark">مصنوع بتطبيق حسابي</string>
+    <string name="share_brand">دفتر حسابي</string>
+    <string name="history_month_empty">ما كاين حتى حساب مسجل فـ %1$s</string>
+</resources>

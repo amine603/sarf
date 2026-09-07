@@ -6,7 +6,11 @@ sealed class AppDestination(val route: String) {
     data object History : AppDestination("history")
     data object Settings : AppDestination("settings")
     data object StyleShowcase : AppDestination("style_showcase")
-    data object NewCalculation : AppDestination("calculation/new")
+    data object NewCalculation : AppDestination("calculation/new") {
+        const val ROUTE_PATTERN = "calculation/new?groupId={groupId}"
+        fun routeForGroup(groupId: String?): String =
+            if (groupId != null) "calculation/new?groupId=$groupId" else "calculation/new"
+    }
     data class EditCalculation(val calculationId: String) : AppDestination("calculation/$calculationId") {
         companion object {
             const val ROUTE_PATTERN = "calculation/{calculationId}"

@@ -120,4 +120,28 @@ interface CalculationDao {
         upsertCalculationWithItems(duplicatedCalc, duplicatedItems)
         return getCalculation(newId)
     }
+
+    @Transaction
+    @Query("""
+        SELECT * FROM calculations
+        WHERE status = 'SAVED'
+        ORDER BY updatedAtEpochMs DESC
+    """)
+    suspend fun getAllSaved(): List<CalculationWithItems>
+
+    @Query("DELETE FROM calculations")
+    suspend fun deleteAllCalculations()
+
+    @Transaction
+    suspend fun restoreCalculations(
+        items: List<CalculationWithItems>,
+        replaceExisting: Boolean
+    ) {
+        if (replaceExisting) {
+            deleteAllCalculations()
+        }
+        for (item in items) {
+            upsertCalculationWithItems(item.calculation, item.items)
+        }
+    }
 }

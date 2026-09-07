@@ -160,7 +160,7 @@ fun MoneyBreakdownSheet(
                 modifier = Modifier
                     .fillMaxSize()
                     .drawBehind {
-                        val spacingPx = JournalRuleSpacing.toPx()
+                        val spacingPx = JournalRuleSpacing.roundToPx().toFloat()
                         val lineCount = (size.height / spacingPx).toInt() + 1
                         val stroke = 0.6.dp.toPx()
                         val lineColor = JournalRule.copy(alpha = 0.32f)

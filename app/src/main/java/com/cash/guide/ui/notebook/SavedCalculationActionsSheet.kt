@@ -129,7 +129,7 @@ fun SavedCalculationActionsSheet(
                         style = TextStyle(platformStyle = NoFontPadding),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .offset(y = if (isRtl) 6.2.dp else 5.8.dp)
+                            .journalBaselineOnRule(lineHeight = ActionSheetRuleSpacing)
                     )
                 }
 
@@ -267,7 +267,7 @@ private fun ActionSheetRuledItem(
                 .size(28.dp)
                 .clip(CircleShape)
                 .background(badgeColor)
-                .offset(y = (-1.5).dp),
+                .offset(y = (-7).dp),
             contentAlignment = Alignment.Center
         ) {
             HisabiSketchIcon(
@@ -282,10 +282,10 @@ private fun ActionSheetRuledItem(
             text = label,
             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
             fontSize = if (isRtl) 17.5.sp else 19.sp,
-            fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
+            fontWeight = FontWeight.Normal,
             color = tintColor,
             style = TextStyle(platformStyle = NoFontPadding),
-            modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+            modifier = Modifier.journalBaselineOnRule(lineHeight = ActionSheetRuleSpacing)
         )
     }
 }

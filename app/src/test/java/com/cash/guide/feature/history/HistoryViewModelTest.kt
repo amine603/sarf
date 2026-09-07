@@ -1,4 +1,4 @@
-﻿package com.cash.guide.feature.history
+package com.cash.guide.feature.history
 
 import com.cash.guide.data.CalculationRepository
 import com.cash.guide.data.db.CalculationDao
@@ -69,6 +69,16 @@ class HistoryViewModelTest {
         override suspend fun deleteItemsForCalculation(calculationId: String) { items.remove(calculationId) }
         override suspend fun deleteCalculation(id: String) { calculations.remove(id); items.remove(id) }
         override suspend fun deleteDrafts(draftId: String, targetId: String?) {}
+        override suspend fun getAllSaved(): List<CalculationWithItems> {
+            return calculations.values
+                .filter { it.status == "SAVED" }
+                .sortedByDescending { it.updatedAtEpochMs }
+                .map { CalculationWithItems(it, items[it.id] ?: emptyList()) }
+        }
+        override suspend fun deleteAllCalculations() {
+            calculations.clear()
+            items.clear()
+        }
     }
 
     private lateinit var dao: FakeDao

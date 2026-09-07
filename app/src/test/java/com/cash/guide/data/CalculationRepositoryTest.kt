@@ -103,6 +103,18 @@ class CalculationRepositoryTest {
                 .map { it.id }
             toRemove.forEach { deleteCalculation(it) }
         }
+
+        override suspend fun getAllSaved(): List<CalculationWithItems> {
+            return calculations.values
+                .filter { it.status == "SAVED" }
+                .sortedByDescending { it.updatedAtEpochMs }
+                .map { CalculationWithItems(it, items[it.id] ?: emptyList()) }
+        }
+
+        override suspend fun deleteAllCalculations() {
+            calculations.clear()
+            items.clear()
+        }
     }
 
     private lateinit var dao: FakeCalculationDao

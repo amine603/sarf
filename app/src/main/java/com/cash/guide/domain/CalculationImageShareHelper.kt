@@ -116,6 +116,9 @@ object CalculationImageShareHelper {
         val marginX = 60f
 
         // Fonts
+        val creamFrothFont = runCatching {
+            ResourcesCompat.getFont(context, R.font.cream_froth)
+        }.getOrNull()
         val majazFont = runCatching {
             ResourcesCompat.getFont(context, R.font.majaz_regular)
         }.getOrNull() ?: Typeface.DEFAULT
@@ -129,7 +132,7 @@ object CalculationImageShareHelper {
             ResourcesCompat.getFont(context, R.font.manrope_medium)
         }.getOrNull() ?: Typeface.DEFAULT
 
-        val primaryFont = if (isRtl) majazFont else patrickHandFont
+        val primaryFont = if (isRtl) (creamFrothFont ?: majazFont) else patrickHandFont
 
         // Colors
         val paperColor = Color.rgb(0xFB, 0xF6, 0xE8)          // #FBF6E8 French Cream Paper
@@ -138,7 +141,7 @@ object CalculationImageShareHelper {
         val mutedInkColor = Color.rgb(0x7A, 0x79, 0x72)       // #7A7972
         val ruleColor = Color.argb(0x80, 0xB8, 0xC7, 0xCC)    // #B8C7CC cool gray-blue
         val pinkWashColor = Color.argb(0x80, 0xF3, 0xA7, 0xB9) // #F3A7B9
-        val yellowWashColor = Color.argb(0x99, 0xF4, 0xD6, 0x6D) // #F4D66D
+        val yellowWashColor = Color.argb(0x5A, 0xF4, 0xD6, 0x6D) // #F4D66D (~35% alpha)
         val blueWashColor = Color.argb(0x80, 0xA8, 0xCF, 0xE3) // #A8CFE3
 
         // Calculate layout coordinates and heights
@@ -217,7 +220,7 @@ object CalculationImageShareHelper {
             textAlign = if (isRtl) Paint.Align.LEFT else Paint.Align.RIGHT
         }
 
-        val brandText = if (isRtl) "دفتر حسابي" else "Hssabi • Carnet"
+        val brandText = context.getString(R.string.share_brand)
         val dateStr = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(createdAtEpochMs))
 
         if (isRtl) {
@@ -256,7 +259,7 @@ object CalculationImageShareHelper {
             isFakeBoldText = true
             textAlign = Paint.Align.CENTER
         }
-        val defaultTitle = if (isRtl) "حساب جديد" else "Nouveau calcul"
+        val defaultTitle = context.getString(R.string.editor_new_title)
         val displayTitle = title.ifBlank { defaultTitle }
         val titleWidth = titlePaint.measureText(displayTitle).coerceAtMost(width - marginX * 2 - 40f)
         val titleWashW = (titleWidth + 56f).coerceAtMost(width - marginX * 2)
@@ -309,11 +312,11 @@ object CalculationImageShareHelper {
                 color = mutedInkColor
                 textAlign = Paint.Align.CENTER
             }
-            val emptyText = if (isRtl) "بدون عناصر" else "Aucun article"
+            val emptyText = context.getString(R.string.share_empty_items)
             val yBaseline = itemsStartY + ruleSpacing - 12f
             canvas.drawText(emptyText, width / 2f, yBaseline, emptyPaint)
         } else {
-            val articlePrefix = if (isRtl) "عنصر" else "Article"
+            val articlePrefix = context.getString(R.string.share_article_prefix)
             items.forEachIndexed { index, item ->
                 val lineY = itemsStartY + (index + 1) * ruleSpacing
                 val yBaseline = lineY - 5f
@@ -386,7 +389,7 @@ object CalculationImageShareHelper {
         }
 
         val totalValStr = MoneyMath.fromCentimes(totalCentimes, currency)
-        val totalLabelStr = if (isRtl) "المجموع" else "TOTAL"
+        val totalLabelStr = context.getString(R.string.share_total_label)
         val tCurrW = totalCurrPaint.measureText(currencySuffix)
 
         val totalBaseline = totalBoxY + 56f
@@ -421,7 +424,7 @@ object CalculationImageShareHelper {
             color = mutedInkColor
             textAlign = Paint.Align.CENTER
         }
-        val watermark = if (isRtl) "صُنع بواسطة حسابي" else "Créé avec Hssabi"
+        val watermark = context.getString(R.string.share_watermark)
         canvas.drawText(watermark, width / 2f, footerY + 36f, footerPaint)
 
         return bitmap

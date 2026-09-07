@@ -62,14 +62,17 @@ import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.SavedCalculationActionsSheet
 import com.cash.guide.ui.notebook.TajawalFamily
-import com.cash.guide.ui.notebook.NotebookMetrics
-import com.cash.guide.feature.groups.AssignToGroupDialog
-
+import com.cash.guide.ui.notebook.journalBaselineOnRule
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import com.cash.guide.feature.groups.AssignToGroupDialog
 import com.cash.guide.app.LocalizedContextWrapper
 import com.cash.guide.domain.DateGroupHelper
 import com.cash.guide.ui.notebook.HighlighterYellow
+import com.cash.guide.ui.notebook.HighlighterBlue
 import com.cash.guide.ui.notebook.NotebookDateGroupBlock
 import com.cash.guide.ui.notebook.NotebookPrimaryActionButton
 import com.cash.guide.ui.notebook.NotebookSearchField
@@ -130,7 +133,8 @@ fun HomeScreen(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val greetingAnnotated = remember(isRtl, state.userName) {
+                val greetingPrefix = stringResource(R.string.home_greeting_prefix)
+                val greetingAnnotated = remember(greetingPrefix, state.userName) {
                     buildAnnotatedString {
                         withStyle(
                             SpanStyle(
@@ -138,7 +142,7 @@ fun HomeScreen(
                                 color = JournalInk.copy(alpha = 0.72f)
                             )
                         ) {
-                            append(if (isRtl) "أهلاً " else "Bonjour ")
+                            append("$greetingPrefix ")
                         }
                         withStyle(
                             SpanStyle(
@@ -148,17 +152,26 @@ fun HomeScreen(
                         ) {
                             append(state.userName)
                         }
-                        append(" 😊")
                     }
                 }
 
-                Text(
-                    text = greetingAnnotated,
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 17.5.sp else 19.5.sp,
-                    style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = greetingAnnotated,
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = if (isRtl) 17.5.sp else 19.5.sp,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
+                    )
+                    Text(
+                        text = "😊",
+                        fontSize = 15.sp,
+                        modifier = Modifier.offset(y = (-3).dp)
+                    )
+                }
 
                 Text(
                     text = currentMonthYear,
@@ -167,7 +180,7 @@ fun HomeScreen(
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk.copy(alpha = 0.85f),
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
 
@@ -194,11 +207,11 @@ fun HomeScreen(
             // Line 6: 1 rule spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Section: Recent Calculations ("Calculs récents" / "الحسابات الأخيرة") in soft yellow band
+            // Section: Recent Calculations ("Calculs récents" / "الحسابات الأخيرة") in soft blue band
             if (!state.isEmpty) {
                 NotebookSectionBand(
                     title = stringResource(R.string.home_recent_title),
-                    highlightColor = HighlighterYellow,
+                    highlightColor = HighlighterBlue,
                     isCentered = true
                 )
 
@@ -231,21 +244,66 @@ fun HomeScreen(
                         verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.End
                     ) {
-                        Text(
-                            text = if (isRtl) "← ${stringResource(R.string.home_see_all)}" else "${stringResource(R.string.home_see_all)} →",
-                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                            fontSize = if (isRtl) 15.sp else 16.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = JournalWritingInk.copy(alpha = 0.85f),
-                            style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier
-                                .clickable(role = Role.Button, onClick = {
+                        Row(
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.clickable(
+                                role = Role.Button,
+                                onClick = {
                                     focusManager.clearFocus()
                                     keyboardController?.hide()
                                     onOpenHistory()
-                                })
-                                .offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
-                        )
+                                }
+                            )
+                        ) {
+                            if (isRtl) {
+                                Text(
+                                    text = stringResource(R.string.home_see_all),
+                                    fontFamily = TajawalFamily,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = JournalWritingInk.copy(alpha = 0.85f),
+                                    style = TextStyle(platformStyle = NoFontPadding),
+                                    modifier = Modifier.journalBaselineOnRule()
+                                )
+                                // Left-pointing handwritten arrow
+                                Canvas(
+                                    modifier = Modifier
+                                        .size(13.dp, 10.dp)
+                                        .offset(y = (-3.5).dp)
+                                ) {
+                                    val strokeW = 1.35.dp.toPx()
+                                    val tint = JournalWritingInk.copy(alpha = 0.85f)
+                                    val midY = size.height / 2f
+                                    drawLine(tint, Offset(size.width, midY), Offset(1f, midY), strokeWidth = strokeW, cap = StrokeCap.Round)
+                                    drawLine(tint, Offset(4.5.dp.toPx(), 1f), Offset(1f, midY), strokeWidth = strokeW, cap = StrokeCap.Round)
+                                    drawLine(tint, Offset(4.5.dp.toPx(), size.height - 1f), Offset(1f, midY), strokeWidth = strokeW, cap = StrokeCap.Round)
+                                }
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.home_see_all),
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 16.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = JournalWritingInk.copy(alpha = 0.85f),
+                                    style = TextStyle(platformStyle = NoFontPadding),
+                                    modifier = Modifier.journalBaselineOnRule()
+                                )
+                                // Right-pointing handwritten arrow
+                                Canvas(
+                                    modifier = Modifier
+                                        .size(13.dp, 10.dp)
+                                        .offset(y = (-3.5).dp)
+                                ) {
+                                    val strokeW = 1.35.dp.toPx()
+                                    val tint = JournalWritingInk.copy(alpha = 0.85f)
+                                    val midY = size.height / 2f
+                                    drawLine(tint, Offset(0f, midY), Offset(size.width - 1f, midY), strokeWidth = strokeW, cap = StrokeCap.Round)
+                                    drawLine(tint, Offset(size.width - 4.5.dp.toPx(), 1f), Offset(size.width - 1f, midY), strokeWidth = strokeW, cap = StrokeCap.Round)
+                                    drawLine(tint, Offset(size.width - 4.5.dp.toPx(), size.height - 1f), Offset(size.width - 1f, midY), strokeWidth = strokeW, cap = StrokeCap.Round)
+                                }
+                            }
+                        }
                     }
                 }
             } else if (!state.isLoading) {
@@ -268,7 +326,7 @@ fun HomeScreen(
                         fontWeight = FontWeight.Medium,
                         color = JournalMutedInk,
                         style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                        modifier = Modifier.journalBaselineOnRule()
                     )
                 }
             }

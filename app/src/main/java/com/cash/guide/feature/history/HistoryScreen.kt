@@ -46,6 +46,7 @@ import com.cash.guide.domain.MoneyUnit
 import com.cash.guide.ui.notebook.DeleteConfirmationDialog
 import com.cash.guide.ui.notebook.HighlighterPink
 import com.cash.guide.ui.notebook.HighlighterYellow
+import com.cash.guide.ui.notebook.HighlighterBlue
 import com.cash.guide.ui.notebook.HisabiSketchIcon
 import com.cash.guide.ui.notebook.HisabiSymbol
 import com.cash.guide.ui.notebook.JournalCalculationRow
@@ -65,6 +66,7 @@ import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.SavedCalculationActionsSheet
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.NotebookMetrics
+import com.cash.guide.ui.notebook.journalBaselineOnRule
 import com.cash.guide.feature.groups.AssignToGroupDialog
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -122,7 +124,7 @@ fun HistoryScreen(
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
 
                 Text(
@@ -132,7 +134,7 @@ fun HistoryScreen(
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk.copy(alpha = 0.85f),
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
 
@@ -164,11 +166,12 @@ fun HistoryScreen(
                         .drawBehind {
                             val h = size.height
                             val w = size.width
-                            val washHeight = 22.dp.toPx()
-                            val washY = h - (if (isRtl) 16.0.dp.toPx() else 16.5.dp.toPx())
+                            val washHeight = 21.dp.toPx()
+                            val washCenterY = h - 6.5.dp.toPx()
+                            val washY = washCenterY - (washHeight / 2f)
                             val padH = 8.dp.toPx()
                             drawRoundRect(
-                                color = HighlighterYellow.copy(alpha = 0.55f),
+                                color = HighlighterBlue.copy(alpha = 0.55f),
                                 topLeft = Offset(-padH, washY),
                                 size = Size(w + padH * 2, washHeight),
                                 cornerRadius = CornerRadius(4.dp.toPx())
@@ -182,7 +185,7 @@ fun HistoryScreen(
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                        modifier = Modifier.journalBaselineOnRule()
                     )
                 }
 
@@ -207,6 +210,8 @@ fun HistoryScreen(
                         } else {
                             stringResource(R.string.currency_rial)
                         }
+                        val emptyItemsStr = stringResource(R.string.share_empty_items)
+                        val articlePrefixStr = stringResource(R.string.share_article_prefix)
                         val matchingItem = calc.items.firstOrNull { it.label.contains(state.searchQuery, ignoreCase = true) }
                         val subtitle = if (matchingItem != null) {
                             val itemAmt = JournalLedgerManager.formatTotal(matchingItem.amountCentimes, currency)
@@ -219,10 +224,10 @@ fun HistoryScreen(
                                 itemLabels.joinToString(if (isRtl) "، " else ", ")
                             } else if (calc.items.isNotEmpty()) {
                                 calc.items.indices.map { idx ->
-                                    if (isRtl) "عنصر \u200E${idx + 1}\u200F" else "Article ${idx + 1}"
+                                    if (isRtl) "$articlePrefixStr \u200E${idx + 1}\u200F" else "$articlePrefixStr ${idx + 1}"
                                 }.joinToString(if (isRtl) "، " else ", ")
                             } else {
-                                if (isRtl) "بدون عناصر" else "Aucun article"
+                                emptyItemsStr
                             }
                         }
 
@@ -252,7 +257,7 @@ fun HistoryScreen(
                             fontWeight = FontWeight.Medium,
                             color = JournalMutedInk,
                             style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                            modifier = Modifier.journalBaselineOnRule()
                         )
                     }
                 }
@@ -288,7 +293,7 @@ fun HistoryScreen(
                             fontWeight = FontWeight.Medium,
                             color = JournalMutedInk,
                             style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                            modifier = Modifier.journalBaselineOnRule()
                         )
                     }
                 }

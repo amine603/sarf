@@ -87,6 +87,12 @@ class CalculationEditorViewModelTest {
                 .map { it.id }
             idsToRemove.forEach { deleteCalculation(it) }
         }
+
+        override suspend fun getAllSaved(): List<CalculationWithItems> = emptyList()
+        override suspend fun deleteAllCalculations() {
+            calculations.clear()
+            items.clear()
+        }
     }
 
     private lateinit var dao: FakeDao

@@ -56,7 +56,9 @@ data class EditorUiState(
     val recoveredDraft: Boolean = false,
     val validationError: String? = null,
     val pendingFocusRowId: Long? = 1L,
-    val createdAtEpochMs: Long? = null
+    val createdAtEpochMs: Long? = null,
+    val canUndo: Boolean = false,
+    val groupId: String? = null
 ) {
     val hasInvalidRows: Boolean
         get() = rows.any { it.amount.text.isNotBlank() && !MoneyMath.isValidExpression(it.amount.text) }

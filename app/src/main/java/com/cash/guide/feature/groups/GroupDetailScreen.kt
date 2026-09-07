@@ -73,6 +73,7 @@ import com.cash.guide.ui.notebook.NotebookPrimaryActionButton
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.NotebookMetrics
+import com.cash.guide.ui.notebook.journalBaselineOnRule
 
 private val ActionSheetRuleSpacing: Dp = 42.dp
 
@@ -129,11 +130,15 @@ fun GroupDetailScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.weight(1f, fill = false)
             ) {
-                IconButton(
-                    onClick = onBack,
+                Box(
                     modifier = Modifier
-                        .size(28.dp)
-                        .offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                        .size(width = 28.dp, height = JournalRuleSpacing)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = stringResource(R.string.cd_back),
+                            onClick = onBack
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     HisabiSketchIcon(
                         symbol = HisabiSymbol.Back,
@@ -154,8 +159,8 @@ fun GroupDetailScreen(
                     style = TextStyle(platformStyle = NoFontPadding),
                     modifier = Modifier
                         .drawBehind {
-                            val washHeight = 20.dp.toPx()
-                            val washY = size.height - 15.dp.toPx()
+                            val washHeight = 22.dp.toPx()
+                            val washY = size.height - washHeight + 1.dp.toPx()
                             drawRoundRect(
                                 color = groupColor.copy(alpha = 0.50f),
                                 topLeft = Offset(-4.dp.toPx(), washY),
@@ -163,7 +168,7 @@ fun GroupDetailScreen(
                                 cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
                             )
                         }
-                        .offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                        .journalBaselineOnRule()
                 )
             }
 
@@ -174,22 +179,22 @@ fun GroupDetailScreen(
             ) {
                 Text(
                     text = totalFormatted,
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontFamily = PatrickHandFamily,
                     fontSize = if (isRtl) 17.5.sp else 19.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
 
                 Text(
                     text = defaultCurrencySuffix,
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 12.5.sp else 14.sp,
+                    fontFamily = if (defaultCurrencySuffix.contains(Regex("[a-zA-Z]"))) PatrickHandFamily else TajawalFamily,
+                    fontSize = if (defaultCurrencySuffix.contains(Regex("[a-zA-Z]"))) 14.sp else 12.5.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
         }
@@ -211,20 +216,22 @@ fun GroupDetailScreen(
         // Line 5+: Calculations list or empty
         val calculations = groupData?.calculations ?: emptyList()
         if (calculations.isEmpty() && !state.isLoading) {
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(JournalRuleSpacing * 4)
+                    .height(JournalRuleSpacing)
                     .padding(horizontal = 14.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = stringResource(R.string.group_detail_empty),
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                     fontSize = if (isRtl) 14.5.sp else 16.sp,
+                    fontWeight = FontWeight.Normal,
                     color = JournalMutedInk.copy(alpha = 0.85f),
-                    style = TextStyle(platformStyle = NoFontPadding)
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
         } else {
@@ -236,8 +243,10 @@ fun GroupDetailScreen(
                 } else {
                     stringResource(R.string.currency_rial)
                 }
+                val emptyItemsStr = stringResource(R.string.share_empty_items)
+                val articlePrefixStr = stringResource(R.string.share_article_prefix)
 
-                val subtitle = remember(calc, isRtl) {
+                val subtitle = remember(calc, isRtl, emptyItemsStr, articlePrefixStr) {
                     val itemLabels = calc.items
                         .map { it.label.trim() }
                         .filter { it.isNotBlank() }
@@ -246,10 +255,10 @@ fun GroupDetailScreen(
                         itemLabels.joinToString(if (isRtl) "، " else ", ")
                     } else if (calc.items.isNotEmpty()) {
                         calc.items.indices.map { idx ->
-                            if (isRtl) "عنصر \u200E${idx + 1}\u200F" else "Article ${idx + 1}"
+                            if (isRtl) "$articlePrefixStr \u200E${idx + 1}\u200F" else "$articlePrefixStr ${idx + 1}"
                         }.joinToString(if (isRtl) "، " else ", ")
                     } else {
-                        if (isRtl) "بدون عناصر" else "Aucun article"
+                        emptyItemsStr
                     }
                 }
 
@@ -520,10 +529,10 @@ private fun GroupActionSheetItem(
             text = label,
             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
             fontSize = if (isRtl) 17.5.sp else 19.sp,
-            fontWeight = if (isRtl) FontWeight.Medium else FontWeight.Normal,
+            fontWeight = FontWeight.Normal,
             color = tintColor,
             style = TextStyle(platformStyle = NoFontPadding),
-            modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+            modifier = Modifier.journalBaselineOnRule()
         )
     }
 }

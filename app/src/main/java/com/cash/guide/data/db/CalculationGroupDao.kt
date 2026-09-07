@@ -40,4 +40,23 @@ interface CalculationGroupDao {
 
     @Query("UPDATE calculations SET groupId = :groupId, updatedAtEpochMs = :now WHERE id = :calculationId")
     suspend fun assignCalculationToGroup(calculationId: String, groupId: String?, now: Long)
+
+    @Query("SELECT * FROM calculation_groups ORDER BY createdAtEpochMs ASC")
+    suspend fun getAllGroups(): List<CalculationGroupEntity>
+
+    @Query("DELETE FROM calculation_groups")
+    suspend fun deleteAllGroups()
+
+    @Transaction
+    suspend fun restoreGroups(
+        groups: List<CalculationGroupEntity>,
+        replaceExisting: Boolean
+    ) {
+        if (replaceExisting) {
+            deleteAllGroups()
+        }
+        for (group in groups) {
+            insertGroup(group)
+        }
+    }
 }

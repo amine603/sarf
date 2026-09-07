@@ -134,7 +134,8 @@ enum class AppScreen {
 enum class ActiveField {
     NONE,
     TITLE,
-    AMOUNT
+    AMOUNT,
+    HEADER_TITLE
 }
 
 data class EntryRow(
@@ -854,6 +855,9 @@ private fun HisabiCalculatorScreen(
                                 )
                             }
                         }
+
+                        // 1 empty notebook line before Add Row
+                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
                         JournalAddRowButton(onAddRow = onAddRow)
 

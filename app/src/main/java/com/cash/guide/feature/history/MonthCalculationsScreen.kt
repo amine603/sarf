@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -48,6 +49,7 @@ import com.cash.guide.ui.notebook.JournalTwoLineCalculationRow
 import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
+import com.cash.guide.ui.notebook.journalBaselineOnRule
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -67,24 +69,13 @@ fun MonthCalculationsScreen(
 
     val allCalculations by repository.observeAllSaved().collectAsState(initial = emptyList())
 
-    // Month name based on locale
-    val frenchMonths = remember {
-        listOf(
-            "Janvier", "Février", "Mars", "Avril",
-            "Mai", "Juin", "Juillet", "Août",
-            "Septembre", "Octobre", "Novembre", "Décembre"
-        )
-    }
-    val arabicMonths = remember {
-        listOf(
-            "يناير", "فبراير", "مارس", "أبريل",
-            "ماي", "يونيو", "يوليوز", "غشت",
-            "شتنبر", "أكتوبر", "نونبر", "دجنبر"
-        )
-    }
-    val monthTitle = remember(year, month, isRtl) {
-        val name = if (isRtl) arabicMonths[(month - 1).coerceIn(0, 11)] else frenchMonths[(month - 1).coerceIn(0, 11)]
-        "$name $year"
+    val locale = LocalConfiguration.current.locales[0]
+    val monthTitle = remember(year, month, locale) {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.YEAR, year)
+        cal.set(Calendar.MONTH, (month - 1).coerceIn(0, 11))
+        val monthName = SimpleDateFormat("MMMM", locale).format(cal.time).replaceFirstChar { it.uppercase() }
+        "$monthName $year"
     }
 
     // Filter calculations for this year and month
@@ -97,13 +88,14 @@ fun MonthCalculationsScreen(
     }
 
     // Group calculations by day of month
-    val dayGroups = remember(monthCalculations, isRtl) {
+    val dayGroups = remember(monthCalculations, locale) {
         val cal = Calendar.getInstance()
+        val monthFmt = SimpleDateFormat("MMMM", locale)
         monthCalculations.groupBy { calc ->
             cal.timeInMillis = calc.calculation.updatedAtEpochMs
             val day = cal.get(Calendar.DAY_OF_MONTH)
-            val monthName = if (isRtl) arabicMonths[(month - 1).coerceIn(0, 11)] else frenchMonths[(month - 1).coerceIn(0, 11)]
-            if (isRtl) "$day $monthName" else "$day $monthName"
+            val monthName = monthFmt.format(cal.time).replaceFirstChar { it.uppercase() }
+            "$day $monthName"
         }
     }
 
@@ -137,7 +129,7 @@ fun MonthCalculationsScreen(
                     contentDescription = stringResource(R.string.cd_back),
                     tint = JournalInk,
                     size = 20.dp,
-                    modifier = Modifier.offset(y = if (isRtl) 3.5.dp else 1.5.dp)
+                    modifier = Modifier.offset(y = (-4.5).dp)
                 )
             }
 
@@ -150,7 +142,7 @@ fun MonthCalculationsScreen(
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) 5.8.dp else 5.2.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -163,7 +155,7 @@ fun MonthCalculationsScreen(
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = 5.2.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
         }
 
@@ -180,13 +172,13 @@ fun MonthCalculationsScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = if (isRtl) "لا توجد حسابات مسجلة في $monthTitle" else "Aucun calcul enregistré en $monthTitle",
+                    text = stringResource(R.string.history_month_empty, monthTitle),
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) 5.8.dp else 5.2.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
         } else {

@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -74,14 +75,27 @@ import com.cash.guide.ui.notebook.NotebookPrimaryActionButton
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.NotebookMetrics
+import com.cash.guide.ui.notebook.journalBaselineOnRule
 
 val GroupPalette = listOf(
-    "#F4D66D", // Pastel Yellow
+    // Row 1: Warm & Earthy Pastels
+    "#F4D66D", // Pastel Amber Yellow
+    "#F7BDAB", // Pastel Peach
+    "#F5B093", // Pastel Apricot
     "#F3A7B9", // Pastel Pink
-    "#C9DDA0", // Pastel Green
-    "#A8CFE3", // Pastel Blue
+    "#F28AA5", // Pastel Rose
+    "#E8B4B8", // Pastel Dusty Rose
+    "#E4C3AD", // Pastel Sand / Almond
+    "#E8D5B5", // Pastel Cream / Latte
+    // Row 2: Cool, Nature & Violet Pastels
+    "#C9DDA0", // Pastel Sage Green
+    "#A8E6CF", // Pastel Mint
+    "#9BD7D5", // Pastel Aqua
+    "#A8CFE3", // Pastel Sky Blue
+    "#89B5D8", // Pastel Steel Blue
+    "#B3C5E7", // Pastel Periwinkle
     "#D3C5E5", // Pastel Lavender
-    "#F7BDAB"  // Pastel Peach
+    "#C3A6CB"  // Pastel Lilac / Mauve
 )
 
 fun parseGroupColor(hex: String): Color {
@@ -127,7 +141,7 @@ fun GroupsScreen(
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
 
             Text(
@@ -137,7 +151,7 @@ fun GroupsScreen(
                 fontWeight = FontWeight.Normal,
                 color = JournalMutedInk.copy(alpha = 0.85f),
                 style = TextStyle(platformStyle = NoFontPadding),
-                modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                modifier = Modifier.journalBaselineOnRule()
             )
         }
 
@@ -326,7 +340,7 @@ private fun NotebookGroupRow(
                 Box(
                     modifier = Modifier
                         .size(24.dp)
-                        .offset(y = if (isRtl) 4.0.dp else 3.5.dp)
+                        .offset(y = (-2.5).dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(groupColor.copy(alpha = 0.45f)),
                     contentAlignment = Alignment.Center
@@ -347,9 +361,28 @@ private fun NotebookGroupRow(
                     color = JournalInk,
                     maxLines = 1,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
+
+            // Subtle connecting line directly on the blue notebook line between Title and Amount
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 6.dp)
+                    .drawBehind {
+                        val strokeW = 0.85.dp.toPx()
+                        val y = size.height
+                        drawLine(
+                            color = JournalWritingInk.copy(alpha = 0.28f),
+                            start = Offset(0f, y),
+                            end = Offset(size.width, y),
+                            strokeWidth = strokeW,
+                            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.5.dp.toPx()))
+                        )
+                    }
+            )
 
             // End: Total Amount + Currency + 3-dots
             Row(
@@ -358,38 +391,40 @@ private fun NotebookGroupRow(
             ) {
                 Text(
                     text = totalFormatted,
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                    fontFamily = PatrickHandFamily,
                     fontSize = if (isRtl) 17.sp else 18.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
 
                 Text(
                     text = currencySuffix,
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 12.sp else 13.5.sp,
+                    fontFamily = if (currencySuffix.contains(Regex("[a-zA-Z]"))) PatrickHandFamily else TajawalFamily,
+                    fontSize = if (currencySuffix.contains(Regex("[a-zA-Z]"))) 14.sp else 12.5.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    modifier = Modifier.journalBaselineOnRule()
                 )
 
-                Box {
-                    IconButton(
-                        onClick = { menuExpanded = true },
-                        modifier = Modifier
-                            .size(28.dp)
-                            .offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
-                    ) {
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.More,
-                            contentDescription = stringResource(R.string.cd_more_options),
-                            tint = JournalMutedInk,
-                            size = 14.dp
-                        )
-                    }
+                Box(
+                    modifier = Modifier
+                        .size(width = 24.dp, height = JournalRuleSpacing)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = stringResource(R.string.cd_more_options),
+                            onClick = { menuExpanded = true }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.More,
+                        contentDescription = stringResource(R.string.cd_more_options),
+                        tint = JournalMutedInk,
+                        size = 14.dp
+                    )
 
                     DropdownMenu(
                         expanded = menuExpanded,
@@ -452,7 +487,7 @@ private fun NotebookGroupRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 32.dp)
-                    .offset(y = if (isRtl) NotebookMetrics.baselineOffsetRtl else 5.5.dp)
+                    .journalBaselineOnRule()
             )
         }
     }
@@ -538,33 +573,40 @@ private fun CreateOrEditGroupDialog(
                         color = JournalMutedInk
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        GroupPalette.forEach { hex ->
-                            val color = parseGroupColor(hex)
-                            val isSelected = selectedColorHex.equals(hex, ignoreCase = true)
-                            Box(
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(CircleShape)
-                                    .background(color)
-                                    .clickable { onColorSelect(hex) }
-                                    .then(
-                                        if (isSelected) Modifier.border(2.dp, JournalInk, CircleShape)
-                                        else Modifier.border(0.5.dp, JournalMutedInk.copy(alpha = 0.3f), CircleShape)
-                                    ),
-                                contentAlignment = Alignment.Center
+                        GroupPalette.chunked(8).forEach { rowColors ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (isSelected) {
-                                    HisabiSketchIcon(
-                                        symbol = HisabiSymbol.Check,
-                                        contentDescription = null,
-                                        tint = JournalInk,
-                                        size = 14.dp
-                                    )
+                                rowColors.forEach { hex ->
+                                    val color = parseGroupColor(hex)
+                                    val isSelected = selectedColorHex.equals(hex, ignoreCase = true)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(29.dp)
+                                            .clip(CircleShape)
+                                            .background(color)
+                                            .clickable { onColorSelect(hex) }
+                                            .then(
+                                                if (isSelected) Modifier.border(2.dp, JournalInk, CircleShape)
+                                                else Modifier.border(0.5.dp, JournalMutedInk.copy(alpha = 0.3f), CircleShape)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (isSelected) {
+                                            HisabiSketchIcon(
+                                                symbol = HisabiSymbol.Check,
+                                                contentDescription = null,
+                                                tint = JournalInk,
+                                                size = 12.dp
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

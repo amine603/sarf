@@ -87,7 +87,7 @@ fun HssabiNavHost(
                 onNewCalculationInGroup = { gid ->
                     coroutineScope.launch {
                         calculationRepository.createDraftInGroup(gid)
-                        navController.navigate(AppDestination.NewCalculation.route)
+                        navController.navigate(AppDestination.NewCalculation.routeForGroup(gid))
                     }
                 }
             )
@@ -116,16 +116,27 @@ fun HssabiNavHost(
             )
         }
 
-        composable(AppDestination.NewCalculation.route) { backStackEntry ->
+        composable(
+            route = AppDestination.NewCalculation.ROUTE_PATTERN,
+            arguments = listOf(
+                navArgument("groupId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val initialGroupId = backStackEntry.arguments?.getString("groupId")
             val editorViewModel: CalculationEditorViewModel = viewModel(
                 viewModelStoreOwner = backStackEntry,
-                key = "new_calculation"
+                key = "new_calculation_${initialGroupId ?: "root"}"
             ) {
                 editorViewModelFactory()
             }
             CalculationEditorScreen(
                 viewModel = editorViewModel,
                 calculationId = null,
+                initialGroupId = initialGroupId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

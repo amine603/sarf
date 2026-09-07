@@ -91,8 +91,8 @@ object HisabiMetrics {
 
 object NotebookMetrics {
     val ruleSpacing = JournalRuleSpacing // 29.dp
-    val baselineOffset = 5.5.dp
-    val baselineOffsetRtl = 6.0.dp // Calibrated specifically for Majaz on 29.dp ruled lines
+    val baselineOffset = 6.2.dp
+    val baselineOffsetRtl = 7.2.dp // Calibrated specifically for Majaz on 29.dp ruled lines
     val ruleStroke = 0.6.dp
     val verticalGuideThickness = 1.5.dp
 }
@@ -105,16 +105,22 @@ fun notebookBaselineOffset(isRtl: Boolean): Dp =
 val PatrickHandFamily = JournalHandFamily
 
 val MajazFamily = FontFamily(
-    Font(R.font.majaz_regular, FontWeight.Normal),
-    Font(R.font.majaz_regular, FontWeight.Medium),
-    Font(R.font.majaz_regular, FontWeight.Bold)
+    Font(R.font.majaz_regular, FontWeight.Normal)
 )
 
-// Primary Arabic handwriting font used across the entire app
-val ArabicFamily: FontFamily = MajazFamily
+val CreamFrothFamily = FontFamily(
+    Font(R.font.cream_froth_light, FontWeight.Light),
+    Font(R.font.cream_froth_regular, FontWeight.Normal),
+    Font(R.font.cream_froth_regular, FontWeight.Medium),
+    Font(R.font.cream_froth_bold, FontWeight.SemiBold),
+    Font(R.font.cream_froth_bold, FontWeight.Bold)
+)
+
+// Primary Arabic handwriting font used across the entire app (testing Cream Froth)
+val ArabicFamily: FontFamily = CreamFrothFamily
 
 // Alias maintaining 100% compatibility with untouched CalculationEditorScreen
-val TajawalFamily: FontFamily = MajazFamily
+val TajawalFamily: FontFamily = CreamFrothFamily
 
 val ManropeFamily = FontFamily(
     Font(R.font.manrope_regular, FontWeight.Normal),

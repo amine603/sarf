@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
+import java.text.SimpleDateFormat
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,23 +55,15 @@ fun MonthPickerDialog(
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
 
-    val frenchMonths = remember {
-        listOf(
-            "Janvier", "Février", "Mars", "Avril",
-            "Mai", "Juin", "Juillet", "Août",
-            "Septembre", "Octobre", "Novembre", "Décembre"
-        )
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val monthNames = remember(locale) {
+        val cal = Calendar.getInstance()
+        val fmt = SimpleDateFormat("MMMM", locale)
+        (0..11).map { m ->
+            cal.set(Calendar.MONTH, m)
+            fmt.format(cal.time).replaceFirstChar { it.uppercase() }
+        }
     }
-
-    val arabicMonths = remember {
-        listOf(
-            "يناير", "فبراير", "مارس", "أبريل",
-            "ماي", "يونيو", "يوليوز", "غشت",
-            "شتنبر", "أكتوبر", "نونبر", "دجنبر"
-        )
-    }
-
-    val monthNames = if (isRtl) arabicMonths else frenchMonths
 
     BasicAlertDialog(
         onDismissRequest = onDismiss
@@ -201,7 +194,7 @@ fun MonthPickerDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (isRtl) "إغلاق" else "Fermer",
+                        text = stringResource(R.string.calculator_close),
                         fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,

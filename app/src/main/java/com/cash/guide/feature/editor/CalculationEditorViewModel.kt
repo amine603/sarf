@@ -33,6 +33,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+data class DeletedRowAction(
+    val row: EditorRowUiState,
+    val originalIndex: Int
+)
+
 class CalculationEditorViewModel(
     private val calculationRepository: CalculationRepository,
     private val settingsRepository: SettingsRepository? = null,
@@ -46,18 +51,22 @@ class CalculationEditorViewModel(
     private var nextRowId = 2L
     private var lastLatinShiftMode = JournalShiftMode.OFF
     private var draftSaveJob: Job? = null
+    private val undoStack = mutableListOf<DeletedRowAction>()
 
-    fun loadCalculation(id: String?) {
+    fun loadCalculation(id: String?, initialGroupId: String? = null) {
+        undoStack.clear()
         viewModelScope.launch {
             val defaultCurrency = settingsRepository?.defaultCurrency?.first() ?: MoneyUnit.DIRHAM
             val defaultLanguage = when (settingsRepository?.appLanguage?.first()) {
-                "ar" -> JournalKeyboardLanguage.ARABIC
+                "ar", "dar" -> JournalKeyboardLanguage.ARABIC
+                "en" -> JournalKeyboardLanguage.ENGLISH
                 else -> JournalKeyboardLanguage.FRENCH
             }
 
             if (id == null) {
                 // Check if an uncommitted new draft exists
                 val draft = calculationRepository.getRecoverableDraft(null)
+                val effectiveGroupId = initialGroupId ?: draft?.calculation?.groupId
                 if (draft != null && (draft.calculation.title.isNotBlank() || draft.items.isNotEmpty())) {
                     val draftCurrency = runCatching { MoneyUnit.valueOf(draft.calculation.currency) }.getOrDefault(defaultCurrency)
                     val restoredRows = if (draft.items.isEmpty()) {
@@ -90,11 +99,12 @@ class CalculationEditorViewModel(
                             keyboardExpanded = true,
                             isDirty = true,
                             recoveredDraft = true,
-                            createdAtEpochMs = draft.calculation.createdAtEpochMs
+                            createdAtEpochMs = draft.calculation.createdAtEpochMs,
+                            groupId = effectiveGroupId
                         )
                     }
                 } else {
-                    val initialId = UUID.randomUUID().toString()
+                    val initialId = draft?.calculation?.id ?: UUID.randomUUID().toString()
                     _uiState.update {
                         it.copy(
                             calculationId = initialId,
@@ -108,7 +118,8 @@ class CalculationEditorViewModel(
                             keyboardMode = JournalKeyboardMode.TEXT,
                             keyboardLanguage = defaultLanguage,
                             keyboardExpanded = true,
-                            isDirty = false
+                            isDirty = false,
+                            groupId = effectiveGroupId
                         )
                     }
                 }
@@ -117,6 +128,7 @@ class CalculationEditorViewModel(
                 val draft = calculationRepository.getRecoverableDraft(id)
                 val saved = calculationRepository.getCalculation(id)
                 val originalCreatedAt = saved?.calculation?.createdAtEpochMs
+                val effectiveGroupId = initialGroupId ?: draft?.calculation?.groupId ?: saved?.calculation?.groupId
                 if (draft != null) {
                     val draftCurrency = runCatching { MoneyUnit.valueOf(draft.calculation.currency) }.getOrDefault(defaultCurrency)
                     val restoredRows = draft.items.sortedBy { it.position }.mapIndexed { idx, item ->
@@ -144,7 +156,8 @@ class CalculationEditorViewModel(
                             keyboardExpanded = false,
                             isDirty = true,
                             recoveredDraft = true,
-                            createdAtEpochMs = originalCreatedAt ?: draft.calculation.createdAtEpochMs
+                            createdAtEpochMs = originalCreatedAt ?: draft.calculation.createdAtEpochMs,
+                            groupId = effectiveGroupId
                         )
                     }
                 } else if (saved != null) {
@@ -177,7 +190,8 @@ class CalculationEditorViewModel(
                             keyboardMode = JournalKeyboardMode.NUMBER,
                             keyboardExpanded = false,
                             isDirty = false,
-                            createdAtEpochMs = saved.calculation.createdAtEpochMs
+                            createdAtEpochMs = saved.calculation.createdAtEpochMs,
+                            groupId = effectiveGroupId
                         )
                     }
                 }
@@ -261,6 +275,13 @@ class CalculationEditorViewModel(
     }
 
     fun removeRow(id: Long) {
+        val currentRows = _uiState.value.rows
+        val index = currentRows.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            val rowToDelete = currentRows[index]
+            undoStack.add(DeletedRowAction(row = rowToDelete, originalIndex = index))
+        }
+
         _uiState.update { state ->
             val filtered = state.rows.filter { it.id != id }
             val updatedRows = filtered.ifEmpty {
@@ -277,10 +298,67 @@ class CalculationEditorViewModel(
                 activeField = newActiveField,
                 keyboardMode = newKeyboardMode,
                 keyboardExpanded = newKeyboardExpanded,
+                canUndo = undoStack.isNotEmpty(),
                 isDirty = true
             )
         }
         scheduleDraftSave()
+    }
+
+    fun undoDelete() {
+        val last = undoStack.removeLastOrNull() ?: return
+        _uiState.update { state ->
+            val mutableRows = state.rows.toMutableList()
+            val finalRows = if (mutableRows.size == 1 && mutableRows[0].isEmpty) {
+                listOf(last.row)
+            } else {
+                val insertIdx = last.originalIndex.coerceIn(0, mutableRows.size)
+                mutableRows.add(insertIdx, last.row)
+                mutableRows
+            }
+            state.copy(
+                rows = finalRows,
+                canUndo = undoStack.isNotEmpty(),
+                isDirty = true
+            )
+        }
+        scheduleDraftSave()
+    }
+
+    fun selectCalculationTitle() {
+        _uiState.update { state ->
+            var newShiftState = state.shiftState
+            var newShiftMode = state.shiftMode
+            if (state.title.text.isEmpty() && state.keyboardLanguage != JournalKeyboardLanguage.ARABIC) {
+                newShiftState = JournalKeyboardController.reduceShift(
+                    state = state.shiftState,
+                    action = ShiftAction.AutoSetOneShot,
+                    monotonicNow = monotonicClock
+                )
+                newShiftMode = newShiftState.mode
+                lastLatinShiftMode = newShiftState.mode
+            }
+            state.copy(
+                activeRowId = null,
+                activeField = ActiveField.HEADER_TITLE,
+                keyboardMode = JournalKeyboardMode.TEXT,
+                keyboardExpanded = true,
+                shiftState = newShiftState,
+                shiftMode = newShiftMode
+            )
+        }
+    }
+
+    fun confirmCalculationTitle() {
+        _uiState.update { state ->
+            state.copy(
+                activeField = ActiveField.NONE,
+                keyboardMode = JournalKeyboardMode.NONE,
+                keyboardExpanded = false,
+                shiftState = JournalShiftState(mode = JournalShiftMode.OFF),
+                shiftMode = JournalShiftMode.OFF
+            )
+        }
     }
 
     fun confirmRowEdit(id: Long) {
@@ -299,6 +377,27 @@ class CalculationEditorViewModel(
     fun selectRowField(rowId: Long, field: ActiveField) {
         _uiState.update { state ->
             when (field) {
+                ActiveField.HEADER_TITLE -> {
+                    var newShiftState = state.shiftState
+                    var newShiftMode = state.shiftMode
+                    if (state.title.text.isEmpty() && state.keyboardLanguage != JournalKeyboardLanguage.ARABIC) {
+                        newShiftState = JournalKeyboardController.reduceShift(
+                            state = state.shiftState,
+                            action = ShiftAction.AutoSetOneShot,
+                            monotonicNow = monotonicClock
+                        )
+                        newShiftMode = newShiftState.mode
+                        lastLatinShiftMode = newShiftState.mode
+                    }
+                    state.copy(
+                        activeRowId = null,
+                        activeField = ActiveField.HEADER_TITLE,
+                        keyboardMode = JournalKeyboardMode.TEXT,
+                        keyboardExpanded = true,
+                        shiftState = newShiftState,
+                        shiftMode = newShiftMode
+                    )
+                }
                 ActiveField.TITLE -> {
                     var newShiftState = state.shiftState
                     var newShiftMode = state.shiftMode
@@ -346,7 +445,7 @@ class CalculationEditorViewModel(
     fun toggleKeyboardExpanded() {
         _uiState.update { state ->
             val nextExpanded = !state.keyboardExpanded
-            if (nextExpanded && state.activeRowId == null) {
+            if (nextExpanded && state.activeRowId == null && state.activeField != ActiveField.HEADER_TITLE) {
                 val targetRow = state.rows.lastOrNull() ?: EditorRowUiState(id = 1L)
                 state.copy(
                     keyboardExpanded = true,
@@ -379,6 +478,32 @@ class CalculationEditorViewModel(
 
     fun applyTextKey(text: String) {
         val state = _uiState.value
+        if (state.activeField == ActiveField.HEADER_TITLE) {
+            val newVal = JournalKeyboardController.insertText(state.title, text)
+            var newShiftState = state.shiftState
+            var newShiftMode = state.shiftMode
+            if (state.keyboardLanguage != JournalKeyboardLanguage.ARABIC) {
+                newShiftState = JournalKeyboardController.reduceShift(
+                    state = state.shiftState,
+                    action = ShiftAction.UserTypedText(text),
+                    monotonicNow = monotonicClock
+                )
+                newShiftMode = newShiftState.mode
+                lastLatinShiftMode = newShiftState.mode
+            }
+            _uiState.update { s ->
+                s.copy(
+                    title = newVal,
+                    shiftState = newShiftState,
+                    shiftMode = newShiftMode,
+                    isDirty = true,
+                    validationError = if (newVal.text.isNotBlank() && s.validationError == "TITLE_REQUIRED") null else s.validationError
+                )
+            }
+            scheduleDraftSave()
+            return
+        }
+
         val targetId = state.activeRowId ?: return
         val row = state.rows.firstOrNull { it.id == targetId } ?: return
         val newVal = JournalKeyboardController.insertText(row.title, text)
@@ -404,6 +529,19 @@ class CalculationEditorViewModel(
 
     fun applyTextBackspace() {
         val state = _uiState.value
+        if (state.activeField == ActiveField.HEADER_TITLE) {
+            val newVal = JournalKeyboardController.deleteBackward(state.title, graphemeSegmenter)
+            _uiState.update { s ->
+                s.copy(
+                    title = newVal,
+                    isDirty = true,
+                    validationError = if (newVal.text.isNotBlank() && s.validationError == "TITLE_REQUIRED") null else s.validationError
+                )
+            }
+            scheduleDraftSave()
+            return
+        }
+
         val targetId = state.activeRowId ?: return
         val row = state.rows.firstOrNull { it.id == targetId } ?: return
         val newVal = JournalKeyboardController.deleteBackward(row.title, graphemeSegmenter)
@@ -416,6 +554,24 @@ class CalculationEditorViewModel(
 
     fun applyCompactKey(key: String) {
         val state = _uiState.value
+        if (state.activeField == ActiveField.HEADER_TITLE) {
+            val curVal = state.title
+            val newVal = if (key == "⌫") {
+                JournalKeyboardController.deleteBackward(curVal, graphemeSegmenter)
+            } else {
+                JournalKeyboardController.insertText(curVal, key)
+            }
+            _uiState.update { s ->
+                s.copy(
+                    title = newVal,
+                    isDirty = true,
+                    validationError = if (newVal.text.isNotBlank() && s.validationError == "TITLE_REQUIRED") null else s.validationError
+                )
+            }
+            scheduleDraftSave()
+            return
+        }
+
         val targetId = state.activeRowId ?: return
         val row = state.rows.firstOrNull { it.id == targetId } ?: return
         val curVal = row.amount
@@ -485,12 +641,20 @@ class CalculationEditorViewModel(
 
     fun switchToTextMode() {
         val state = _uiState.value
+        if (state.activeField == ActiveField.HEADER_TITLE) {
+            _uiState.update { it.copy(keyboardMode = JournalKeyboardMode.TEXT) }
+            return
+        }
         val targetId = state.activeRowId ?: state.rows.firstOrNull()?.id ?: return
         selectRowField(targetId, ActiveField.TITLE)
     }
 
     fun switchToNumericMode() {
         val state = _uiState.value
+        if (state.activeField == ActiveField.HEADER_TITLE) {
+            _uiState.update { it.copy(keyboardMode = JournalKeyboardMode.NUMBER) }
+            return
+        }
         val targetId = state.activeRowId ?: state.rows.firstOrNull()?.id ?: return
         selectRowField(targetId, ActiveField.AMOUNT)
     }
@@ -702,7 +866,8 @@ class CalculationEditorViewModel(
                 createdAtEpochMs = state.createdAtEpochMs ?: now,
                 updatedAtEpochMs = now,
                 status = "SAVED",
-                editingCalculationId = null
+                editingCalculationId = null,
+                groupId = state.groupId
             )
 
             calculationRepository.saveCalculation(calculationEntity, itemEntities)
@@ -764,7 +929,8 @@ class CalculationEditorViewModel(
                 createdAtEpochMs = now,
                 updatedAtEpochMs = now,
                 status = "DRAFT",
-                editingCalculationId = editingSavedId
+                editingCalculationId = editingSavedId,
+                groupId = state.groupId
             )
 
             calculationRepository.saveDraft(draftEntity, itemEntities)
