@@ -199,4 +199,33 @@
     <string name="share_watermark">صُنع بواسطة حسابي</string>
     <string name="share_brand">دفتر حسابي</string>
     <string name="history_month_empty">لا توجد حسابات مسجلة في %1$s</string>
+
+    <!-- Export options and formats -->
+    <string name="export_options_title">خيارات التصدير</string>
+    <string name="export_as_pdf">وثيقة PDF</string>
+    <string name="export_as_pdf_desc">تنسيق أنيق لدفتر الحسابات جاهز للطباعة</string>
+    <string name="export_as_excel">جدول إكسل (.csv)</string>
+    <string name="export_as_excel_desc">بيانات مجدولة بترميز UTF-8 متوافق مع البرامج</string>
+    <string name="export_as_image">صورة الدفتر</string>
+    <string name="export_as_image_desc">صورة عالية الدقة للمشاركة عبر واتساب</string>
+    <string name="export_all_excel">تصدير جميع الحسابات (Excel)</string>
+    <string name="export_all_excel_desc">سجل كامل وشامل لجميع الحسابات والبنود</string>
+    <string name="export_all_pdf">كشف حساب شامل (PDF)</string>
+    <string name="export_all_pdf_desc">تقرير مفصل لجميع الحسابات والمجموعات</string>
+    <string name="export_action_share">مشاركة</string>
+    <string name="export_action_open">فتح الملف</string>
+    <string name="export_success">تم تجهيز وتصدير الملف بنجاح</string>
+    <string name="export_error">حدث خطأ أثناء تصدير الملف</string>
+    <string name="export_no_calculations">لا توجد حسابات مسجلة لتصديرها</string>
+    <string name="export_report_title">تقرير حسابات صَرْف SARF</string>
+    <string name="export_col_number">الرقم</string>
+    <string name="export_col_item">البيان / السلعة</string>
+    <string name="export_col_expression">العملية</string>
+    <string name="export_col_amount">المبلغ</string>
+    <string name="export_col_currency">العملة</string>
+    <string name="export_col_date">التاريخ</string>
+    <string name="export_col_group">المجموعة</string>
+    <string name="export_col_calc_title">عنوان الحساب</string>
+    <string name="export_col_calc_total">مجموع الحساب</string>
+    <string name="export_col_note">ملاحظة</string>
 </resources>

@@ -20,8 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.foundation.border
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.cash.guide.ui.notebook.ExportOptionsBottomSheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,6 +78,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
+    var showExportOptions by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -467,16 +471,22 @@ fun SettingsScreen(
             // 1 empty notebook line spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Section 4 Header - Upcoming Features (soft pink band)
+            // Section 4 Header - Export & Reports (soft yellow band)
             NotebookSectionBand(
-                title = stringResource(R.string.settings_section_upcoming),
-                highlightColor = HighlighterPink,
+                title = stringResource(R.string.export_options_title),
+                highlightColor = HighlighterYellow,
                 isCentered = false
             )
 
-            JournalUpcomingFeatureRow(
+            // Setting: Exporter PDF / Excel
+            JournalActionRow(
                 title = stringResource(R.string.settings_export_title),
-                description = stringResource(R.string.settings_export_desc)
+                description = stringResource(R.string.settings_export_desc),
+                bulletColor = Color(0xFFE5A93C),
+                badgeText = stringResource(R.string.export_action_share),
+                onClick = {
+                    showExportOptions = true
+                }
             )
 
             // Bottom Spacers: 5 notebook lines for full scrolling clearance above dock
@@ -510,6 +520,32 @@ fun SettingsScreen(
                 onDismiss = {
                     viewModel.dismissRestoreDialog()
                 }
+            )
+        }
+
+        // Export Options Bottom Sheet
+        if (showExportOptions) {
+            ExportOptionsBottomSheet(
+                title = stringResource(R.string.export_options_title),
+                onExportPdf = {
+                    viewModel.exportAllToPdf(context, isRtl) { success, hasCalcs ->
+                        if (!hasCalcs) {
+                            Toast.makeText(context, R.string.export_no_calculations, Toast.LENGTH_SHORT).show()
+                        } else if (!success) {
+                            Toast.makeText(context, R.string.export_error, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                onExportExcel = {
+                    viewModel.exportAllToExcel(context) { success, hasCalcs ->
+                        if (!hasCalcs) {
+                            Toast.makeText(context, R.string.export_no_calculations, Toast.LENGTH_SHORT).show()
+                        } else if (!success) {
+                            Toast.makeText(context, R.string.export_error, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                onDismiss = { showExportOptions = false }
             )
         }
     }

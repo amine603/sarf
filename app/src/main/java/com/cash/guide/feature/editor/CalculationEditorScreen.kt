@@ -98,6 +98,7 @@ import com.cash.guide.ui.notebook.ManropeFamily
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.NoFontPadding
+import com.cash.guide.ui.notebook.ExportOptionsBottomSheet
 import com.cash.guide.ui.notebook.UnsavedChangesDialog
 import kotlinx.coroutines.launch
 
@@ -114,6 +115,7 @@ fun CalculationEditorScreen(
     val context = LocalContext.current
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
+    var showExportSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(calculationId, initialGroupId) {
         viewModel.loadCalculation(calculationId, initialGroupId)
@@ -147,7 +149,7 @@ fun CalculationEditorScreen(
                 onUndoClick = { viewModel.undoDelete() },
                 onCalculatorClick = { viewModel.openCalculatorPopup(state.activeRowId) },
                 onSaveClick = { viewModel.saveCalculation(onSuccess = onNavigateBack) },
-                onShareClick = { viewModel.shareAsImage(context, isRtl) },
+                onShareClick = { showExportSheet = true },
                 onBackClick = { viewModel.handleBackPress(onNavigateBack) }
             )
 
@@ -297,6 +299,17 @@ fun CalculationEditorScreen(
                 onSave = { viewModel.saveCalculation(onSuccess = onNavigateBack) },
                 onDiscard = { viewModel.discardChanges(onNavigateBack) },
                 onContinue = { viewModel.dismissUnsavedDialog() }
+            )
+        }
+
+        // Export Options Bottom Sheet
+        if (showExportSheet) {
+            ExportOptionsBottomSheet(
+                title = state.title.text.ifBlank { stringResource(R.string.editor_new_title) },
+                onExportPdf = { viewModel.exportAsPdf(context, isRtl) },
+                onExportExcel = { viewModel.exportAsExcel(context) },
+                onShareImage = { viewModel.shareAsImage(context, isRtl) },
+                onDismiss = { showExportSheet = false }
             )
         }
     }

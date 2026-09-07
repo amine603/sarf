@@ -29,6 +29,9 @@ class CalculationRepository(
     suspend fun getCalculation(id: String): CalculationWithItems? =
         dao.getCalculation(id)
 
+    suspend fun getAllSaved(): List<CalculationWithItems> =
+        dao.getAllSaved()
+
     fun searchSaved(query: String): Flow<List<CalculationWithItems>> =
         dao.searchSaved(query.trim())
 
@@ -132,6 +135,9 @@ class CalculationRepository(
 
     suspend fun getGroup(groupId: String): CalculationGroupEntity? =
         groupDao?.getGroup(groupId)
+
+    suspend fun getAllGroups(): List<CalculationGroupEntity> =
+        groupDao?.getAllGroups() ?: emptyList()
 
     suspend fun createGroup(name: String, colorHex: String): String {
         val id = UUID.randomUUID().toString()

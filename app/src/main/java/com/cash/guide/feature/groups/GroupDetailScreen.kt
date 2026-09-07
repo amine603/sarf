@@ -29,6 +29,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +54,12 @@ import com.cash.guide.data.SettingsRepository
 import com.cash.guide.domain.JournalLedgerManager
 import com.cash.guide.domain.MoneyUnit
 import com.cash.guide.domain.CalculationImageShareHelper
+import com.cash.guide.domain.export.ExcelExportHelper
+import com.cash.guide.domain.export.FileExportManager
+import com.cash.guide.domain.export.PdfExportHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.cash.guide.ui.notebook.HisabiSketchIcon
 import com.cash.guide.ui.notebook.HisabiSymbol
 import com.cash.guide.ui.notebook.HighlighterBlue
@@ -93,6 +100,7 @@ fun GroupDetailScreen(
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     val defaultCurrency by settingsRepository.defaultCurrency.collectAsState(initial = MoneyUnit.DIRHAM)
     val defaultCurrencySuffix = if (defaultCurrency == MoneyUnit.DIRHAM) {
@@ -300,6 +308,45 @@ fun GroupDetailScreen(
                 )
                 viewModel.selectCalculationForAction(null)
             },
+            onExportPdf = {
+                val groupTitle = groupData?.group?.name
+                coroutineScope.launch {
+                    val pdfFile = withContext(Dispatchers.IO) {
+                        PdfExportHelper.exportSingleCalculationPdf(
+                            context = context,
+                            calculationWithItems = calc,
+                            groupName = groupTitle,
+                            isRtl = isRtl
+                        )
+                    }
+                    FileExportManager.shareFile(
+                        context = context,
+                        file = pdfFile,
+                        mimeType = FileExportManager.MIME_PDF,
+                        subject = calc.calculation.title
+                    )
+                }
+                viewModel.selectCalculationForAction(null)
+            },
+            onExportExcel = {
+                val groupTitle = groupData?.group?.name
+                coroutineScope.launch {
+                    val csvFile = withContext(Dispatchers.IO) {
+                        ExcelExportHelper.exportSingleCalculation(
+                            context = context,
+                            calculationWithItems = calc,
+                            groupName = groupTitle
+                        )
+                    }
+                    FileExportManager.shareFile(
+                        context = context,
+                        file = csvFile,
+                        mimeType = FileExportManager.MIME_CSV,
+                        subject = calc.calculation.title
+                    )
+                }
+                viewModel.selectCalculationForAction(null)
+            },
             onRemoveFromGroup = {
                 viewModel.removeCalculationFromGroup(calc.calculation.id)
             },
@@ -362,6 +409,8 @@ private fun GroupCalculationActionsSheet(
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
     onShareImage: (() -> Unit)? = null,
+    onExportPdf: (() -> Unit)? = null,
+    onExportExcel: (() -> Unit)? = null,
     onRemoveFromGroup: () -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
@@ -454,6 +503,26 @@ private fun GroupCalculationActionsSheet(
                         symbol = HisabiSymbol.Share,
                         badgeColor = HighlighterGreen.copy(alpha = 0.55f),
                         onClick = onShareImage
+                    )
+                }
+
+                // Export PDF
+                if (onExportPdf != null) {
+                    GroupActionSheetItem(
+                        label = stringResource(R.string.action_export_pdf),
+                        symbol = HisabiSymbol.Page,
+                        badgeColor = HighlighterBlue.copy(alpha = 0.55f),
+                        onClick = onExportPdf
+                    )
+                }
+
+                // Export Excel
+                if (onExportExcel != null) {
+                    GroupActionSheetItem(
+                        label = stringResource(R.string.export_as_excel),
+                        symbol = HisabiSymbol.Table,
+                        badgeColor = HighlighterYellow.copy(alpha = 0.55f),
+                        onClick = onExportExcel
                     )
                 }
 

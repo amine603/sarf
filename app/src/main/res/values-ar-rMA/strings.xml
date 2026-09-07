@@ -199,4 +199,33 @@
     <string name="share_watermark">مصنوع بتطبيق حسابي</string>
     <string name="share_brand">دفتر حسابي</string>
     <string name="history_month_empty">ما كاين حتى حساب مسجل فـ %1$s</string>
+
+    <!-- Export options and formats -->
+    <string name="export_options_title">خيارات التصدير</string>
+    <string name="export_as_pdf">ملف PDF</string>
+    <string name="export_as_pdf_desc">تنسيق أنيق بحال الكناش واجد للطباعة</string>
+    <string name="export_as_excel">جدول إكسيل (.csv)</string>
+    <string name="export_as_excel_desc">طابلو منظم بـ UTF-8 كيتحل فـ Excel ديريكت</string>
+    <string name="export_as_image">تصويرة د الكناش</string>
+    <string name="export_as_image_desc">تصويرة نقية تبارطاجيها فالواتساب</string>
+    <string name="export_all_excel">كاع الحسابات فـ Excel</string>
+    <string name="export_all_excel_desc">طابلو شامل فيه كاع الحسابات والسلعة</string>
+    <string name="export_all_pdf">كشف حساب كامل (PDF)</string>
+    <string name="export_all_pdf_desc">تقرير مفصل فيه الحسابات والمجموعات كاملين</string>
+    <string name="export_action_share">بارطاجي</string>
+    <string name="export_action_open">حل الملف</string>
+    <string name="export_success">الملف واجد ومصدر بنجاح</string>
+    <string name="export_error">وقع شي خطأ فالتصدير</string>
+    <string name="export_no_calculations">ما كاين حتى حساب مسجل باش تصدرو</string>
+    <string name="export_report_title">تقرير الحسابات د صَرْف</string>
+    <string name="export_col_number">الرقم</string>
+    <string name="export_col_item">السلعة / البند</string>
+    <string name="export_col_expression">العملية</string>
+    <string name="export_col_amount">الثمن</string>
+    <string name="export_col_currency">العملة</string>
+    <string name="export_col_date">التاريخ</string>
+    <string name="export_col_group">المجموعة</string>
+    <string name="export_col_calc_title">سمية الحساب</string>
+    <string name="export_col_calc_total">المجموع د الحساب</string>
+    <string name="export_col_note">ملاحظة</string>
 </resources>

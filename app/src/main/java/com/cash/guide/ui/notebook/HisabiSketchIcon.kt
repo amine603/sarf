@@ -44,7 +44,8 @@ enum class HisabiSymbol {
     Smile,
     Folder,
     Share,
-    Undo
+    Undo,
+    Table
 }
 
 @Composable
@@ -426,6 +427,19 @@ fun HisabiSketchIcon(
                     lineTo(u(mx(10.5f)), u(13.5f))
                 }
                 drawPath(arrowHead, tint, style = pen)
+            }
+            HisabiSymbol.Table -> {
+                drawRoundRect(
+                    tint,
+                    topLeft = point(3.5f, 4.5f),
+                    size = Size(u(17f), u(15f)),
+                    cornerRadius = CornerRadius(u(2f)),
+                    style = pen
+                )
+                drawLine(tint, point(3.5f, 9.5f), point(20.5f, 9.5f), u(1.3f))
+                drawLine(tint, point(3.5f, 14.5f), point(20.5f, 14.5f), u(1.1f))
+                drawLine(tint, point(9.5f, 4.5f), point(9.5f, 19.5f), u(1.1f))
+                drawLine(tint, point(15.5f, 4.5f), point(15.5f, 19.5f), u(1.1f))
             }
         }
     }

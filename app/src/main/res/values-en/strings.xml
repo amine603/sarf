@@ -199,4 +199,33 @@
     <string name="share_watermark">Made with Hssabi</string>
     <string name="share_brand">Hssabi • Notebook</string>
     <string name="history_month_empty">No calculations recorded in %1$s</string>
+
+    <!-- Export options and formats -->
+    <string name="export_options_title">Export Options</string>
+    <string name="export_as_pdf">PDF Document</string>
+    <string name="export_as_pdf_desc">Print-ready notebook A4 document</string>
+    <string name="export_as_excel">Excel Sheet (.csv)</string>
+    <string name="export_as_excel_desc">Spreadsheet table with UTF-8 encoding</string>
+    <string name="export_as_image">Notebook Image</string>
+    <string name="export_as_image_desc">High-res receipt image for WhatsApp</string>
+    <string name="export_all_excel">All Calculations (Excel)</string>
+    <string name="export_all_excel_desc">Full spreadsheet with all calculations and items</string>
+    <string name="export_all_pdf">Complete Report (PDF)</string>
+    <string name="export_all_pdf_desc">Detailed summary statement of all records</string>
+    <string name="export_action_share">Share</string>
+    <string name="export_action_open">Open</string>
+    <string name="export_success">File exported successfully</string>
+    <string name="export_error">Error during export</string>
+    <string name="export_no_calculations">No saved calculations to export</string>
+    <string name="export_report_title">SARF Calculations Report</string>
+    <string name="export_col_number">No.</string>
+    <string name="export_col_item">Item</string>
+    <string name="export_col_expression">Expression</string>
+    <string name="export_col_amount">Amount</string>
+    <string name="export_col_currency">Currency</string>
+    <string name="export_col_date">Date</string>
+    <string name="export_col_group">Group</string>
+    <string name="export_col_calc_title">Calculation Title</string>
+    <string name="export_col_calc_total">Calculation Total</string>
+    <string name="export_col_note">Note</string>
 </resources>

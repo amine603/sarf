@@ -42,26 +42,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
 
-/**
- * Line spacing for the Actions Popup sheet.
- * Slightly larger than the homepage (42dp vs 29dp) for comfortable touch targets
- * and badge placement, while maintaining authentic lined notebook paper rhythm.
- */
-private val ActionSheetRuleSpacing: Dp = 42.dp
+private val ExportSheetRuleSpacing: Dp = 44.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SavedCalculationActionsSheet(
-    calculationTitle: String,
-    isPinned: Boolean = false,
-    onTogglePin: () -> Unit = {},
-    onEdit: () -> Unit,
-    onDuplicate: () -> Unit,
+fun ExportOptionsBottomSheet(
+    title: String,
+    onExportPdf: () -> Unit,
+    onExportExcel: () -> Unit,
     onShareImage: (() -> Unit)? = null,
-    onExportPdf: (() -> Unit)? = null,
-    onExportExcel: (() -> Unit)? = null,
-    onAssignToGroup: (() -> Unit)? = null,
-    onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -100,11 +89,11 @@ fun SavedCalculationActionsSheet(
                     .fillMaxWidth()
                     .navigationBarsPadding()
             ) {
-                // Row 1: Calculation Title sitting directly on its ruled notebook line (centered)
+                // Header: Title sitting directly on ruled notebook line
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(ActionSheetRuleSpacing)
+                        .height(ExportSheetRuleSpacing)
                         .drawBehind {
                             val strokeW = 0.6.dp.toPx()
                             val y = size.height
@@ -120,7 +109,7 @@ fun SavedCalculationActionsSheet(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = calculationTitle.ifBlank { stringResource(R.string.editor_new_title) },
+                        text = title.ifBlank { stringResource(R.string.export_options_title) },
                         fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                         fontSize = if (isRtl) 19.sp else 21.sp,
                         fontWeight = FontWeight.Bold,
@@ -131,49 +120,38 @@ fun SavedCalculationActionsSheet(
                         style = TextStyle(platformStyle = NoFontPadding),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .journalBaselineOnRule(lineHeight = ActionSheetRuleSpacing)
+                            .journalBaselineOnRule(lineHeight = ExportSheetRuleSpacing)
                     )
                 }
 
-                // Row 2: Épingler / Désépingler (Pin)
-                ActionSheetRuledItem(
-                    label = stringResource(if (isPinned) R.string.action_unpin else R.string.action_pin),
-                    symbol = HisabiSymbol.Pin,
-                    badgeColor = HighlighterBlue.copy(alpha = 0.50f),
+                // Row: PDF Document
+                ExportSheetRuledItem(
+                    label = stringResource(R.string.export_as_pdf),
+                    symbol = HisabiSymbol.Page,
+                    badgeColor = HighlighterBlue.copy(alpha = 0.55f),
                     onClick = {
                         onDismiss()
-                        onTogglePin()
+                        onExportPdf()
                     }
                 )
 
-                // Row 3: Modifier (Edit)
-                ActionSheetRuledItem(
-                    label = stringResource(R.string.action_edit),
-                    symbol = HisabiSymbol.Pencil,
-                    badgeColor = HighlighterPink.copy(alpha = 0.40f),
+                // Row: Excel Spreadsheet
+                ExportSheetRuledItem(
+                    label = stringResource(R.string.export_as_excel),
+                    symbol = HisabiSymbol.Table,
+                    badgeColor = HighlighterGreen.copy(alpha = 0.55f),
                     onClick = {
                         onDismiss()
-                        onEdit()
+                        onExportExcel()
                     }
                 )
 
-                // Row 4: Dupliquer (Duplicate)
-                ActionSheetRuledItem(
-                    label = stringResource(R.string.action_duplicate),
-                    symbol = HisabiSymbol.Copy,
-                    badgeColor = HighlighterYellow.copy(alpha = 0.55f),
-                    onClick = {
-                        onDismiss()
-                        onDuplicate()
-                    }
-                )
-
-                // Row: Partager en image (Share as Long Image)
+                // Row: Image (if applicable)
                 if (onShareImage != null) {
-                    ActionSheetRuledItem(
-                        label = stringResource(R.string.action_share_image),
+                    ExportSheetRuledItem(
+                        label = stringResource(R.string.export_as_image),
                         symbol = HisabiSymbol.Share,
-                        badgeColor = HighlighterGreen.copy(alpha = 0.55f),
+                        badgeColor = HighlighterYellow.copy(alpha = 0.55f),
                         onClick = {
                             onDismiss()
                             onShareImage()
@@ -181,62 +159,11 @@ fun SavedCalculationActionsSheet(
                     )
                 }
 
-                // Row: Exporter en PDF
-                if (onExportPdf != null) {
-                    ActionSheetRuledItem(
-                        label = stringResource(R.string.action_export_pdf),
-                        symbol = HisabiSymbol.Page,
-                        badgeColor = HighlighterBlue.copy(alpha = 0.50f),
-                        onClick = {
-                            onDismiss()
-                            onExportPdf()
-                        }
-                    )
-                }
-
-                // Row: Exporter en Excel (.csv)
-                if (onExportExcel != null) {
-                    ActionSheetRuledItem(
-                        label = stringResource(R.string.export_as_excel),
-                        symbol = HisabiSymbol.Table,
-                        badgeColor = HighlighterYellow.copy(alpha = 0.55f),
-                        onClick = {
-                            onDismiss()
-                            onExportExcel()
-                        }
-                    )
-                }
-
-                // Row: Ajouter / Déplacer vers un groupe
-                if (onAssignToGroup != null) {
-                    ActionSheetRuledItem(
-                        label = stringResource(R.string.action_add_to_group),
-                        symbol = HisabiSymbol.Folder,
-                        badgeColor = HighlighterBlue.copy(alpha = 0.55f),
-                        onClick = {
-                            onDismiss()
-                            onAssignToGroup()
-                        }
-                    )
-                }
-
-                // Row 5: Supprimer (Delete - Destructive)
-                ActionSheetRuledItem(
-                    label = stringResource(R.string.action_delete),
-                    symbol = HisabiSymbol.Trash,
-                    badgeColor = JournalActionDelete.copy(alpha = 0.15f),
-                    isDestructive = true,
-                    onClick = {
-                        onDismiss()
-                        onDelete()
-                    }
-                )
-
-                // Row 6: Empty notebook ruled line for authentic bottom margin
+                // Empty notebook rule for authentic margin
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(ActionSheetRuleSpacing)
+                        .height(ExportSheetRuleSpacing)
                         .drawBehind {
                             val strokeW = 0.6.dp.toPx()
                             val y = size.height
@@ -255,26 +182,20 @@ fun SavedCalculationActionsSheet(
     }
 }
 
-/**
- * An action row inside the bottom sheet sitting directly on 1 notebook ruled line.
- * Features a colored sketch icon badge on the start and handwritten label sitting directly on the line.
- */
 @Composable
-private fun ActionSheetRuledItem(
+private fun ExportSheetRuledItem(
     label: String,
     symbol: HisabiSymbol,
     badgeColor: Color,
-    isDestructive: Boolean = false,
     onClick: () -> Unit
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
-    val tintColor = if (isDestructive) JournalActionDelete else JournalInk
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(ActionSheetRuleSpacing)
+            .height(ExportSheetRuleSpacing)
             .drawBehind {
                 val strokeW = 0.6.dp.toPx()
                 val y = size.height
@@ -301,7 +222,7 @@ private fun ActionSheetRuledItem(
             HisabiSketchIcon(
                 symbol = symbol,
                 contentDescription = null,
-                tint = tintColor,
+                tint = JournalInk,
                 size = 16.dp
             )
         }
@@ -311,9 +232,9 @@ private fun ActionSheetRuledItem(
             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
             fontSize = if (isRtl) 17.5.sp else 19.sp,
             fontWeight = FontWeight.Normal,
-            color = tintColor,
+            color = JournalInk,
             style = TextStyle(platformStyle = NoFontPadding),
-            modifier = Modifier.journalBaselineOnRule(lineHeight = ActionSheetRuleSpacing)
+            modifier = Modifier.journalBaselineOnRule(lineHeight = ExportSheetRuleSpacing)
         )
     }
 }

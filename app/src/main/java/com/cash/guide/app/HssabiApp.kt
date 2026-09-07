@@ -98,7 +98,7 @@ fun HssabiApp() {
     val groupsViewModel = viewModel { GroupsViewModel(calculationRepository) }
     val historyViewModel = viewModel { HistoryViewModel(calculationRepository) }
     val backupManager = remember { BackupManager(database) }
-    val settingsViewModel = viewModel { SettingsViewModel(settingsRepository, backupManager) }
+    val settingsViewModel = viewModel { SettingsViewModel(settingsRepository, backupManager, calculationRepository) }
 
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()

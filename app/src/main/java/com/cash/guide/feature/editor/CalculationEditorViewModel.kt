@@ -11,8 +11,14 @@ import com.cash.guide.data.CalculationRepository
 import com.cash.guide.data.SettingsRepository
 import com.cash.guide.data.db.CalculationEntity
 import com.cash.guide.data.db.CalculationItemEntity
+import com.cash.guide.data.db.CalculationWithItems
 import com.cash.guide.domain.AndroidIcuGraphemeSegmenter
 import com.cash.guide.domain.CalculationImageShareHelper
+import com.cash.guide.domain.export.ExcelExportHelper
+import com.cash.guide.domain.export.FileExportManager
+import com.cash.guide.domain.export.PdfExportHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.cash.guide.domain.GraphemeSegmenter
 import com.cash.guide.domain.JournalKeyboardController
 import com.cash.guide.domain.JournalKeyboardLanguage
@@ -974,6 +980,109 @@ class CalculationEditorViewModel(
                 groupName = groupName,
                 createdAtEpochMs = state.createdAtEpochMs ?: now,
                 isRtl = isRtl
+            )
+        }
+    }
+
+    fun exportAsPdf(context: Context, isRtl: Boolean) {
+        val state = _uiState.value
+        val titleText = state.title.text.trim().ifBlank { context.getString(R.string.editor_new_title) }
+        val targetId = state.editingSavedId ?: state.calculationId ?: UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+
+        val populatedRows = state.rows.filter { it.isPopulated }
+        val itemEntities = populatedRows.mapIndexed { idx, row ->
+            val centimes = MoneyMath.toCentimes(row.amount.text, state.currency) ?: 0L
+            CalculationItemEntity(
+                id = UUID.randomUUID().toString(),
+                calculationId = targetId,
+                label = row.title.text.trim(),
+                amountCentimes = centimes,
+                rawExpression = row.amount.text.trim(),
+                position = idx,
+                createdAtEpochMs = now,
+                updatedAtEpochMs = now
+            )
+        }
+        val calcEntity = CalculationEntity(
+            id = targetId,
+            title = titleText,
+            currency = state.currency.name,
+            createdAtEpochMs = state.createdAtEpochMs ?: now,
+            updatedAtEpochMs = now,
+            status = "SAVED",
+            groupId = state.groupId
+        )
+        val calcWithItems = CalculationWithItems(calcEntity, itemEntities)
+
+        viewModelScope.launch {
+            val groupName = state.groupId?.let { gid ->
+                calculationRepository.getGroup(gid)?.name
+            }
+            val pdfFile = withContext(Dispatchers.IO) {
+                PdfExportHelper.exportSingleCalculationPdf(
+                    context = context,
+                    calculationWithItems = calcWithItems,
+                    groupName = groupName,
+                    isRtl = isRtl
+                )
+            }
+            FileExportManager.shareFile(
+                context = context,
+                file = pdfFile,
+                mimeType = FileExportManager.MIME_PDF,
+                subject = titleText
+            )
+        }
+    }
+
+    fun exportAsExcel(context: Context) {
+        val state = _uiState.value
+        val titleText = state.title.text.trim().ifBlank { context.getString(R.string.editor_new_title) }
+        val targetId = state.editingSavedId ?: state.calculationId ?: UUID.randomUUID().toString()
+        val now = System.currentTimeMillis()
+
+        val populatedRows = state.rows.filter { it.isPopulated }
+        val itemEntities = populatedRows.mapIndexed { idx, row ->
+            val centimes = MoneyMath.toCentimes(row.amount.text, state.currency) ?: 0L
+            CalculationItemEntity(
+                id = UUID.randomUUID().toString(),
+                calculationId = targetId,
+                label = row.title.text.trim(),
+                amountCentimes = centimes,
+                rawExpression = row.amount.text.trim(),
+                position = idx,
+                createdAtEpochMs = now,
+                updatedAtEpochMs = now
+            )
+        }
+        val calcEntity = CalculationEntity(
+            id = targetId,
+            title = titleText,
+            currency = state.currency.name,
+            createdAtEpochMs = state.createdAtEpochMs ?: now,
+            updatedAtEpochMs = now,
+            status = "SAVED",
+            groupId = state.groupId
+        )
+        val calcWithItems = CalculationWithItems(calcEntity, itemEntities)
+
+        viewModelScope.launch {
+            val groupName = state.groupId?.let { gid ->
+                calculationRepository.getGroup(gid)?.name
+            }
+            val csvFile = withContext(Dispatchers.IO) {
+                ExcelExportHelper.exportSingleCalculation(
+                    context = context,
+                    calculationWithItems = calcWithItems,
+                    groupName = groupName
+                )
+            }
+            FileExportManager.shareFile(
+                context = context,
+                file = csvFile,
+                mimeType = FileExportManager.MIME_CSV,
+                subject = titleText
             )
         }
     }

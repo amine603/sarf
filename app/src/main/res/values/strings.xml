@@ -199,4 +199,33 @@
     <string name="share_watermark">Créé avec Hssabi</string>
     <string name="share_brand">Hssabi • Carnet</string>
     <string name="history_month_empty">Aucun calcul enregistré en %1$s</string>
+
+    <!-- Export options and formats -->
+    <string name="export_options_title">Options d’exportation</string>
+    <string name="export_as_pdf">Document PDF</string>
+    <string name="export_as_pdf_desc">Mise en page carnet A4 prête à imprimer</string>
+    <string name="export_as_excel">Feuille Excel (.csv)</string>
+    <string name="export_as_excel_desc">Tableau de données avec encodage UTF-8</string>
+    <string name="export_as_image">Image du carnet</string>
+    <string name="export_as_image_desc">Image haute résolution pour WhatsApp</string>
+    <string name="export_all_excel">Toutes les données (Excel)</string>
+    <string name="export_all_excel_desc">Tableau complet de tous vos calculs et lignes</string>
+    <string name="export_all_pdf">Rapport complet (PDF)</string>
+    <string name="export_all_pdf_desc">Bilan détaillé de tous les comptes enregistrés</string>
+    <string name="export_action_share">Partager</string>
+    <string name="export_action_open">Ouvrir</string>
+    <string name="export_success">Fichier exporté avec succès</string>
+    <string name="export_error">Erreur lors de l’exportation</string>
+    <string name="export_no_calculations">Aucun calcul enregistré à exporter</string>
+    <string name="export_report_title">Rapport des comptes SARF</string>
+    <string name="export_col_number">N°</string>
+    <string name="export_col_item">Article</string>
+    <string name="export_col_expression">Expression</string>
+    <string name="export_col_amount">Montant</string>
+    <string name="export_col_currency">Devise</string>
+    <string name="export_col_date">Date</string>
+    <string name="export_col_group">Groupe</string>
+    <string name="export_col_calc_title">Titre du calcul</string>
+    <string name="export_col_calc_total">Total calcul</string>
+    <string name="export_col_note">Note</string>
 </resources>

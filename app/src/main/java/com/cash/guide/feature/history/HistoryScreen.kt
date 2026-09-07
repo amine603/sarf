@@ -24,7 +24,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.cash.guide.domain.CalculationImageShareHelper
+import com.cash.guide.domain.export.ExcelExportHelper
+import com.cash.guide.domain.export.FileExportManager
+import com.cash.guide.domain.export.PdfExportHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -329,6 +334,51 @@ fun HistoryScreen(
                             calculationWithItems = calcToShare,
                             groupName = groupName,
                             isRtl = isRtl
+                        )
+                    }
+                    viewModel.selectCalculationForAction(null)
+                },
+                onExportPdf = {
+                    val calcToExport = actionCalc
+                    coroutineScope.launch {
+                        val groupName = calcToExport.calculation.groupId?.let { gid ->
+                            viewModel.repository.getGroup(gid)?.name
+                        }
+                        val pdfFile = withContext(Dispatchers.IO) {
+                            PdfExportHelper.exportSingleCalculationPdf(
+                                context = context,
+                                calculationWithItems = calcToExport,
+                                groupName = groupName,
+                                isRtl = isRtl
+                            )
+                        }
+                        FileExportManager.shareFile(
+                            context = context,
+                            file = pdfFile,
+                            mimeType = FileExportManager.MIME_PDF,
+                            subject = calcToExport.calculation.title
+                        )
+                    }
+                    viewModel.selectCalculationForAction(null)
+                },
+                onExportExcel = {
+                    val calcToExport = actionCalc
+                    coroutineScope.launch {
+                        val groupName = calcToExport.calculation.groupId?.let { gid ->
+                            viewModel.repository.getGroup(gid)?.name
+                        }
+                        val csvFile = withContext(Dispatchers.IO) {
+                            ExcelExportHelper.exportSingleCalculation(
+                                context = context,
+                                calculationWithItems = calcToExport,
+                                groupName = groupName
+                            )
+                        }
+                        FileExportManager.shareFile(
+                            context = context,
+                            file = csvFile,
+                            mimeType = FileExportManager.MIME_CSV,
+                            subject = calcToExport.calculation.title
                         )
                     }
                     viewModel.selectCalculationForAction(null)
