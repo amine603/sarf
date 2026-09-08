@@ -11,7 +11,8 @@ import androidx.room.PrimaryKey
         Index("status"),
         Index("editingCalculationId"),
         Index("groupId"),
-        Index("paymentStatus")
+        Index("paymentStatus"),
+        Index("calcType")
     ]
 )
 data class CalculationEntity(
@@ -24,5 +25,6 @@ data class CalculationEntity(
     val note: String? = null,
     val editingCalculationId: String? = null,
     val groupId: String? = null,
-    val paymentStatus: String = "PAID" // "PAID" or "UNPAID"
+    val paymentStatus: String = "PAID", // "PAID" or "UNPAID"
+    val calcType: String = "PERSONNEL" // "PERSONNEL" or "CREDIT"
 )

@@ -86,6 +86,9 @@ interface CalculationDao {
     @Query("UPDATE calculations SET paymentStatus = :paymentStatus, updatedAtEpochMs = :now WHERE id = :id")
     suspend fun updatePaymentStatus(id: String, paymentStatus: String, now: Long = System.currentTimeMillis())
 
+    @Query("UPDATE calculations SET calcType = :calcType, updatedAtEpochMs = :now WHERE id = :id")
+    suspend fun updateCalcType(id: String, calcType: String, now: Long = System.currentTimeMillis())
+
     @Transaction
     suspend fun upsertCalculationWithItems(
         calculation: CalculationEntity,

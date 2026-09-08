@@ -75,6 +75,12 @@ class HistoryViewModelTest {
                 calculations[id] = existing.copy(paymentStatus = paymentStatus, updatedAtEpochMs = now)
             }
         }
+        override suspend fun updateCalcType(id: String, calcType: String, now: Long) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(calcType = calcType, updatedAtEpochMs = now)
+            }
+        }
         override suspend fun getAllSaved(): List<CalculationWithItems> {
             return calculations.values
                 .filter { it.status == "SAVED" }

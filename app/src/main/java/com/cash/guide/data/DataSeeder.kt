@@ -87,6 +87,7 @@ object DataSeeder {
             val offsetMs: Long,
             val note: String? = null,
             val paymentStatus: String = "PAID",
+            val calcType: String = if (paymentStatus == "UNPAID") "CREDIT" else "PERSONNEL",
             val items: List<SeedItem>
         )
 
@@ -343,7 +344,8 @@ object DataSeeder {
                 status = "SAVED",
                 note = seed.note,
                 groupId = seed.groupId,
-                paymentStatus = seed.paymentStatus
+                paymentStatus = seed.paymentStatus,
+                calcType = seed.calcType
             )
 
             val itemEntities = seed.items.mapIndexed { idx, item ->

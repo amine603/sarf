@@ -62,6 +62,12 @@ class HomeViewModelTest {
                 calculations[id] = existing.copy(paymentStatus = paymentStatus, updatedAtEpochMs = now)
             }
         }
+        override suspend fun updateCalcType(id: String, calcType: String, now: Long) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(calcType = calcType, updatedAtEpochMs = now)
+            }
+        }
         override suspend fun getAllSaved(): List<CalculationWithItems> {
             return calculations.values
                 .filter { it.status == "SAVED" }
@@ -160,6 +166,26 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         val updated2 = dao.getCalculation("calc-pay-1")
+        assertEquals("PAID", updated2?.calculation?.paymentStatus)
+    }
+
+    @Test
+    fun toggleCalcType_togglesTypeAndPaymentStatusInRepository() = runTest {
+        val calc = CalculationEntity("calc-type-1", "Achat", "DIRHAM", 100, 100, "SAVED", paymentStatus = "PAID", calcType = "PERSONNEL")
+        dao.insertCalculation(calc)
+
+        viewModel.toggleCalcType("calc-type-1", "PERSONNEL")
+        advanceUntilIdle()
+
+        val updated = dao.getCalculation("calc-type-1")
+        assertEquals("CREDIT", updated?.calculation?.calcType)
+        assertEquals("UNPAID", updated?.calculation?.paymentStatus)
+
+        viewModel.toggleCalcType("calc-type-1", "CREDIT")
+        advanceUntilIdle()
+
+        val updated2 = dao.getCalculation("calc-type-1")
+        assertEquals("PERSONNEL", updated2?.calculation?.calcType)
         assertEquals("PAID", updated2?.calculation?.paymentStatus)
     }
 }

@@ -51,6 +51,15 @@ fun HssabiNavHost(
             HomeScreen(
                 viewModel = homeViewModel,
                 onNewCalculation = { navController.navigate(AppDestination.NewCalculation.route) },
+                onNewCalculationWithParams = { title, calcType, currency ->
+                    navController.navigate(
+                        AppDestination.NewCalculation.createRoute(
+                            type = calcType,
+                            currency = currency.name,
+                            title = title
+                        )
+                    )
+                },
                 onOpenCalculation = { id -> navController.navigate("calculation/$id") },
                 onOpenHistory = { navController.navigate(AppDestination.History.route) },
                 onOpenMonthCalculations = { year, month ->
@@ -123,13 +132,33 @@ fun HssabiNavHost(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("type") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = "PERSONNEL"
+                },
+                navArgument("currency") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = "DIRHAM"
+                },
+                navArgument("title") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = ""
                 }
             )
         ) { backStackEntry ->
             val initialGroupId = backStackEntry.arguments?.getString("groupId")
+            val initialType = backStackEntry.arguments?.getString("type") ?: "PERSONNEL"
+            val initialCurrency = backStackEntry.arguments?.getString("currency") ?: "DIRHAM"
+            val rawTitle = backStackEntry.arguments?.getString("title") ?: ""
+            val initialTitle = runCatching { java.net.URLDecoder.decode(rawTitle, "UTF-8") }.getOrDefault(rawTitle)
+
             val editorViewModel: CalculationEditorViewModel = viewModel(
                 viewModelStoreOwner = backStackEntry,
-                key = "new_calculation_${initialGroupId ?: "root"}"
+                key = "new_calculation_${initialGroupId ?: "root"}_${initialType}_$initialCurrency"
             ) {
                 editorViewModelFactory()
             }
@@ -137,6 +166,9 @@ fun HssabiNavHost(
                 viewModel = editorViewModel,
                 calculationId = null,
                 initialGroupId = initialGroupId,
+                initialType = initialType,
+                initialCurrency = initialCurrency,
+                initialTitle = initialTitle,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

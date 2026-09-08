@@ -238,4 +238,18 @@
     <string name="total_unpaid_banner">Total des crédits :</string>
     <string name="action_mark_paid">Marquer comme payé</string>
     <string name="action_mark_unpaid">Marquer comme crédit</string>
+    <string name="action_convert_to_credit">Changer en Crédit</string>
+    <string name="action_convert_to_personnel">Changer en Personnel</string>
+
+    <!-- New calculation setup sheet & types -->
+    <string name="calc_type_personnel">Personnel</string>
+    <string name="calc_type_credit">Crédit</string>
+    <string name="new_calc_sheet_title">Nouveau calcul</string>
+    <string name="new_calc_name_label">Nom du calcul ou client</string>
+    <string name="new_calc_name_placeholder">Ex: Chantier, Ahmed, Épicerie...</string>
+    <string name="new_calc_type_label">Type de calcul</string>
+    <string name="new_calc_currency_label">Devise</string>
+    <string name="new_calc_templates_label">Modèles de calcul</string>
+    <string name="new_calc_templates_soon">Bientôt disponible</string>
+    <string name="new_calc_start_action">Commencer</string>
 </resources>

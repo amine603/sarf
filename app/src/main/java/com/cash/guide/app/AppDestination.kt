@@ -7,9 +7,22 @@ sealed class AppDestination(val route: String) {
     data object Settings : AppDestination("settings")
     data object StyleShowcase : AppDestination("style_showcase")
     data object NewCalculation : AppDestination("calculation/new") {
-        const val ROUTE_PATTERN = "calculation/new?groupId={groupId}"
+        const val ROUTE_PATTERN = "calculation/new?groupId={groupId}&type={type}&currency={currency}&title={title}"
+        fun createRoute(
+            groupId: String? = null,
+            type: String = "PERSONNEL",
+            currency: String = "DIRHAM",
+            title: String = ""
+        ): String {
+            val encodedTitle = java.net.URLEncoder.encode(title, "UTF-8")
+            return buildString {
+                append("calculation/new?")
+                if (groupId != null) append("groupId=$groupId&")
+                append("type=$type&currency=$currency&title=$encodedTitle")
+            }
+        }
         fun routeForGroup(groupId: String?): String =
-            if (groupId != null) "calculation/new?groupId=$groupId" else "calculation/new"
+            createRoute(groupId = groupId)
     }
     data class EditCalculation(val calculationId: String) : AppDestination("calculation/$calculationId") {
         companion object {

@@ -282,6 +282,8 @@ fun GroupDetailScreen(
                     subtitle = subtitle,
                     isPinned = false,
                     dotColorOverride = groupColor,
+                    paymentStatus = calc.calculation.paymentStatus,
+                    calcType = calc.calculation.calcType,
                     onClick = { onOpenCalculation(calc.calculation.id) },
                     onMoreClick = { viewModel.selectCalculationForAction(calc) }
                 )

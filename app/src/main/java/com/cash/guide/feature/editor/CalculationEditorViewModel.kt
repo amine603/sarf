@@ -59,7 +59,13 @@ class CalculationEditorViewModel(
     private var draftSaveJob: Job? = null
     private val undoStack = mutableListOf<DeletedRowAction>()
 
-    fun loadCalculation(id: String?, initialGroupId: String? = null) {
+    fun loadCalculation(
+        id: String?,
+        initialGroupId: String? = null,
+        initialType: String? = null,
+        initialCurrency: MoneyUnit? = null,
+        initialTitle: String? = null
+    ) {
         undoStack.clear()
         viewModelScope.launch {
             val defaultCurrency = settingsRepository?.defaultCurrency?.first() ?: MoneyUnit.DIRHAM
@@ -70,8 +76,9 @@ class CalculationEditorViewModel(
             }
 
             if (id == null) {
+                val hasExplicitParams = initialType != null || !initialTitle.isNullOrBlank() || initialCurrency != null
                 // Check if an uncommitted new draft exists
-                val draft = calculationRepository.getRecoverableDraft(null)
+                val draft = if (hasExplicitParams) null else calculationRepository.getRecoverableDraft(null)
                 val effectiveGroupId = initialGroupId ?: draft?.calculation?.groupId
                 if (draft != null && (draft.calculation.title.isNotBlank() || draft.items.isNotEmpty())) {
                     val draftCurrency = runCatching { MoneyUnit.valueOf(draft.calculation.currency) }.getOrDefault(defaultCurrency)
@@ -107,27 +114,34 @@ class CalculationEditorViewModel(
                             recoveredDraft = true,
                             createdAtEpochMs = draft.calculation.createdAtEpochMs,
                             groupId = effectiveGroupId,
-                            paymentStatus = draft.calculation.paymentStatus
+                            paymentStatus = draft.calculation.paymentStatus,
+                            calcType = draft.calculation.calcType
                         )
                     }
                 } else {
                     val initialId = draft?.calculation?.id ?: UUID.randomUUID().toString()
+                    val targetType = initialType ?: "PERSONNEL"
+                    val targetPaymentStatus = if (targetType == "CREDIT") "UNPAID" else "PAID"
+                    val targetCurrency = initialCurrency ?: defaultCurrency
+                    val targetTitle = initialTitle ?: ""
+
                     _uiState.update {
                         it.copy(
                             calculationId = initialId,
                             editingSavedId = null,
                             mode = EditorMode.NEW,
-                            title = TextFieldValue(""),
-                            currency = defaultCurrency,
+                            title = TextFieldValue(targetTitle, TextRange(targetTitle.length)),
+                            currency = targetCurrency,
                             rows = listOf(EditorRowUiState(id = 1L)),
                             activeRowId = 1L,
-                            activeField = ActiveField.TITLE,
-                            keyboardMode = JournalKeyboardMode.TEXT,
+                            activeField = if (targetTitle.isNotBlank()) ActiveField.AMOUNT else ActiveField.TITLE,
+                            keyboardMode = if (targetTitle.isNotBlank()) JournalKeyboardMode.NUMBER else JournalKeyboardMode.TEXT,
                             keyboardLanguage = defaultLanguage,
                             keyboardExpanded = true,
-                            isDirty = false,
+                            isDirty = targetTitle.isNotBlank(),
                             groupId = effectiveGroupId,
-                            paymentStatus = "PAID"
+                            paymentStatus = targetPaymentStatus,
+                            calcType = targetType
                         )
                     }
                 }
@@ -166,7 +180,8 @@ class CalculationEditorViewModel(
                             recoveredDraft = true,
                             createdAtEpochMs = originalCreatedAt ?: draft.calculation.createdAtEpochMs,
                             groupId = effectiveGroupId,
-                            paymentStatus = draft.calculation.paymentStatus
+                            paymentStatus = draft.calculation.paymentStatus,
+                            calcType = draft.calculation.calcType
                         )
                     }
                 } else if (saved != null) {
@@ -201,7 +216,8 @@ class CalculationEditorViewModel(
                             isDirty = false,
                             createdAtEpochMs = saved.calculation.createdAtEpochMs,
                             groupId = effectiveGroupId,
-                            paymentStatus = saved.calculation.paymentStatus
+                            paymentStatus = saved.calculation.paymentStatus,
+                            calcType = saved.calculation.calcType
                         )
                     }
                 }
@@ -878,7 +894,8 @@ class CalculationEditorViewModel(
                 status = "SAVED",
                 editingCalculationId = null,
                 groupId = state.groupId,
-                paymentStatus = state.paymentStatus
+                paymentStatus = state.paymentStatus,
+                calcType = state.calcType
             )
 
             calculationRepository.saveCalculation(calculationEntity, itemEntities)
@@ -908,6 +925,22 @@ class CalculationEditorViewModel(
         val current = _uiState.value
         if (current.mode == EditorMode.EXISTING && current.editingSavedId != null) {
             viewModelScope.launch {
+                calculationRepository.updatePaymentStatus(current.editingSavedId, current.paymentStatus)
+            }
+        }
+        scheduleDraftSave()
+    }
+
+    fun toggleCalcType() {
+        _uiState.update { state ->
+            val nextType = if (state.calcType == "CREDIT") "PERSONNEL" else "CREDIT"
+            val nextStatus = if (nextType == "CREDIT") "UNPAID" else "PAID"
+            state.copy(calcType = nextType, paymentStatus = nextStatus, isDirty = true)
+        }
+        val current = _uiState.value
+        if (current.mode == EditorMode.EXISTING && current.editingSavedId != null) {
+            viewModelScope.launch {
+                calculationRepository.updateCalcType(current.editingSavedId, current.calcType)
                 calculationRepository.updatePaymentStatus(current.editingSavedId, current.paymentStatus)
             }
         }
@@ -956,7 +989,8 @@ class CalculationEditorViewModel(
                 status = "DRAFT",
                 editingCalculationId = editingSavedId,
                 groupId = state.groupId,
-                paymentStatus = state.paymentStatus
+                paymentStatus = state.paymentStatus,
+                calcType = state.calcType
             )
 
             calculationRepository.saveDraft(draftEntity, itemEntities)

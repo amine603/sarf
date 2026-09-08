@@ -86,6 +86,7 @@ class BackupManager(
             if (c.editingCalculationId != null) cEntity.put("editingCalculationId", c.editingCalculationId)
             if (c.groupId != null) cEntity.put("groupId", c.groupId)
             cEntity.put("paymentStatus", c.paymentStatus)
+            cEntity.put("calcType", c.calcType)
             calcObj.put("calculation", cEntity)
 
             val itemsArr = JSONArray()
@@ -152,7 +153,8 @@ class BackupManager(
                     note = if (cObj.has("note") && !cObj.isNull("note")) cObj.getString("note") else null,
                     editingCalculationId = if (cObj.has("editingCalculationId") && !cObj.isNull("editingCalculationId")) cObj.getString("editingCalculationId") else null,
                     groupId = if (cObj.has("groupId") && !cObj.isNull("groupId")) cObj.getString("groupId") else null,
-                    paymentStatus = cObj.optString("paymentStatus", "PAID")
+                    paymentStatus = cObj.optString("paymentStatus", "PAID"),
+                    calcType = cObj.optString("calcType", if (cObj.optString("paymentStatus", "PAID") == "UNPAID") "CREDIT" else "PERSONNEL")
                 )
 
                 val itemsList = mutableListOf<CalculationItemEntity>()

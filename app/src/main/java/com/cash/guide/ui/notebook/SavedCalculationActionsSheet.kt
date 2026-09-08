@@ -57,6 +57,8 @@ fun SavedCalculationActionsSheet(
     onTogglePin: () -> Unit = {},
     paymentStatus: String = "PAID",
     onTogglePaymentStatus: (() -> Unit)? = null,
+    calcType: String = "PERSONNEL",
+    onToggleCalcType: (() -> Unit)? = null,
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
     onShareImage: (() -> Unit)? = null,
@@ -149,8 +151,8 @@ fun SavedCalculationActionsSheet(
                     }
                 )
 
-                // Row: Marquer comme payé / Marquer comme crédit
-                if (onTogglePaymentStatus != null) {
+                // Row: Marquer comme payé / Marquer comme crédit (if CREDIT)
+                if (calcType == "CREDIT" && onTogglePaymentStatus != null) {
                     val isPaid = paymentStatus == "PAID"
                     val label = stringResource(if (isPaid) R.string.action_mark_unpaid else R.string.action_mark_paid)
                     val symbol = if (isPaid) HisabiSymbol.Clock else HisabiSymbol.Check
@@ -162,6 +164,23 @@ fun SavedCalculationActionsSheet(
                         onClick = {
                             onDismiss()
                             onTogglePaymentStatus()
+                        }
+                    )
+                }
+
+                // Row: Convert between Personnel and Crédit
+                if (onToggleCalcType != null) {
+                    val isCredit = calcType == "CREDIT"
+                    val label = stringResource(if (isCredit) R.string.action_convert_to_personnel else R.string.action_convert_to_credit)
+                    val symbol = if (isCredit) HisabiSymbol.Pencil else HisabiSymbol.Folder
+                    val badgeColor = if (isCredit) HighlighterBlue.copy(alpha = 0.50f) else Color(0xFFC2410C).copy(alpha = 0.20f)
+                    ActionSheetRuledItem(
+                        label = label,
+                        symbol = symbol,
+                        badgeColor = badgeColor,
+                        onClick = {
+                            onDismiss()
+                            onToggleCalcType()
                         }
                     )
                 }

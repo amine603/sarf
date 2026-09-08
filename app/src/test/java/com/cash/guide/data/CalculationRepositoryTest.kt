@@ -111,6 +111,13 @@ class CalculationRepositoryTest {
             }
         }
 
+        override suspend fun updateCalcType(id: String, calcType: String, now: Long) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(calcType = calcType, updatedAtEpochMs = now)
+            }
+        }
+
         override suspend fun getAllSaved(): List<CalculationWithItems> {
             return calculations.values
                 .filter { it.status == "SAVED" }
@@ -383,5 +390,16 @@ class CalculationRepositoryTest {
 
         repository.updatePaymentStatus("c1", "PAID")
         assertEquals("PAID", repository.getCalculation("c1")?.calculation?.paymentStatus)
+    }
+
+    @Test
+    fun updateCalcType_updatesSuccessfully() = runBlocking {
+        val calc = CalculationEntity(id = "c1", title = "Crédit Hanout", currency = "DIRHAM", createdAtEpochMs = 10, updatedAtEpochMs = 10, status = "SAVED", calcType = "PERSONNEL")
+        repository.saveCalculation(calc, emptyList())
+
+        assertEquals("PERSONNEL", repository.getCalculation("c1")?.calculation?.calcType)
+
+        repository.updateCalcType("c1", "CREDIT")
+        assertEquals("CREDIT", repository.getCalculation("c1")?.calculation?.calcType)
     }
 }

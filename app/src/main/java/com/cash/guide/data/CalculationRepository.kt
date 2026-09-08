@@ -99,6 +99,11 @@ class CalculationRepository(
         dao.updatePaymentStatus(id, paymentStatus, now)
     }
 
+    suspend fun updateCalcType(id: String, calcType: String) {
+        val now = System.currentTimeMillis()
+        dao.updateCalcType(id, calcType, now)
+    }
+
     suspend fun getRecoverableDraft(editingCalculationId: String?): CalculationWithItems? {
         return if (editingCalculationId != null) {
             dao.getDraftForCalculation(editingCalculationId)

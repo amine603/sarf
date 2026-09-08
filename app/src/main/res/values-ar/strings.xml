@@ -238,4 +238,18 @@
     <string name="total_unpaid_banner">مجموع الكريدي :</string>
     <string name="action_mark_paid">تعليم كخالص ✓</string>
     <string name="action_mark_unpaid">تعليم كباقي / كريدي</string>
+    <string name="action_convert_to_credit">تحويل إلى كريدي</string>
+    <string name="action_convert_to_personnel">تحويل إلى شخصي</string>
+
+    <!-- New calculation setup sheet & types -->
+    <string name="calc_type_personnel">شخصي</string>
+    <string name="calc_type_credit">كريدي</string>
+    <string name="new_calc_sheet_title">حساب جديد</string>
+    <string name="new_calc_name_label">اسم الحساب أو الزبون</string>
+    <string name="new_calc_name_placeholder">مثلاً: سلعة، سلف، أحمد، مصطفى...</string>
+    <string name="new_calc_type_label">نوع الحساب</string>
+    <string name="new_calc_currency_label">العملة</string>
+    <string name="new_calc_templates_label">قوالب جاهزة</string>
+    <string name="new_calc_templates_soon">قريباً</string>
+    <string name="new_calc_start_action">ابدأ الحساب</string>
 </resources>

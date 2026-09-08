@@ -111,6 +111,9 @@ fun CalculationEditorScreen(
     viewModel: CalculationEditorViewModel,
     calculationId: String? = null,
     initialGroupId: String? = null,
+    initialType: String? = null,
+    initialCurrency: String? = null,
+    initialTitle: String? = null,
     onNavigateBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -121,8 +124,15 @@ fun CalculationEditorScreen(
     val isRtl = layoutDirection == LayoutDirection.Rtl
     var showExportSheet by remember { mutableStateOf(false) }
 
-    LaunchedEffect(calculationId, initialGroupId) {
-        viewModel.loadCalculation(calculationId, initialGroupId)
+    LaunchedEffect(calculationId, initialGroupId, initialType, initialCurrency, initialTitle) {
+        val currencyEnum = initialCurrency?.let { runCatching { MoneyUnit.valueOf(it) }.getOrNull() }
+        viewModel.loadCalculation(
+            id = calculationId,
+            initialGroupId = initialGroupId,
+            initialType = initialType,
+            initialCurrency = currencyEnum,
+            initialTitle = initialTitle
+        )
     }
 
     BackHandler {
@@ -151,6 +161,7 @@ fun CalculationEditorScreen(
                 },
                 paymentStatus = state.paymentStatus,
                 onPaymentStatusToggle = { viewModel.togglePaymentStatus() },
+                calcType = state.calcType,
                 canUndo = state.canUndo,
                 onUndoClick = { viewModel.undoDelete() },
                 onCalculatorClick = { viewModel.openCalculatorPopup(state.activeRowId) },
@@ -333,6 +344,7 @@ private fun EditorTopBar(
     onCurrencyToggle: () -> Unit,
     paymentStatus: String = "PAID",
     onPaymentStatusToggle: () -> Unit = {},
+    calcType: String = "PERSONNEL",
     canUndo: Boolean,
     onUndoClick: () -> Unit,
     onCalculatorClick: () -> Unit,
@@ -594,40 +606,42 @@ private fun EditorTopBar(
                     }
                 }
 
-                // 2. Payment Status Rubber Stamp (Kredi / Khlass)
-                val isPaid = paymentStatus == "PAID"
-                val stampColor = if (isPaid) Color(0xFF15803D) else Color(0xFFC2410C)
-                val stampBg = if (isPaid) Color(0xFFDCFCE7).copy(alpha = 0.65f) else Color(0xFFFFEDD5).copy(alpha = 0.65f)
-                val stampText = if (isPaid) {
-                    stringResource(R.string.payment_status_paid) + " ✓"
-                } else {
-                    stringResource(R.string.payment_status_unpaid)
-                }
+                // 2. Payment Status Rubber Stamp (Kredi / Khlass) - Only if calcType == "CREDIT"
+                if (calcType == "CREDIT") {
+                    val isPaid = paymentStatus == "PAID"
+                    val stampColor = if (isPaid) Color(0xFF15803D) else Color(0xFFC2410C)
+                    val stampBg = if (isPaid) Color(0xFFDCFCE7).copy(alpha = 0.65f) else Color(0xFFFFEDD5).copy(alpha = 0.65f)
+                    val stampText = if (isPaid) {
+                        stringResource(R.string.payment_status_paid) + " ✓"
+                    } else {
+                        stringResource(R.string.payment_status_unpaid)
+                    }
 
-                Box(
-                    modifier = Modifier
-                        .graphicsLayer {
-                            rotationZ = if (isPaid) -2f else 2f
-                        }
-                        .clip(RoundedCornerShape(6.dp))
-                        .border(
-                            width = 1.35.dp,
-                            color = stampColor.copy(alpha = 0.85f),
-                            shape = RoundedCornerShape(6.dp)
+                    Box(
+                        modifier = Modifier
+                            .graphicsLayer {
+                                rotationZ = if (isPaid) -2f else 2f
+                            }
+                            .clip(RoundedCornerShape(6.dp))
+                            .border(
+                                width = 1.35.dp,
+                                color = stampColor.copy(alpha = 0.85f),
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .background(stampBg)
+                            .clickable(role = Role.Button, onClick = onPaymentStatusToggle)
+                            .padding(horizontal = 9.dp, vertical = 3.5.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stampText,
+                            fontFamily = resolveJournalFont(stampText, isRtl),
+                            fontSize = if (isRtl) 12.5.sp else 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = stampColor,
+                            style = TextStyle(platformStyle = NoFontPadding)
                         )
-                        .background(stampBg)
-                        .clickable(role = Role.Button, onClick = onPaymentStatusToggle)
-                        .padding(horizontal = 9.dp, vertical = 3.5.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stampText,
-                        fontFamily = resolveJournalFont(stampText, isRtl),
-                        fontSize = if (isRtl) 12.5.sp else 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = stampColor,
-                        style = TextStyle(platformStyle = NoFontPadding)
-                    )
+                    }
                 }
 
                 // 3. Calculator Button (Center)

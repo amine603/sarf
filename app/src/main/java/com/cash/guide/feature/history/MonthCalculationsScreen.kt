@@ -203,6 +203,8 @@ fun MonthCalculationsScreen(
                         totalAmount = calcTotal,
                         currencySuffix = currencySuffix,
                         isPinned = false,
+                        paymentStatus = calc.calculation.paymentStatus,
+                        calcType = calc.calculation.calcType,
                         onClick = { onOpenCalculation(calc.calculation.id) },
                         onMoreClick = {}
                     )

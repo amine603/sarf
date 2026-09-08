@@ -84,6 +84,15 @@ class HomeViewModel(
         }
     }
 
+    fun toggleCalcType(calculationId: String, currentType: String) {
+        val nextType = if (currentType == "CREDIT") "PERSONNEL" else "CREDIT"
+        val nextStatus = if (nextType == "CREDIT") "UNPAID" else "PAID"
+        viewModelScope.launch {
+            repository.updateCalcType(calculationId, nextType)
+            repository.updatePaymentStatus(calculationId, nextStatus)
+        }
+    }
+
     private fun applyFilters(context: Context) {
         val query = _uiState.value.searchQuery.trim()
         val selectedDate = _uiState.value.selectedDateEpoch
@@ -92,11 +101,11 @@ class HomeViewModel(
         val favorites = allItems.filter { it.calculation.id in pinnedIds }
 
         val unpaidTotal = allItems
-            .filter { it.calculation.paymentStatus == "UNPAID" }
+            .filter { (it.calculation.calcType == "CREDIT" || it.calculation.paymentStatus == "UNPAID") && it.calculation.paymentStatus == "UNPAID" }
             .sumOf { it.totalCentimes }
 
         val recentGroups = DateGroupHelper.groupByDate(
-            items = allItems.take(10),
+            items = allItems,
             todayString = context.getString(R.string.date_today),
             yesterdayString = context.getString(R.string.date_yesterday),
             thisWeekString = context.getString(R.string.date_this_week),
@@ -124,7 +133,7 @@ class HomeViewModel(
                 }
                 val matchesPayment = when (paymentFilter) {
                     PaymentFilter.ALL -> true
-                    PaymentFilter.UNPAID -> calc.calculation.paymentStatus == "UNPAID"
+                    PaymentFilter.UNPAID -> calc.calculation.calcType == "CREDIT" || calc.calculation.paymentStatus == "UNPAID"
                     PaymentFilter.PAID -> calc.calculation.paymentStatus == "PAID"
                 }
                 matchesQuery && matchesDate && matchesPayment

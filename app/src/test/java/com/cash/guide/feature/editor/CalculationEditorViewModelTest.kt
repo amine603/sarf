@@ -95,6 +95,13 @@ class CalculationEditorViewModelTest {
             }
         }
 
+        override suspend fun updateCalcType(id: String, calcType: String, now: Long) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(calcType = calcType, updatedAtEpochMs = now)
+            }
+        }
+
         override suspend fun getAllSaved(): List<CalculationWithItems> = emptyList()
         override suspend fun deleteAllCalculations() {
             calculations.clear()
@@ -400,5 +407,19 @@ class CalculationEditorViewModelTest {
 
         viewModel.togglePaymentStatus()
         assertEquals("PAID", viewModel.uiState.value.paymentStatus)
+    }
+
+    @Test
+    fun loadCalculation_withInitialType_initializesCorrectlyAndToggles() = runTest {
+        viewModel.loadCalculation(null, initialType = "CREDIT")
+        advanceUntilIdle()
+
+        assertEquals("CREDIT", viewModel.uiState.value.calcType)
+        assertEquals("UNPAID", viewModel.uiState.value.paymentStatus)
+
+        viewModel.toggleCalcType()
+        assertEquals("PERSONNEL", viewModel.uiState.value.calcType)
+        assertEquals("PAID", viewModel.uiState.value.paymentStatus)
+        assertTrue(viewModel.uiState.value.isDirty)
     }
 }

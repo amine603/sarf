@@ -88,6 +88,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.cash.guide.ui.notebook.MonthPickerDialog
+import com.cash.guide.ui.notebook.NewCalculationSetupSheet
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -101,7 +102,8 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onNewCalculation: () -> Unit,
+    onNewCalculation: () -> Unit = {},
+    onNewCalculationWithParams: ((title: String, calcType: String, currency: MoneyUnit) -> Unit)? = null,
     onOpenCalculation: (String) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenMonthCalculations: (year: Int, month: Int) -> Unit = { _, _ -> },
@@ -117,6 +119,7 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var showMonthPicker by remember { mutableStateOf(false) }
+    var showNewCalcSetupSheet by remember { mutableStateOf(false) }
     var calcToAssignToGroup by remember { mutableStateOf<com.cash.guide.data.db.CalculationWithItems?>(null) }
     val currentMonthYear = remember(context) {
         val locale = context.resources.configuration.locales[0]
@@ -208,7 +211,13 @@ fun HomeScreen(
             // Line 5: Full-width pink "+ Nouveau calcul" primary button (29dp)
             NotebookPrimaryActionButton(
                 text = stringResource(R.string.home_new_calculation),
-                onClick = onNewCalculation
+                onClick = {
+                    if (onNewCalculationWithParams != null) {
+                        showNewCalcSetupSheet = true
+                    } else {
+                        onNewCalculation()
+                    }
+                }
             )
 
             // Line 6: 1 rule spacer
@@ -499,6 +508,10 @@ fun HomeScreen(
                 onTogglePaymentStatus = {
                     viewModel.togglePaymentStatus(actionCalc.calculation.id, actionCalc.calculation.paymentStatus)
                 },
+                calcType = actionCalc.calculation.calcType,
+                onToggleCalcType = {
+                    viewModel.toggleCalcType(actionCalc.calculation.id, actionCalc.calculation.calcType)
+                },
                 onEdit = {
                     onOpenCalculation(actionCalc.calculation.id)
                     viewModel.selectCalculationForAction(null)
@@ -613,6 +626,17 @@ fun HomeScreen(
                 onSelectMonth = { year, month ->
                     showMonthPicker = false
                     onOpenMonthCalculations(year, month)
+                }
+            )
+        }
+
+        // New Calculation Setup Sheet (Personnel vs Credit, Title, Currency, Templates)
+        if (showNewCalcSetupSheet && onNewCalculationWithParams != null) {
+            NewCalculationSetupSheet(
+                onDismiss = { showNewCalcSetupSheet = false },
+                onConfirm = { title, calcType, currency ->
+                    showNewCalcSetupSheet = false
+                    onNewCalculationWithParams(title, calcType, currency)
                 }
             )
         }

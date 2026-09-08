@@ -221,6 +221,8 @@ fun HistoryScreen(
                             title = calc.calculation.title,
                             totalAmount = totalFormatted,
                             currencySuffix = currencySuffix,
+                            paymentStatus = calc.calculation.paymentStatus,
+                            calcType = calc.calculation.calcType,
                             onClick = { onOpenCalculation(calc.calculation.id) },
                             onMoreClick = { viewModel.selectCalculationForAction(calc) }
                         )
