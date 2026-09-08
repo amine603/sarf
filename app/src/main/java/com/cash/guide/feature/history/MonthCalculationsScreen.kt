@@ -45,7 +45,7 @@ import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalRuleSpacing
 import com.cash.guide.ui.notebook.JournalRuledDocument
-import com.cash.guide.ui.notebook.JournalTwoLineCalculationRow
+import com.cash.guide.ui.notebook.NotebookCalculationRow
 import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
@@ -138,7 +138,7 @@ fun MonthCalculationsScreen(
             Text(
                 text = monthTitle,
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 19.sp else 21.sp,
+                fontSize = if (isRtl) 16.5.sp else 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
@@ -151,7 +151,7 @@ fun MonthCalculationsScreen(
             Text(
                 text = "$totalFormatted ${stringResource(R.string.currency_dirham)}",
                 fontFamily = PatrickHandFamily,
-                fontSize = 17.sp,
+                fontSize = 15.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
@@ -174,7 +174,7 @@ fun MonthCalculationsScreen(
                 Text(
                     text = stringResource(R.string.history_month_empty, monthTitle),
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = 16.sp,
+                    fontSize = if (isRtl) 14.5.sp else 15.sp,
                     fontWeight = FontWeight.Medium,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -196,17 +196,10 @@ fun MonthCalculationsScreen(
                     } else {
                         stringResource(R.string.currency_rial)
                     }
-                    val timeStr = timeFormatter.format(calc.calculation.updatedAtEpochMs)
-                    val subtitle = if (calc.items.isNotEmpty()) {
-                        "$timeStr • ${calc.items.size} ${if (calc.items.size == 1) "ligne" else "lignes"}"
-                    } else {
-                        timeStr
-                    }
 
-                    JournalTwoLineCalculationRow(
+                    NotebookCalculationRow(
                         index = idx,
                         title = calc.calculation.title,
-                        subtitle = subtitle,
                         totalAmount = calcTotal,
                         currencySuffix = currencySuffix,
                         isPinned = false,

@@ -125,7 +125,7 @@ fun SettingsScreen(
                 Text(
                     text = stringResource(R.string.settings_title),
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 18.5.sp else 21.sp,
+                    fontSize = if (isRtl) 16.5.sp else 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -143,7 +143,7 @@ fun SettingsScreen(
                 Text(
                     text = currentMonthYear,
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 14.5.sp else 16.sp,
+                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                     fontWeight = FontWeight.Light,
                     color = JournalMutedInk.copy(alpha = 0.85f),
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -191,7 +191,7 @@ fun SettingsScreen(
                         Text(
                             text = stringResource(R.string.settings_language),
                             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                            fontSize = if (isRtl) 15.5.sp else 16.5.sp,
+                            fontSize = if (isRtl) 14.5.sp else 15.sp,
                             fontWeight = FontWeight.Normal,
                             color = JournalInk,
                             style = TextStyle(platformStyle = NoFontPadding),
@@ -267,7 +267,7 @@ fun SettingsScreen(
                         Text(
                             text = stringResource(R.string.settings_currency),
                             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                            fontSize = if (isRtl) 15.5.sp else 16.5.sp,
+                            fontSize = if (isRtl) 14.5.sp else 15.sp,
                             fontWeight = FontWeight.Normal,
                             color = JournalInk,
                             style = TextStyle(platformStyle = NoFontPadding),
@@ -345,7 +345,7 @@ fun SettingsScreen(
                         Text(
                             text = stringResource(R.string.settings_storage_title),
                             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                            fontSize = if (isRtl) 15.5.sp else 16.5.sp,
+                            fontSize = if (isRtl) 14.5.sp else 15.sp,
                             fontWeight = FontWeight.Normal,
                             color = JournalInk,
                             style = TextStyle(platformStyle = NoFontPadding),
@@ -593,7 +593,7 @@ private fun JournalActionRow(
                 Text(
                     text = title,
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 15.5.sp else 16.5.sp,
+                    fontSize = if (isRtl) 14.5.sp else 15.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),

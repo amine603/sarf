@@ -125,6 +125,7 @@ fun MoneyBreakdownSheet(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -191,15 +192,16 @@ fun MoneyBreakdownSheet(
                             NotebookHighlightedBadge(
                                 text = stringResource(R.string.breakdown_title),
                                 highlighterColor = HighlighterPink.copy(alpha = 0.65f),
-                                fontSize = 18.sp,
+                                fontSize = 16.5.sp,
                                 horizontalPadding = 12.dp,
                                 verticalPadding = 3.5.dp
                             )
                             Spacer(Modifier.height(4.dp))
+                            val subtitleText = stringResource(R.string.breakdown_subtitle)
                             Text(
-                                text = stringResource(R.string.breakdown_subtitle),
-                                fontFamily = TajawalFamily,
-                                fontSize = 13.sp,
+                                text = subtitleText,
+                                fontFamily = resolveJournalFont(subtitleText, isRtl),
+                                fontSize = if (isRtl) 13.sp else 13.5.sp,
                                 fontWeight = FontWeight.Normal,
                                 color = JournalMutedInk,
                                 style = TextStyle(platformStyle = NoFontPadding)
@@ -228,14 +230,15 @@ fun MoneyBreakdownSheet(
                                 Text(
                                     text = dirhamFormatted,
                                     fontFamily = PatrickHandFamily,
-                                    fontSize = 21.sp,
+                                    fontSize = 18.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = ColorOrange
                                 )
+                                val dirhamSuffix = stringResource(R.string.currency_dirham)
                                 Text(
-                                    text = stringResource(R.string.currency_dirham),
-                                    fontFamily = TajawalFamily,
-                                    fontSize = 14.sp,
+                                    text = dirhamSuffix,
+                                    fontFamily = resolveJournalFont(dirhamSuffix, isRtl),
+                                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = JournalInk,
                                     modifier = Modifier.padding(bottom = 1.dp)
@@ -246,7 +249,7 @@ fun MoneyBreakdownSheet(
                                 text = "=",
                                 fontFamily = PatrickHandFamily,
                                 color = JournalMutedInk,
-                                fontSize = 18.sp,
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
 
@@ -257,14 +260,15 @@ fun MoneyBreakdownSheet(
                                 Text(
                                     text = rialFormatted,
                                     fontFamily = PatrickHandFamily,
-                                    fontSize = 21.sp,
+                                    fontSize = 18.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = ColorOrange
                                 )
+                                val rialSuffix = stringResource(R.string.currency_rial)
                                 Text(
-                                    text = stringResource(R.string.currency_rial),
-                                    fontFamily = TajawalFamily,
-                                    fontSize = 14.sp,
+                                    text = rialSuffix,
+                                    fontFamily = resolveJournalFont(rialSuffix, isRtl),
+                                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = JournalInk,
                                     modifier = Modifier.padding(bottom = 1.dp)
@@ -286,11 +290,12 @@ fun MoneyBreakdownSheet(
                                     .height(14.dp)
                                     .background(HighlighterYellow.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
                             )
+                            val distText = stringResource(R.string.breakdown_distribution)
                             Text(
-                                text = stringResource(R.string.breakdown_distribution),
-                                fontFamily = TajawalFamily,
+                                text = distText,
+                                fontFamily = resolveJournalFont(distText, isRtl),
                                 color = JournalWritingInk,
-                                fontSize = 14.5.sp,
+                                fontSize = if (isRtl) 14.sp else 14.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 style = TextStyle(platformStyle = NoFontPadding)
                             )
@@ -322,11 +327,12 @@ fun MoneyBreakdownSheet(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                val remText = "${stringResource(R.string.breakdown_remainder)} (< 10 centimes):"
                                 Text(
-                                    text = "${stringResource(R.string.breakdown_remainder)} (< 10 centimes):",
-                                    fontFamily = TajawalFamily,
+                                    text = remText,
+                                    fontFamily = resolveJournalFont(remText, isRtl),
                                     color = JournalInk,
-                                    fontSize = 13.5.sp,
+                                    fontSize = if (isRtl) 13.sp else 13.5.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
@@ -348,6 +354,8 @@ fun MoneyBreakdownSheet(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun BreakdownDenominationBlock(piece: MoneyPiece) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
     val isBanknote = piece.denomination.valueCentimes >= 2_000L
     val bitmap = rememberBanknoteImage(piece.denomination.assetPath)
     val rialText = getRialEquivalent(piece.denomination.valueCentimes)
@@ -383,7 +391,7 @@ private fun BreakdownDenominationBlock(piece: MoneyPiece) {
                     Text(
                         text = "${piece.count} ×",
                         fontFamily = PatrickHandFamily,
-                        fontSize = 16.sp,
+                        fontSize = 15.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (isBanknote) ColorCoral else ColorOrange,
                         style = TextStyle(platformStyle = NoFontPadding)
@@ -392,9 +400,9 @@ private fun BreakdownDenominationBlock(piece: MoneyPiece) {
 
                 Text(
                     text = piece.denomination.label,
-                    fontFamily = TajawalFamily,
+                    fontFamily = resolveJournalFont(piece.denomination.label, isRtl),
                     color = JournalInk,
-                    fontSize = 14.5.sp,
+                    fontSize = if (isArabicScript(piece.denomination.label) || isRtl) 14.sp else 14.5.sp,
                     fontWeight = FontWeight.Bold,
                     style = TextStyle(platformStyle = NoFontPadding)
                 )
@@ -402,7 +410,7 @@ private fun BreakdownDenominationBlock(piece: MoneyPiece) {
                 if (rialText != null) {
                     Text(
                         text = "($rialText)",
-                        fontFamily = TajawalFamily,
+                        fontFamily = resolveJournalFont(rialText, isRtl),
                         color = JournalMutedInk,
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Medium,
@@ -411,10 +419,12 @@ private fun BreakdownDenominationBlock(piece: MoneyPiece) {
                 }
             }
 
+            val dhSuffix = stringResource(R.string.currency_dirham)
+            val isDhLatin = dhSuffix.contains(Regex("[a-zA-Z]"))
             Text(
-                text = "$pieceTotalDh ${stringResource(R.string.currency_dirham)}",
-                fontFamily = PatrickHandFamily,
-                fontSize = 15.5.sp,
+                text = "$pieceTotalDh $dhSuffix",
+                fontFamily = if (isDhLatin) PatrickHandFamily else TajawalFamily,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = JournalWritingInk,
                 style = TextStyle(platformStyle = NoFontPadding)
@@ -474,9 +484,10 @@ private fun BreakdownDenominationBlock(piece: MoneyPiece) {
                         .padding(horizontal = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
+                    val moreText = "+ ${piece.count - 30} " + if (isRtl) "أخرى" else "autres"
                     Text(
-                        text = "+ ${piece.count - 30} أخرى",
-                        fontFamily = TajawalFamily,
+                        text = moreText,
+                        fontFamily = resolveJournalFont(moreText, isRtl),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = JournalMutedInk

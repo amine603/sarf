@@ -38,6 +38,12 @@ fun DeleteConfirmationDialog(
     val configuration = LocalConfiguration.current
     val layoutDirection = LocalLayoutDirection.current
 
+    val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
+    val titleText = stringResource(R.string.delete_title)
+    val bodyText = stringResource(R.string.delete_body)
+    val cancelText = stringResource(R.string.delete_cancel)
+    val confirmText = stringResource(R.string.delete_confirm)
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -64,19 +70,19 @@ fun DeleteConfirmationDialog(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.delete_title),
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 22.sp,
+                    text = titleText,
+                    fontFamily = resolveJournalFont(titleText, isRtl),
+                    fontSize = if (isRtl) 17.sp else 17.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk
                 )
 
                 Text(
-                    text = stringResource(R.string.delete_body),
-                    fontFamily = ManropeFamily,
-                    fontSize = 15.sp,
+                    text = bodyText,
+                    fontFamily = resolveJournalFont(bodyText, isRtl),
+                    fontSize = if (isRtl) 14.sp else 14.5.sp,
                     color = JournalWritingInk,
-                    lineHeight = 22.sp
+                    lineHeight = 20.sp
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -89,16 +95,16 @@ fun DeleteConfirmationDialog(
                         onClick = onDismiss,
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .height(44.dp),
                         shape = RoundedCornerShape(8.dp),
                         border = BorderStroke(1.dp, JournalRule)
                     ) {
                         Text(
-                            text = stringResource(R.string.delete_cancel),
-                            fontFamily = ManropeFamily,
+                            text = cancelText,
+                            fontFamily = resolveJournalFont(cancelText, isRtl),
                             color = JournalMutedInk,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp
+                            fontWeight = FontWeight.Medium,
+                            fontSize = if (isRtl) 13.5.sp else 14.sp
                         )
                     }
 
@@ -106,7 +112,7 @@ fun DeleteConfirmationDialog(
                         onClick = onConfirmDelete,
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .height(44.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = JournalActionDelete,
@@ -114,10 +120,10 @@ fun DeleteConfirmationDialog(
                         )
                     ) {
                         Text(
-                            text = stringResource(R.string.delete_confirm),
-                            fontFamily = ManropeFamily,
+                            text = confirmText,
+                            fontFamily = resolveJournalFont(confirmText, isRtl),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                            fontSize = if (isRtl) 13.5.sp else 14.sp
                         )
                     }
                 }

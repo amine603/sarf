@@ -140,6 +140,19 @@ fun isArabicScript(text: String): Boolean {
     }
 }
 
+/**
+ * Universal script- and locale-aware handwritten font resolver.
+ * French/English/Latin -> PatrickHandFamily
+ * Arabic -> CreamFrothFamily
+ */
+fun resolveJournalFont(text: String = "", isRtl: Boolean = false): FontFamily {
+    return if (isArabicScript(text) || (text.isBlank() && isRtl)) {
+        CreamFrothFamily
+    } else {
+        PatrickHandFamily
+    }
+}
+
 @Composable
 fun arabicWritingStyle(
     color: Color = WritingInk,
@@ -160,10 +173,10 @@ fun arabicWritingStyle(
 @Composable
 fun amountWritingStyle(
     color: Color = Ink,
-    sizeSp: Float = 16.5f,
+    sizeSp: Float = 15.5f,
     weight: FontWeight = FontWeight.Medium
 ) = TextStyle(
-    fontFamily = ManropeFamily,
+    fontFamily = PatrickHandFamily,
     fontSize = sizeSp.sp,
     lineHeight = with(LocalDensity.current) { HisabiMetrics.Grid.toSp() },
     lineHeightStyle = LineHeightStyle(
@@ -178,29 +191,29 @@ fun amountWritingStyle(
 @Composable
 fun journalCategoryStyle() = TextStyle(
     fontFamily = JournalHandFamily,
-    fontSize = 18.sp,
+    fontSize = 15.sp,
     fontWeight = FontWeight.Normal,
     color = JournalInk,
-    lineHeight = 22.sp,
+    lineHeight = 19.sp,
     platformStyle = NoFontPadding
 )
 
 @Composable
 fun journalRowNumberStyle(color: Color = JournalMutedInk) = TextStyle(
     fontFamily = JournalHandFamily,
-    fontSize = 16.5.sp,
+    fontSize = 14.sp,
     fontWeight = FontWeight.Normal,
     color = color,
-    lineHeight = 20.sp,
+    lineHeight = 18.sp,
     platformStyle = NoFontPadding
 )
 
 @Composable
 fun journalTitleStyle(text: String = "", color: Color = JournalInk): TextStyle {
-    val isArabic = text.any { it in '\u0600'..'\u06FF' }
+    val isArabic = isArabicScript(text)
     return TextStyle(
-        fontFamily = if (isArabic) TajawalFamily else JournalHandFamily,
-        fontSize = if (isArabic) 18.sp else 16.5.sp,
+        fontFamily = if (isArabic) CreamFrothFamily else JournalHandFamily,
+        fontSize = if (isArabic) 14.5.sp else 15.sp,
         fontWeight = FontWeight.Normal,
         color = color,
         lineHeight = 20.sp,
@@ -211,50 +224,50 @@ fun journalTitleStyle(text: String = "", color: Color = JournalInk): TextStyle {
 @Composable
 fun journalAmountStyle(color: Color = JournalInk) = TextStyle(
     fontFamily = JournalHandFamily,
-    fontSize = 17.5.sp,
+    fontSize = 15.5.sp,
     fontWeight = FontWeight.Normal,
     color = color,
-    lineHeight = 21.sp,
+    lineHeight = 20.sp,
     platformStyle = NoFontPadding
 )
 
 @Composable
 fun journalSuffixStyle() = TextStyle(
     fontFamily = JournalHandFamily,
-    fontSize = 15.sp,
+    fontSize = 13.5.sp,
     fontWeight = FontWeight.Normal,
     color = JournalMutedInk,
-    lineHeight = 18.sp,
+    lineHeight = 16.sp,
     platformStyle = NoFontPadding
 )
 
 @Composable
 fun journalTotalLabelStyle() = TextStyle(
     fontFamily = JournalHandFamily,
-    fontSize = 16.5.sp,
+    fontSize = 15.sp,
     fontWeight = FontWeight.Normal,
     color = JournalInk,
-    lineHeight = 20.sp,
+    lineHeight = 18.sp,
     platformStyle = NoFontPadding
 )
 
 @Composable
 fun journalPrimaryTotalStyle(color: Color = JournalInk) = TextStyle(
     fontFamily = JournalHandFamily,
-    fontSize = 25.sp,
-    fontWeight = FontWeight.Normal,
+    fontSize = 18.5.sp,
+    fontWeight = FontWeight.Bold,
     color = color,
-    lineHeight = 28.sp,
+    lineHeight = 22.sp,
     platformStyle = NoFontPadding
 )
 
 @Composable
 fun journalSecondaryTotalStyle() = TextStyle(
     fontFamily = JournalHandFamily,
-    fontSize = 15.5.sp,
+    fontSize = 13.5.sp,
     fontWeight = FontWeight.Normal,
     color = JournalMutedInk,
-    lineHeight = 19.sp,
+    lineHeight = 17.sp,
     platformStyle = NoFontPadding
 )
 

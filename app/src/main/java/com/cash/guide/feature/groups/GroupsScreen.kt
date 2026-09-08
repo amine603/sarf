@@ -76,6 +76,8 @@ import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.NotebookMetrics
 import com.cash.guide.ui.notebook.journalBaselineOnRule
+import com.cash.guide.ui.notebook.resolveJournalFont
+import com.cash.guide.ui.notebook.isArabicScript
 
 val GroupPalette = listOf(
     // Row 1: Warm & Earthy Pastels
@@ -137,7 +139,7 @@ fun GroupsScreen(
             Text(
                 text = stringResource(R.string.groups_title),
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 17.5.sp else 19.5.sp,
+                fontSize = if (isRtl) 16.5.sp else 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
@@ -147,7 +149,7 @@ fun GroupsScreen(
             Text(
                 text = stringResource(R.string.groups_count_badge, state.groups.size),
                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 14.5.sp else 16.sp,
+                fontSize = if (isRtl) 13.5.sp else 14.sp,
                 fontWeight = FontWeight.Normal,
                 color = JournalMutedInk.copy(alpha = 0.85f),
                 style = TextStyle(platformStyle = NoFontPadding),
@@ -189,14 +191,14 @@ fun GroupsScreen(
                 Text(
                     text = stringResource(R.string.groups_empty_title),
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 16.sp else 18.sp,
+                    fontSize = if (isRtl) 14.5.sp else 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalMutedInk
                 )
                 Text(
                     text = stringResource(R.string.groups_empty_desc),
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 13.sp else 15.sp,
+                    fontSize = if (isRtl) 12.5.sp else 13.sp,
                     color = JournalMutedInk.copy(alpha = 0.75f)
                 )
             }
@@ -355,8 +357,8 @@ private fun NotebookGroupRow(
 
                 Text(
                     text = groupItem.group.name,
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 17.5.sp else 19.sp,
+                    fontFamily = resolveJournalFont(groupItem.group.name, isRtl),
+                    fontSize = if (isArabicScript(groupItem.group.name) || isRtl) 14.5.sp else 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     maxLines = 1,
@@ -392,7 +394,7 @@ private fun NotebookGroupRow(
                 Text(
                     text = totalFormatted,
                     fontFamily = PatrickHandFamily,
-                    fontSize = if (isRtl) 17.sp else 18.5.sp,
+                    fontSize = 15.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -402,7 +404,7 @@ private fun NotebookGroupRow(
                 Text(
                     text = currencySuffix,
                     fontFamily = if (currencySuffix.contains(Regex("[a-zA-Z]"))) PatrickHandFamily else TajawalFamily,
-                    fontSize = if (currencySuffix.contains(Regex("[a-zA-Z]"))) 14.sp else 12.5.sp,
+                    fontSize = if (currencySuffix.contains(Regex("[a-zA-Z]"))) 13.5.sp else 12.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -511,10 +513,11 @@ private fun CreateOrEditGroupDialog(
         onDismissRequest = onDismiss,
         containerColor = JournalPaper,
         title = {
+            val dialogTitle = if (isEditing) stringResource(R.string.group_dialog_edit_title) else stringResource(R.string.group_dialog_create_title)
             Text(
-                text = if (isEditing) stringResource(R.string.group_dialog_edit_title) else stringResource(R.string.group_dialog_create_title),
-                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = 19.sp,
+                text = dialogTitle,
+                fontFamily = resolveJournalFont(dialogTitle, isRtl),
+                fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = JournalInk
             )
@@ -554,8 +557,8 @@ private fun CreateOrEditGroupDialog(
                         singleLine = true,
                         cursorBrush = SolidColor(JournalInk),
                         textStyle = TextStyle(
-                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                            fontSize = 17.sp,
+                            fontFamily = resolveJournalFont(name, isRtl),
+                            fontSize = 15.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = JournalInk
                         ),
@@ -622,7 +625,7 @@ private fun CreateOrEditGroupDialog(
                 Text(
                     text = stringResource(R.string.group_dialog_save),
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = 16.sp,
+                    fontSize = 14.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (name.isNotBlank()) JournalInk else JournalMutedInk.copy(alpha = 0.4f)
                 )
@@ -633,7 +636,7 @@ private fun CreateOrEditGroupDialog(
                 Text(
                     text = stringResource(R.string.group_dialog_cancel),
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     color = JournalMutedInk
                 )
             }

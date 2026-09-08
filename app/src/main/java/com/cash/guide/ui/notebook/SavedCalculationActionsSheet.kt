@@ -119,10 +119,11 @@ fun SavedCalculationActionsSheet(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Center
                 ) {
+                    val titleText = calculationTitle.ifBlank { stringResource(R.string.editor_new_title) }
                     Text(
-                        text = calculationTitle.ifBlank { stringResource(R.string.editor_new_title) },
-                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        fontSize = if (isRtl) 19.sp else 21.sp,
+                        text = titleText,
+                        fontFamily = resolveJournalFont(titleText, isRtl),
+                        fontSize = if (isArabicScript(titleText) || isRtl) 16.sp else 16.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         maxLines = 1,
@@ -308,8 +309,8 @@ private fun ActionSheetRuledItem(
 
         Text(
             text = label,
-            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-            fontSize = if (isRtl) 17.5.sp else 19.sp,
+            fontFamily = resolveJournalFont(label, isRtl),
+            fontSize = if (isRtl) 14.5.sp else 15.sp,
             fontWeight = FontWeight.Normal,
             color = tintColor,
             style = TextStyle(platformStyle = NoFontPadding),

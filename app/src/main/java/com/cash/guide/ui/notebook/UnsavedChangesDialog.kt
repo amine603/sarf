@@ -41,6 +41,13 @@ fun UnsavedChangesDialog(
     val configuration = LocalConfiguration.current
     val layoutDirection = LocalLayoutDirection.current
 
+    val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
+    val titleText = stringResource(R.string.unsaved_title)
+    val bodyText = stringResource(R.string.unsaved_body)
+    val saveText = stringResource(R.string.unsaved_save)
+    val discardText = stringResource(R.string.unsaved_discard)
+    val continueText = stringResource(R.string.unsaved_continue)
+
     Dialog(
         onDismissRequest = onContinue,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -67,19 +74,19 @@ fun UnsavedChangesDialog(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.unsaved_title),
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 22.sp,
+                    text = titleText,
+                    fontFamily = resolveJournalFont(titleText, isRtl),
+                    fontSize = if (isRtl) 17.sp else 17.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk
                 )
 
                 Text(
-                    text = stringResource(R.string.unsaved_body),
-                    fontFamily = ManropeFamily,
-                    fontSize = 15.sp,
+                    text = bodyText,
+                    fontFamily = resolveJournalFont(bodyText, isRtl),
+                    fontSize = if (isRtl) 14.sp else 14.5.sp,
                     color = JournalWritingInk,
-                    lineHeight = 22.sp
+                    lineHeight = 20.sp
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -93,7 +100,7 @@ fun UnsavedChangesDialog(
                         onClick = onSave,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(44.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = HighlighterPink,
@@ -101,10 +108,10 @@ fun UnsavedChangesDialog(
                         )
                     ) {
                         Text(
-                            text = stringResource(R.string.unsaved_save),
-                            fontFamily = ManropeFamily,
+                            text = saveText,
+                            fontFamily = resolveJournalFont(saveText, isRtl),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                            fontSize = if (isRtl) 14.sp else 14.5.sp
                         )
                     }
 
@@ -113,7 +120,7 @@ fun UnsavedChangesDialog(
                         onClick = onDiscard,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(44.dp),
                         shape = RoundedCornerShape(8.dp),
                         border = BorderStroke(1.dp, JournalActionDelete.copy(alpha = 0.6f)),
                         colors = ButtonDefaults.outlinedButtonColors(
@@ -121,10 +128,10 @@ fun UnsavedChangesDialog(
                         )
                     ) {
                         Text(
-                            text = stringResource(R.string.unsaved_discard),
-                            fontFamily = ManropeFamily,
+                            text = discardText,
+                            fontFamily = resolveJournalFont(discardText, isRtl),
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp
+                            fontSize = if (isRtl) 13.5.sp else 14.sp
                         )
                     }
 
@@ -133,14 +140,14 @@ fun UnsavedChangesDialog(
                         onClick = onContinue,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(40.dp),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.unsaved_continue),
-                            fontFamily = ManropeFamily,
+                            text = continueText,
+                            fontFamily = resolveJournalFont(continueText, isRtl),
                             color = JournalMutedInk,
-                            fontSize = 14.sp
+                            fontSize = if (isRtl) 13.5.sp else 14.sp
                         )
                     }
                 }

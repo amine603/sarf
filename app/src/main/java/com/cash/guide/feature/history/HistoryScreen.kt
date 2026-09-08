@@ -125,7 +125,7 @@ fun HistoryScreen(
                 Text(
                     text = stringResource(R.string.history_title),
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 18.5.sp else 21.sp,
+                    fontSize = if (isRtl) 16.5.sp else 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -135,7 +135,7 @@ fun HistoryScreen(
                 Text(
                     text = currentMonthYear,
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 14.5.sp else 16.sp,
+                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk.copy(alpha = 0.85f),
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -186,7 +186,7 @@ fun HistoryScreen(
                     Text(
                         text = stringResource(R.string.history_section_title),
                         fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        fontSize = if (isRtl) 16.sp else 17.5.sp,
+                        fontSize = if (isRtl) 14.sp else 14.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding),
@@ -215,31 +215,10 @@ fun HistoryScreen(
                         } else {
                             stringResource(R.string.currency_rial)
                         }
-                        val emptyItemsStr = stringResource(R.string.share_empty_items)
-                        val articlePrefixStr = stringResource(R.string.share_article_prefix)
-                        val matchingItem = calc.items.firstOrNull { it.label.contains(state.searchQuery, ignoreCase = true) }
-                        val subtitle = if (matchingItem != null) {
-                            val itemAmt = JournalLedgerManager.formatTotal(matchingItem.amountCentimes, currency)
-                            "${matchingItem.label} — $itemAmt $currencySuffix"
-                        } else {
-                            val itemLabels = calc.items
-                                .map { it.label.trim() }
-                                .filter { it.isNotBlank() }
-                            if (itemLabels.isNotEmpty()) {
-                                itemLabels.joinToString(if (isRtl) "، " else ", ")
-                            } else if (calc.items.isNotEmpty()) {
-                                calc.items.indices.map { idx ->
-                                    if (isRtl) "$articlePrefixStr \u200E${idx + 1}\u200F" else "$articlePrefixStr ${idx + 1}"
-                                }.joinToString(if (isRtl) "، " else ", ")
-                            } else {
-                                emptyItemsStr
-                            }
-                        }
 
                         NotebookCalculationRow(
                             index = idx,
                             title = calc.calculation.title,
-                            subtitle = subtitle,
                             totalAmount = totalFormatted,
                             currencySuffix = currencySuffix,
                             onClick = { onOpenCalculation(calc.calculation.id) },
@@ -258,7 +237,7 @@ fun HistoryScreen(
                         Text(
                             text = stringResource(R.string.history_no_results_title),
                             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                            fontSize = 16.5.sp,
+                            fontSize = if (isRtl) 14.5.sp else 15.sp,
                             fontWeight = FontWeight.Medium,
                             color = JournalMutedInk,
                             style = TextStyle(platformStyle = NoFontPadding),
@@ -294,7 +273,7 @@ fun HistoryScreen(
                         Text(
                             text = stringResource(R.string.home_empty_title),
                             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                            fontSize = 16.5.sp,
+                            fontSize = if (isRtl) 14.5.sp else 15.sp,
                             fontWeight = FontWeight.Medium,
                             color = JournalMutedInk,
                             style = TextStyle(platformStyle = NoFontPadding),

@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import com.cash.guide.R
 import com.cash.guide.data.db.CalculationWithItems
 import com.cash.guide.domain.JournalLedgerManager
@@ -73,6 +75,7 @@ fun CalculationSummaryCard(
     )
     val badgeTint = pastelColors[kotlin.math.abs(calc.id.hashCode()) % pastelColors.size]
     val isLatinSuffix = currencySuffix.contains(Regex("[a-zA-Z]"))
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     Surface(
         modifier = modifier
@@ -117,10 +120,11 @@ fun CalculationSummaryCard(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
+                    val displayTitle = calc.title.ifBlank { stringResource(R.string.editor_new_title) }
                     Text(
-                        text = calc.title.ifBlank { stringResource(R.string.editor_new_title) },
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 19.sp,
+                        text = displayTitle,
+                        fontFamily = resolveJournalFont(displayTitle, isRtl),
+                        fontSize = if (isArabicScript(displayTitle) || isRtl) 15.sp else 15.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         maxLines = 1,
@@ -137,25 +141,14 @@ fun CalculationSummaryCard(
                         ) {
                             Text(
                                 text = matchingItemSnippet,
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 13.sp,
+                                fontFamily = resolveJournalFont(matchingItemSnippet, isRtl),
+                                fontSize = 12.5.sp,
                                 fontWeight = FontWeight.Normal,
                                 color = JournalWritingInk
                             )
                         }
                     }
 
-                    // Row count
-                    val lineCount = calculationWithItems.items.size
-                    Text(
-                        text = stringResource(
-                            if (lineCount == 1) R.string.card_lines_singular else R.string.card_lines_plural,
-                            lineCount
-                        ),
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 13.sp,
-                        color = JournalMutedInk.copy(alpha = 0.75f)
-                    )
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -168,7 +161,7 @@ fun CalculationSummaryCard(
                     Text(
                         text = totalFormatted,
                         fontFamily = PatrickHandFamily,
-                        fontSize = 19.sp,
+                        fontSize = 15.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         style = androidx.compose.ui.text.TextStyle(platformStyle = NoFontPadding)
@@ -176,7 +169,7 @@ fun CalculationSummaryCard(
                     Text(
                         text = currencySuffix,
                         fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
-                        fontSize = if (isLatinSuffix) 14.sp else 12.sp,
+                        fontSize = if (isLatinSuffix) 13.5.sp else 12.sp,
                         fontWeight = FontWeight.Normal,
                         color = JournalMutedInk,
                         style = androidx.compose.ui.text.TextStyle(platformStyle = NoFontPadding)

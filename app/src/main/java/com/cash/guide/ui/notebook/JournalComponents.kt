@@ -424,10 +424,11 @@ fun JournalEntryRow(
                     .semantics { testTag = "tag_row_title_$rowNumber" }
             ) {
                 if (titleValue.text.isEmpty()) {
+                    val placeholderText = stringResource(R.string.editor_item_placeholder)
                     Text(
-                        text = stringResource(R.string.editor_item_placeholder),
-                        fontFamily = TajawalFamily,
-                        fontSize = 16.5.sp,
+                        text = placeholderText,
+                        fontFamily = resolveJournalFont(placeholderText, isRtl),
+                        fontSize = if (isArabicScript(placeholderText) || isRtl) 14.5.sp else 15.sp,
                         fontWeight = FontWeight.Normal,
                         color = JournalMutedInk.copy(alpha = if (isTitleActive) 0.50f else 0.40f),
                         style = TextStyle(platformStyle = NoFontPadding)
@@ -435,8 +436,8 @@ fun JournalEntryRow(
                 } else {
                     Text(
                         text = titleValue.text,
-                        fontFamily = TajawalFamily,
-                        fontSize = 16.5.sp,
+                        fontFamily = resolveJournalFont(titleValue.text, isRtl),
+                        fontSize = if (isArabicScript(titleValue.text) || isRtl) 14.5.sp else 15.sp,
                         fontWeight = FontWeight.Medium,
                         color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding),
@@ -515,7 +516,7 @@ fun JournalEntryRow(
                     Text(
                         text = "0",
                         fontFamily = PatrickHandFamily,
-                        fontSize = 18.sp,
+                        fontSize = 15.5.sp,
                         fontWeight = FontWeight.Normal,
                         color = JournalMutedInk.copy(alpha = if (isAmountActive) 0.50f else 0.45f),
                         style = TextStyle(platformStyle = NoFontPadding)
@@ -524,7 +525,7 @@ fun JournalEntryRow(
                     Text(
                         text = JournalLedgerManager.formatFrenchNumber(amountValue.text),
                         fontFamily = PatrickHandFamily,
-                        fontSize = 18.sp,
+                        fontSize = 15.5.sp,
                         fontWeight = FontWeight.Normal,
                         color = amountTextColor,
                         style = TextStyle(platformStyle = NoFontPadding)
@@ -533,7 +534,7 @@ fun JournalEntryRow(
                     Text(
                         text = amountValue.text,
                         fontFamily = PatrickHandFamily,
-                        fontSize = 18.sp,
+                        fontSize = 15.5.sp,
                         fontWeight = FontWeight.Normal,
                         color = amountTextColor,
                         style = TextStyle(platformStyle = NoFontPadding),
@@ -547,7 +548,7 @@ fun JournalEntryRow(
             Text(
                 text = currencySuffix,
                 fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
-                fontSize = if (isLatinSuffix) 15.sp else 12.5.sp,
+                fontSize = if (isLatinSuffix) 13.5.sp else 12.sp,
                 fontWeight = FontWeight.Normal,
                 color = JournalMutedInk,
                 style = TextStyle(platformStyle = NoFontPadding),
@@ -1055,8 +1056,8 @@ fun JournalDateRuleBand(
         ) {
             Text(
                 text = title,
-                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = if (isRtl) 17.5.sp else 19.sp,
+                fontFamily = resolveJournalFont(title, isRtl),
+                fontSize = if (isArabicScript(title) || isRtl) 14.5.sp else 15.sp,
                 fontWeight = FontWeight.Normal,
                 color = JournalInk,
                 style = TextStyle(platformStyle = NoFontPadding),
@@ -1664,8 +1665,8 @@ fun NotebookSectionBand(
     ) {
         Text(
             text = if (isRtl || !isCentered) title else title.uppercase(),
-            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-            fontSize = if (isRtl) 16.sp else 17.5.sp,
+            fontFamily = resolveJournalFont(title, isRtl),
+            fontSize = if (isArabicScript(title) || isRtl) 14.sp else 14.5.sp,
             fontWeight = FontWeight.Bold,
             color = JournalInk,
             style = TextStyle(platformStyle = NoFontPadding),
@@ -1786,7 +1787,7 @@ fun NotebookPrimaryActionButton(
                 Text(
                     text = "+",
                     fontFamily = PatrickHandFamily,
-                    fontSize = 20.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -1794,9 +1795,9 @@ fun NotebookPrimaryActionButton(
                 )
                 Text(
                     text = text,
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 16.sp else 17.5.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontFamily = resolveJournalFont(text, isRtl),
+                    fontSize = if (isArabicScript(text) || isRtl) 14.5.sp else 15.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
                     modifier = Modifier.offset(y = if (isRtl) 0.5.dp else 0.dp)
@@ -1882,10 +1883,11 @@ fun NotebookCalculationRow(
                     drawCircle(color = dotColor)
                 }
 
+                val displayTitle = title.ifBlank { stringResource(R.string.editor_new_title) }
                 Text(
-                    text = title.ifBlank { stringResource(R.string.editor_new_title) },
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 16.5.sp else 17.5.sp,
+                    text = displayTitle,
+                    fontFamily = resolveJournalFont(displayTitle, isRtl),
+                    fontSize = if (isArabicScript(displayTitle) || isRtl) 14.5.sp else 15.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalInk,
                     maxLines = 1,
@@ -1922,7 +1924,7 @@ fun NotebookCalculationRow(
                 Text(
                     text = totalAmount,
                     fontFamily = PatrickHandFamily,
-                    fontSize = 18.sp,
+                    fontSize = 15.5.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -1932,7 +1934,7 @@ fun NotebookCalculationRow(
                 Text(
                     text = currencySuffix,
                     fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
-                    fontSize = if (isLatinSuffix) 15.sp else 12.5.sp,
+                    fontSize = if (isLatinSuffix) 13.5.sp else 12.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -2030,7 +2032,7 @@ fun NotebookDateGroupBlock(
                     if (calculations.size > 1) {
                         val strokeW = 1.5.dp.toPx()
                         val guideX = if (isRtl) size.width - 17.75.dp.toPx() else 17.75.dp.toPx()
-                        val rowHeightPx = (JournalRuleSpacing * 2).toPx() // 58dp
+                        val rowHeightPx = JournalRuleSpacing.toPx() // 29dp (single notebook rule)
                         val dotCenterY = 25.25.dp.toPx()
                         val startY = dotCenterY
                         val endY = (calculations.size - 1) * rowHeightPx + dotCenterY
@@ -2053,40 +2055,12 @@ fun NotebookDateGroupBlock(
                 } else {
                     stringResource(R.string.currency_rial)
                 }
-                val emptyItemsStr = stringResource(R.string.share_empty_items)
-                val articlePrefixStr = stringResource(R.string.share_article_prefix)
-
-                val subtitle = remember(calc, searchQuery, emptyItemsStr, articlePrefixStr) {
-                    val matchingItem = if (searchQuery.isNotBlank()) {
-                        calc.items.firstOrNull { it.label.contains(searchQuery, ignoreCase = true) }
-                    } else null
-
-                    if (matchingItem != null) {
-                        val itemAmt = JournalLedgerManager.formatTotal(matchingItem.amountCentimes, currency)
-                        "${matchingItem.label} — $itemAmt $currencySuffix"
-                    } else {
-                        val itemLabels = calc.items
-                            .map { it.label.trim() }
-                            .filter { it.isNotBlank() }
-
-                        if (itemLabels.isNotEmpty()) {
-                            itemLabels.joinToString(if (isRtl) "، " else ", ")
-                        } else if (calc.items.isNotEmpty()) {
-                            calc.items.indices.map { idx ->
-                                if (isRtl) "$articlePrefixStr \u200E${idx + 1}\u200F" else "$articlePrefixStr ${idx + 1}"
-                            }.joinToString(if (isRtl) "، " else ", ")
-                        } else {
-                            emptyItemsStr
-                        }
-                    }
-                }
 
                 NotebookCalculationRow(
                     index = idx,
                     title = calc.calculation.title,
                     totalAmount = totalFormatted,
                     currencySuffix = currencySuffix,
-                    subtitle = subtitle,
                     isPinned = false,
                     dotColorOverride = timelineStyle.dotColor,
                     onClick = { onOpenCalculation(calc.calculation.id) },
@@ -2256,8 +2230,8 @@ fun JournalTotalResultBand(
                 ) {
                     Text(
                         text = totalLabel,
-                        fontFamily = if (isArabic) ArabicFamily else PatrickHandFamily,
-                        fontSize = if (isArabic) 18.sp else 16.5.sp,
+                        fontFamily = resolveJournalFont(totalLabel, isArabic),
+                        fontSize = if (isArabic) 15.sp else 15.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding)
@@ -2270,7 +2244,7 @@ fun JournalTotalResultBand(
                         Text(
                             text = amount,
                             fontFamily = PatrickHandFamily,
-                            fontSize = 22.sp,
+                            fontSize = 18.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = totalColor,
                             style = TextStyle(platformStyle = NoFontPadding)
@@ -2279,7 +2253,7 @@ fun JournalTotalResultBand(
                         Text(
                             text = suffix,
                             fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
-                            fontSize = if (isLatinSuffix) 15.sp else 13.5.sp,
+                            fontSize = if (isLatinSuffix) 13.5.sp else 12.sp,
                             fontWeight = FontWeight.Normal,
                             color = JournalMutedInk,
                             style = TextStyle(platformStyle = NoFontPadding)
@@ -3360,7 +3334,7 @@ fun JournalCalculatorPopup(
                                 text = formattedExpr,
                                 style = TextStyle(
                                     fontFamily = JournalHandFamily,
-                                    fontSize = 22.sp,
+                                    fontSize = 18.sp,
                                     color = JournalInk
                                 ),
                                 textAlign = TextAlign.Center,
@@ -3372,11 +3346,12 @@ fun JournalCalculatorPopup(
                         }
 
                         if (hasError) {
+                            val errorText = stringResource(R.string.calculator_error)
                             Text(
-                                text = "Opération non valide",
+                                text = errorText,
                                 style = TextStyle(
-                                    fontFamily = JournalHandFamily,
-                                    fontSize = 20.sp,
+                                    fontFamily = resolveJournalFont(errorText),
+                                    fontSize = 15.sp,
                                     color = ColorCoral
                                 ),
                                 textAlign = TextAlign.Center,
@@ -3389,7 +3364,7 @@ fun JournalCalculatorPopup(
                                 text = result,
                                 style = TextStyle(
                                     fontFamily = JournalHandFamily,
-                                    fontSize = 30.sp,
+                                    fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = JournalInk
                                 ),
@@ -3403,7 +3378,7 @@ fun JournalCalculatorPopup(
                                 text = "0",
                                 style = TextStyle(
                                     fontFamily = JournalHandFamily,
-                                    fontSize = 30.sp,
+                                    fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = JournalMutedInk.copy(alpha = 0.5f)
                                 ),

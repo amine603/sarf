@@ -108,10 +108,11 @@ fun ExportOptionsBottomSheet(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Center
                 ) {
+                    val resolvedTitle = title.ifBlank { stringResource(R.string.export_options_title) }
                     Text(
-                        text = title.ifBlank { stringResource(R.string.export_options_title) },
-                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        fontSize = if (isRtl) 19.sp else 21.sp,
+                        text = resolvedTitle,
+                        fontFamily = resolveJournalFont(resolvedTitle, isRtl),
+                        fontSize = if (isArabicScript(resolvedTitle) || isRtl) 16.sp else 16.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         maxLines = 1,
@@ -229,8 +230,8 @@ private fun ExportSheetRuledItem(
 
         Text(
             text = label,
-            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-            fontSize = if (isRtl) 17.5.sp else 19.sp,
+            fontFamily = resolveJournalFont(label, isRtl),
+            fontSize = if (isRtl) 14.5.sp else 15.sp,
             fontWeight = FontWeight.Normal,
             color = JournalInk,
             style = TextStyle(platformStyle = NoFontPadding),

@@ -44,6 +44,8 @@ import com.cash.guide.ui.notebook.JournalPaper
 import com.cash.guide.ui.notebook.JournalRule
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
+import com.cash.guide.ui.notebook.isArabicScript
+import com.cash.guide.ui.notebook.resolveJournalFont
 import kotlinx.coroutines.launch
 
 @Composable
@@ -64,10 +66,11 @@ fun AssignToGroupDialog(
         onDismissRequest = onDismiss,
         containerColor = JournalPaper,
         title = {
+            val titleText = stringResource(R.string.group_assign_dialog_title)
             Text(
-                text = stringResource(R.string.group_assign_dialog_title),
-                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                fontSize = 19.sp,
+                text = titleText,
+                fontFamily = resolveJournalFont(titleText, isRtl),
+                fontSize = if (isRtl) 16.5.sp else 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = JournalInk
             )
@@ -83,6 +86,7 @@ fun AssignToGroupDialog(
                 ) {
                     // Option 1: None (ungrouped)
                     item {
+                        val noneText = stringResource(R.string.group_none)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -112,9 +116,9 @@ fun AssignToGroupDialog(
                                 )
                             }
                             Text(
-                                text = stringResource(R.string.group_none),
-                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                fontSize = 16.sp,
+                                text = noneText,
+                                fontFamily = resolveJournalFont(noneText, isRtl),
+                                fontSize = if (isRtl) 14.5.sp else 15.sp,
                                 color = if (currentGroupId == null) JournalInk else JournalMutedInk,
                                 fontWeight = if (currentGroupId == null) FontWeight.Bold else FontWeight.Normal
                             )
@@ -156,8 +160,8 @@ fun AssignToGroupDialog(
                             }
                             Text(
                                 text = group.name,
-                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                fontSize = 16.sp,
+                                fontFamily = resolveJournalFont(group.name, isRtl),
+                                fontSize = if (isArabicScript(group.name) || isRtl) 14.5.sp else 15.sp,
                                 color = JournalInk,
                                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
                                 modifier = Modifier.weight(1f)
@@ -177,11 +181,12 @@ fun AssignToGroupDialog(
         },
         confirmButton = {},
         dismissButton = {
+            val cancelText = stringResource(R.string.group_dialog_cancel)
             TextButton(onClick = onDismiss) {
                 Text(
-                    text = stringResource(R.string.group_dialog_cancel),
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = 15.sp,
+                    text = cancelText,
+                    fontFamily = resolveJournalFont(cancelText, isRtl),
+                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                     color = JournalMutedInk
                 )
             }

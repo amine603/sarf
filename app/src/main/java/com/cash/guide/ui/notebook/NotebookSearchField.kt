@@ -39,6 +39,9 @@ fun NotebookSearchField(
     onClickWhenReadOnly: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val layoutDirection = androidx.compose.ui.platform.LocalLayoutDirection.current
+    val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -76,8 +79,8 @@ fun NotebookSearchField(
                 if (query.isEmpty()) {
                     Text(
                         text = placeholder,
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 17.sp,
+                        fontFamily = resolveJournalFont(placeholder, isRtl),
+                        fontSize = if (isRtl) 14.5.sp else 15.sp,
                         color = JournalMutedInk.copy(alpha = 0.7f)
                     )
                 }
@@ -88,8 +91,8 @@ fun NotebookSearchField(
                         onValueChange = onQueryChange,
                         modifier = Modifier.fillMaxWidth(),
                         textStyle = TextStyle(
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 18.sp,
+                            fontFamily = resolveJournalFont(query, isRtl),
+                            fontSize = if (isArabicScript(query) || isRtl) 15.sp else 15.5.sp,
                             color = JournalInk
                         ),
                         singleLine = true,

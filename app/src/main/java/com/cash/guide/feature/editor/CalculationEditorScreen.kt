@@ -100,6 +100,8 @@ import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.ExportOptionsBottomSheet
 import com.cash.guide.ui.notebook.UnsavedChangesDialog
+import com.cash.guide.ui.notebook.resolveJournalFont
+import com.cash.guide.ui.notebook.isArabicScript
 import kotlinx.coroutines.launch
 
 @Composable
@@ -163,10 +165,11 @@ fun CalculationEditorScreen(
                         .background(JournalActionDelete.copy(alpha = 0.15f))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
+                    val errorText = stringResource(R.string.editor_title_required)
                     Text(
-                        text = stringResource(R.string.editor_title_required),
-                        fontFamily = ManropeFamily,
-                        fontSize = 13.sp,
+                        text = errorText,
+                        fontFamily = resolveJournalFont(errorText, isRtl),
+                        fontSize = if (isRtl) 13.sp else 13.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = JournalActionDelete
                     )
@@ -358,6 +361,8 @@ private fun EditorTopBar(
     }
 
     val isArabicKeyboard = keyboardLanguage == JournalKeyboardLanguage.ARABIC
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
 
     Surface(
         modifier = Modifier
@@ -432,10 +437,11 @@ private fun EditorTopBar(
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (titleValue.text.isEmpty()) {
+                                    val placeholderText = stringResource(R.string.editor_title_placeholder)
                                     Text(
-                                        text = stringResource(R.string.editor_title_placeholder),
-                                        fontFamily = TajawalFamily,
-                                        fontSize = 17.sp,
+                                        text = placeholderText,
+                                        fontFamily = resolveJournalFont(placeholderText, isRtl),
+                                        fontSize = if (isArabicScript(placeholderText) || isRtl) 15.sp else 15.5.sp,
                                         color = JournalMutedInk.copy(alpha = 0.6f),
                                         textAlign = TextAlign.Center,
                                         maxLines = 1,
@@ -445,9 +451,9 @@ private fun EditorTopBar(
                                 } else {
                                     Text(
                                         text = titleValue.text,
-                                        fontFamily = TajawalFamily,
-                                        fontSize = 17.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = resolveJournalFont(titleValue.text, isRtl),
+                                        fontSize = if (isArabicScript(titleValue.text) || isRtl) 15.5.sp else 16.sp,
+                                        fontWeight = FontWeight.Medium,
                                         color = JournalInk,
                                         textAlign = TextAlign.Center,
                                         maxLines = 1,
@@ -564,10 +570,11 @@ private fun EditorTopBar(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        val currencyText = if (currency == MoneyUnit.DIRHAM) stringResource(R.string.currency_dirham) else stringResource(R.string.currency_rial)
                         Text(
-                            text = if (currency == MoneyUnit.DIRHAM) stringResource(R.string.currency_dirham) else stringResource(R.string.currency_rial),
-                            fontFamily = TajawalFamily,
-                            fontSize = 13.5.sp,
+                            text = currencyText,
+                            fontFamily = resolveJournalFont(currencyText, isRtl),
+                            fontSize = if (isRtl) 13.sp else 13.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = JournalInk,
                             style = TextStyle(platformStyle = NoFontPadding)
@@ -596,10 +603,11 @@ private fun EditorTopBar(
                         tint = JournalInk,
                         size = 18.dp
                     )
+                    val calcText = stringResource(R.string.calculator_title)
                     Text(
-                        text = stringResource(R.string.calculator_title),
-                        fontFamily = TajawalFamily,
-                        fontSize = 13.5.sp,
+                        text = calcText,
+                        fontFamily = resolveJournalFont(calcText, isRtl),
+                        fontSize = if (isRtl) 13.sp else 13.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding)
@@ -625,10 +633,11 @@ private fun EditorTopBar(
                         },
                     contentAlignment = Alignment.Center
                 ) {
+                    val saveText = stringResource(R.string.editor_save)
                     Text(
-                        text = stringResource(R.string.editor_save),
-                        fontFamily = TajawalFamily,
-                        fontSize = 15.sp,
+                        text = saveText,
+                        fontFamily = resolveJournalFont(saveText, isRtl),
+                        fontSize = if (isRtl) 14.5.sp else 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding)

@@ -68,7 +68,7 @@ fun RestoreBackupDialog(
     }
 
     val titleFont = if (isRtl) TajawalFamily else PatrickHandFamily
-    val bodyFont = if (isRtl) TajawalFamily else ManropeFamily
+    val bodyFont = if (isRtl) TajawalFamily else PatrickHandFamily
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -99,7 +99,7 @@ fun RestoreBackupDialog(
                     Text(
                         text = stringResource(R.string.backup_dialog_restore_title),
                         fontFamily = titleFont,
-                        fontSize = if (isRtl) 20.sp else 22.sp,
+                        fontSize = if (isRtl) 17.sp else 17.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk
                     )
@@ -141,7 +141,7 @@ fun RestoreBackupDialog(
                         Text(
                             text = stringResource(R.string.backup_dialog_option_merge),
                             fontFamily = titleFont,
-                            fontSize = if (isRtl) 16.5.sp else 17.5.sp,
+                            fontSize = if (isRtl) 15.sp else 15.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = JournalInk
                         )
@@ -168,7 +168,7 @@ fun RestoreBackupDialog(
                         Text(
                             text = stringResource(R.string.backup_dialog_option_replace),
                             fontFamily = titleFont,
-                            fontSize = if (isRtl) 16.5.sp else 17.5.sp,
+                            fontSize = if (isRtl) 15.sp else 15.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = JournalActionDelete
                         )

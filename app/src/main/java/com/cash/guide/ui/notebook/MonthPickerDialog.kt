@@ -107,7 +107,7 @@ fun MonthPickerDialog(
                     Text(
                         text = "$selectedYear",
                         fontFamily = PatrickHandFamily,
-                        fontSize = 22.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk
                     )
@@ -196,7 +196,7 @@ fun MonthPickerDialog(
                     Text(
                         text = stringResource(R.string.calculator_close),
                         fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        fontSize = 16.sp,
+                        fontSize = if (isRtl) 14.sp else 14.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = JournalMutedInk
                     )

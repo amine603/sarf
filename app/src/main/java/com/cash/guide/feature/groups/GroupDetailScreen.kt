@@ -81,6 +81,8 @@ import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.NotebookMetrics
 import com.cash.guide.ui.notebook.journalBaselineOnRule
+import com.cash.guide.ui.notebook.resolveJournalFont
+import com.cash.guide.ui.notebook.isArabicScript
 
 private val ActionSheetRuleSpacing: Dp = 42.dp
 
@@ -157,10 +159,11 @@ fun GroupDetailScreen(
                 }
 
                 // Title with highlighter wash
+                val groupTitle = group?.name ?: ""
                 Text(
-                    text = group?.name ?: "",
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 18.sp else 20.sp,
+                    text = groupTitle,
+                    fontFamily = resolveJournalFont(groupTitle, isRtl),
+                    fontSize = if (isArabicScript(groupTitle) || isRtl) 16.5.sp else 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     maxLines = 1,
@@ -188,7 +191,7 @@ fun GroupDetailScreen(
                 Text(
                     text = totalFormatted,
                     fontFamily = PatrickHandFamily,
-                    fontSize = if (isRtl) 17.5.sp else 19.sp,
+                    fontSize = 15.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -198,7 +201,7 @@ fun GroupDetailScreen(
                 Text(
                     text = defaultCurrencySuffix,
                     fontFamily = if (defaultCurrencySuffix.contains(Regex("[a-zA-Z]"))) PatrickHandFamily else TajawalFamily,
-                    fontSize = if (defaultCurrencySuffix.contains(Regex("[a-zA-Z]"))) 14.sp else 12.5.sp,
+                    fontSize = if (defaultCurrencySuffix.contains(Regex("[a-zA-Z]"))) 13.5.sp else 12.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -232,10 +235,11 @@ fun GroupDetailScreen(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.Center
             ) {
+                val emptyText = stringResource(R.string.group_detail_empty)
                 Text(
-                    text = stringResource(R.string.group_detail_empty),
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 14.5.sp else 16.sp,
+                    text = emptyText,
+                    fontFamily = resolveJournalFont(emptyText, isRtl),
+                    fontSize = if (isRtl) 14.sp else 14.5.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk.copy(alpha = 0.85f),
                     style = TextStyle(platformStyle = NoFontPadding),

@@ -167,13 +167,13 @@ fun HomeScreen(
                     Text(
                         text = greetingAnnotated,
                         fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        fontSize = if (isRtl) 17.5.sp else 19.5.sp,
+                        fontSize = if (isRtl) 15.5.sp else 16.5.sp,
                         style = TextStyle(platformStyle = NoFontPadding),
                         modifier = Modifier.journalBaselineOnRule()
                     )
                     Text(
                         text = "😊",
-                        fontSize = 15.sp,
+                        fontSize = 14.sp,
                         modifier = Modifier.offset(y = (-3).dp)
                     )
                 }
@@ -181,7 +181,7 @@ fun HomeScreen(
                 Text(
                     text = currentMonthYear,
                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 14.5.sp else 16.sp,
+                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                     fontWeight = FontWeight.Normal,
                     color = JournalMutedInk.copy(alpha = 0.85f),
                     style = TextStyle(platformStyle = NoFontPadding),
@@ -265,7 +265,7 @@ fun HomeScreen(
                                 Text(
                                     text = stringResource(R.string.home_see_all),
                                     fontFamily = TajawalFamily,
-                                    fontSize = 15.sp,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = JournalWritingInk.copy(alpha = 0.85f),
                                     style = TextStyle(platformStyle = NoFontPadding),
@@ -288,7 +288,7 @@ fun HomeScreen(
                                 Text(
                                     text = stringResource(R.string.home_see_all),
                                     fontFamily = PatrickHandFamily,
-                                    fontSize = 16.5.sp,
+                                    fontSize = 14.5.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = JournalWritingInk.copy(alpha = 0.85f),
                                     style = TextStyle(platformStyle = NoFontPadding),
@@ -327,7 +327,7 @@ fun HomeScreen(
                             stringResource(R.string.home_empty_title)
                         },
                         fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        fontSize = 16.5.sp,
+                        fontSize = if (isRtl) 14.5.sp else 15.sp,
                         fontWeight = FontWeight.Medium,
                         color = JournalMutedInk,
                         style = TextStyle(platformStyle = NoFontPadding),
