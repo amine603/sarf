@@ -94,6 +94,8 @@ import com.cash.guide.ui.notebook.MonthPickerDialog
 import com.cash.guide.ui.notebook.NewCalculationSetupSheet
 import java.text.SimpleDateFormat
 import java.util.Date
+import com.cash.guide.data.TemplateRepository
+import com.cash.guide.data.db.CalculationWithItems
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -106,7 +108,7 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
 fun HomeScreen(
     viewModel: HomeViewModel,
     onNewCalculation: () -> Unit = {},
-    onNewCalculationWithParams: ((title: String, calcType: String, currency: MoneyUnit) -> Unit)? = null,
+    onNewCalculationWithParams: ((title: String, calcType: String, currency: MoneyUnit, templateId: String?) -> Unit)? = null,
     onOpenCalculation: (String) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenMonthCalculations: (year: Int, month: Int) -> Unit = { _, _ -> },
@@ -573,6 +575,26 @@ fun HomeScreen(
                     }
                     viewModel.selectCalculationForAction(null)
                 },
+                onSaveAsTemplate = {
+                    coroutineScope.launch {
+                        val nonBlankItems = actionCalc.items
+                            .sortedBy { it.position }
+                            .map { it.label.trim() }
+                            .filter { it.isNotBlank() }
+                        TemplateRepository.getInstance(context).saveCustomTemplate(
+                            title = actionCalc.calculation.title,
+                            calcType = actionCalc.calculation.calcType,
+                            currency = actionCalc.calculation.currency,
+                            itemLabels = nonBlankItems
+                        )
+                        android.widget.Toast.makeText(
+                            context,
+                            context.getString(R.string.template_saved_success),
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    viewModel.selectCalculationForAction(null)
+                },
                 onShareImage = {
                     val calcToShare = actionCalc
                     coroutineScope.launch {
@@ -685,9 +707,9 @@ fun HomeScreen(
         if (showNewCalcSetupSheet && onNewCalculationWithParams != null) {
             NewCalculationSetupSheet(
                 onDismiss = { showNewCalcSetupSheet = false },
-                onConfirm = { title, calcType, currency ->
+                onConfirm = { title, calcType, currency, templateId ->
                     showNewCalcSetupSheet = false
-                    onNewCalculationWithParams(title, calcType, currency)
+                    onNewCalculationWithParams(title, calcType, currency, templateId)
                 }
             )
         }

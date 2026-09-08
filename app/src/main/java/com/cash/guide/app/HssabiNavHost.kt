@@ -51,12 +51,13 @@ fun HssabiNavHost(
             HomeScreen(
                 viewModel = homeViewModel,
                 onNewCalculation = { navController.navigate(AppDestination.NewCalculation.route) },
-                onNewCalculationWithParams = { title, calcType, currency ->
+                onNewCalculationWithParams = { title, calcType, currency, templateId ->
                     navController.navigate(
                         AppDestination.NewCalculation.createRoute(
                             type = calcType,
                             currency = currency.name,
-                            title = title
+                            title = title,
+                            templateId = templateId
                         )
                     )
                 },
@@ -147,6 +148,11 @@ fun HssabiNavHost(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = ""
+                },
+                navArgument("templateId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
@@ -155,10 +161,11 @@ fun HssabiNavHost(
             val initialCurrency = backStackEntry.arguments?.getString("currency") ?: "DIRHAM"
             val rawTitle = backStackEntry.arguments?.getString("title") ?: ""
             val initialTitle = runCatching { java.net.URLDecoder.decode(rawTitle, "UTF-8") }.getOrDefault(rawTitle)
+            val templateId = backStackEntry.arguments?.getString("templateId")
 
             val editorViewModel: CalculationEditorViewModel = viewModel(
                 viewModelStoreOwner = backStackEntry,
-                key = "new_calculation_${initialGroupId ?: "root"}_${initialType}_$initialCurrency"
+                key = "new_calculation_${initialGroupId ?: "root"}_${initialType}_${initialCurrency}_${templateId ?: "none"}"
             ) {
                 editorViewModelFactory()
             }
@@ -169,7 +176,9 @@ fun HssabiNavHost(
                 initialType = initialType,
                 initialCurrency = initialCurrency,
                 initialTitle = initialTitle,
-                onNavigateBack = { navController.popBackStack() }
+                templateId = templateId,
+                onNavigateBack = { navController.popBackStack() },
+                onOpenCalculation = { id -> navController.navigate("calculation/$id") }
             )
         }
 
@@ -187,7 +196,8 @@ fun HssabiNavHost(
             CalculationEditorScreen(
                 viewModel = editorViewModel,
                 calculationId = calcId,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onOpenCalculation = { id -> navController.navigate("calculation/$id") }
             )
         }
 

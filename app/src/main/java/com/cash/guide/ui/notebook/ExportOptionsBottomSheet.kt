@@ -48,6 +48,8 @@ private val ExportSheetRuleSpacing: Dp = 44.dp
 @Composable
 fun ExportOptionsBottomSheet(
     title: String,
+    onSaveAsTemplate: (() -> Unit)? = null,
+    onDuplicate: (() -> Unit)? = null,
     onExportPdf: () -> Unit,
     onExportExcel: () -> Unit,
     onShareImage: (() -> Unit)? = null,
@@ -122,6 +124,32 @@ fun ExportOptionsBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .journalBaselineOnRule(lineHeight = ExportSheetRuleSpacing)
+                    )
+                }
+
+                // Row: Enregistrer comme modèle
+                if (onSaveAsTemplate != null) {
+                    ExportSheetRuledItem(
+                        label = stringResource(R.string.action_save_as_template),
+                        symbol = HisabiSymbol.Page,
+                        badgeColor = HighlighterPink.copy(alpha = 0.50f),
+                        onClick = {
+                            onDismiss()
+                            onSaveAsTemplate()
+                        }
+                    )
+                }
+
+                // Row: Dupliquer
+                if (onDuplicate != null) {
+                    ExportSheetRuledItem(
+                        label = stringResource(R.string.action_duplicate_editor),
+                        symbol = HisabiSymbol.Copy,
+                        badgeColor = HighlighterYellow.copy(alpha = 0.55f),
+                        onClick = {
+                            onDismiss()
+                            onDuplicate()
+                        }
                     )
                 }
 

@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.cash.guide.data.TemplateRepository
 import com.cash.guide.domain.CalculationImageShareHelper
 import com.cash.guide.domain.export.ExcelExportHelper
 import com.cash.guide.domain.export.FileExportManager
@@ -301,6 +302,26 @@ fun HistoryScreen(
                 onDuplicate = {
                     viewModel.duplicateCalculation(actionCalc) { newId ->
                         onOpenCalculation(newId)
+                    }
+                    viewModel.selectCalculationForAction(null)
+                },
+                onSaveAsTemplate = {
+                    coroutineScope.launch {
+                        val nonBlankItems = actionCalc.items
+                            .sortedBy { it.position }
+                            .map { it.label.trim() }
+                            .filter { it.isNotBlank() }
+                        TemplateRepository.getInstance(context).saveCustomTemplate(
+                            title = actionCalc.calculation.title,
+                            calcType = actionCalc.calculation.calcType,
+                            currency = actionCalc.calculation.currency,
+                            itemLabels = nonBlankItems
+                        )
+                        android.widget.Toast.makeText(
+                            context,
+                            context.getString(R.string.template_saved_success),
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
                     }
                     viewModel.selectCalculationForAction(null)
                 },

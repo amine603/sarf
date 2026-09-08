@@ -228,4 +228,12 @@
     <string name="export_col_calc_title">سمية الحساب</string>
     <string name="export_col_calc_total">المجموع د الحساب</string>
     <string name="export_col_note">ملاحظة</string>
+    <string name="action_save_as_template">تسجيل كنموذج</string>
+    <string name="template_saved_success">تم حفظ النموذج بنجاح !</string>
+    <string name="template_deleted_success">تم حذف النموذج</string>
+    <string name="templates_header_custom">النماذج ديالي :</string>
+    <string name="templates_header_builtin">نماذج واجدين :</string>
+    <string name="template_items_count">%d عناصر</string>
+    <string name="action_duplicate_editor">دوبليكي هذا الحساب</string>
+    <string name="editor_options_title">خيارات الحساب</string>
 </resources>

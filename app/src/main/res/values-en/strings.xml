@@ -228,4 +228,12 @@
     <string name="export_col_calc_title">Calculation Title</string>
     <string name="export_col_calc_total">Calculation Total</string>
     <string name="export_col_note">Note</string>
+    <string name="action_save_as_template">Save as template</string>
+    <string name="template_saved_success">Template saved successfully!</string>
+    <string name="template_deleted_success">Template deleted</string>
+    <string name="templates_header_custom">My templates:</string>
+    <string name="templates_header_builtin">Ready templates:</string>
+    <string name="template_items_count">%d items</string>
+    <string name="action_duplicate_editor">Duplicate this calculation</string>
+    <string name="editor_options_title">Calculation Options</string>
 </resources>

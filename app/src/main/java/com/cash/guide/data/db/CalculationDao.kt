@@ -106,9 +106,12 @@ interface CalculationDao {
         now: Long
     ): CalculationWithItems? {
         val source = getCalculation(sourceId) ?: return null
+        val sourceTitle = source.calculation.title
+        val hasArabic = sourceTitle.any { it in '\u0600'..'\u06FF' }
+        val copySuffix = if (hasArabic) " (نسخة)" else " (copie)"
         val duplicatedCalc = source.calculation.copy(
             id = newId,
-            title = if (source.calculation.title.isNotBlank()) "${source.calculation.title} (copie)" else "",
+            title = if (sourceTitle.isNotBlank()) "$sourceTitle$copySuffix" else "",
             createdAtEpochMs = now,
             updatedAtEpochMs = now,
             status = "DRAFT",

@@ -252,4 +252,12 @@
     <string name="new_calc_templates_label">قوالب جاهزة</string>
     <string name="new_calc_templates_soon">قريباً</string>
     <string name="new_calc_start_action">ابدأ الحساب</string>
+    <string name="action_save_as_template">حفظ كنموذج</string>
+    <string name="template_saved_success">تم حفظ النموذج بنجاح !</string>
+    <string name="template_deleted_success">تم حذف النموذج</string>
+    <string name="templates_header_custom">نماذجي الخاصة :</string>
+    <string name="templates_header_builtin">نماذج جاهزة :</string>
+    <string name="template_items_count">%d عناصر</string>
+    <string name="action_duplicate_editor">نسخ هذا الحساب</string>
+    <string name="editor_options_title">خيارات الحساب</string>
 </resources>

@@ -114,7 +114,9 @@ fun CalculationEditorScreen(
     initialType: String? = null,
     initialCurrency: String? = null,
     initialTitle: String? = null,
-    onNavigateBack: () -> Unit
+    templateId: String? = null,
+    onNavigateBack: () -> Unit,
+    onOpenCalculation: ((String) -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
@@ -124,14 +126,15 @@ fun CalculationEditorScreen(
     val isRtl = layoutDirection == LayoutDirection.Rtl
     var showExportSheet by remember { mutableStateOf(false) }
 
-    LaunchedEffect(calculationId, initialGroupId, initialType, initialCurrency, initialTitle) {
+    LaunchedEffect(calculationId, initialGroupId, initialType, initialCurrency, initialTitle, templateId) {
         val currencyEnum = initialCurrency?.let { runCatching { MoneyUnit.valueOf(it) }.getOrNull() }
         viewModel.loadCalculation(
             id = calculationId,
             initialGroupId = initialGroupId,
             initialType = initialType,
             initialCurrency = currencyEnum,
-            initialTitle = initialTitle
+            initialTitle = initialTitle,
+            templateId = templateId
         )
     }
 
@@ -323,7 +326,13 @@ fun CalculationEditorScreen(
         // Export Options Bottom Sheet
         if (showExportSheet) {
             ExportOptionsBottomSheet(
-                title = state.title.text.ifBlank { stringResource(R.string.editor_new_title) },
+                title = state.title.text.ifBlank { stringResource(R.string.editor_options_title) },
+                onSaveAsTemplate = { viewModel.saveAsTemplate(context) },
+                onDuplicate = {
+                    viewModel.duplicateCurrentCalculation { newId ->
+                        onOpenCalculation?.invoke(newId)
+                    }
+                },
                 onExportPdf = { viewModel.exportAsPdf(context, isRtl) },
                 onExportExcel = { viewModel.exportAsExcel(context) },
                 onShareImage = { viewModel.shareAsImage(context, isRtl) },
@@ -549,7 +558,7 @@ private fun EditorTopBar(
                     )
                 }
 
-                // Share Button (42dp touch target)
+                // More Options Button (42dp touch target)
                 Box(
                     modifier = Modifier
                         .size(42.dp)
@@ -558,8 +567,8 @@ private fun EditorTopBar(
                     contentAlignment = Alignment.Center
                 ) {
                     HisabiSketchIcon(
-                        symbol = HisabiSymbol.Share,
-                        contentDescription = stringResource(R.string.action_share_image),
+                        symbol = HisabiSymbol.More,
+                        contentDescription = stringResource(R.string.cd_more_options),
                         tint = JournalInk,
                         size = 20.dp
                     )

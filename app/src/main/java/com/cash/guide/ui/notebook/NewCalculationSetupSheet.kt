@@ -39,10 +39,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.cash.guide.data.TemplateRepository
+import com.cash.guide.data.CalculationTemplate
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -92,18 +97,24 @@ import com.cash.guide.domain.ShiftAction
 @Composable
 fun NewCalculationSetupSheet(
     defaultCurrency: MoneyUnit = MoneyUnit.DIRHAM,
-    onConfirm: (title: String, calcType: String, currency: MoneyUnit) -> Unit,
+    templateRepository: TemplateRepository? = null,
+    onConfirm: (title: String, calcType: String, currency: MoneyUnit, templateId: String?) -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
+    val coroutineScope = rememberCoroutineScope()
+    val repo = templateRepository ?: remember { TemplateRepository.getInstance(context) }
+    val customTemplates by repo.customTemplates.collectAsState(emptyList())
+    val builtInTemplates = remember(isRtl) { repo.getBuiltInTemplates(isRtl) }
 
     var titleValue by remember { mutableStateOf(TextFieldValue("")) }
     var selectedType by remember { mutableStateOf("PERSONNEL") } // "PERSONNEL" or "CREDIT"
     var selectedCurrency by remember { mutableStateOf(defaultCurrency) }
     var selectedModelName by remember { mutableStateOf<String?>(null) }
+    var selectedTemplateId by remember { mutableStateOf<String?>(null) }
     var showModelDropdown by remember { mutableStateOf(false) }
 
     var keyboardMode by remember { mutableStateOf(JournalKeyboardMode.NONE) }
@@ -115,7 +126,7 @@ fun NewCalculationSetupSheet(
     val graphemeSegmenter = remember { AndroidIcuGraphemeSegmenter() }
 
     fun submit() {
-        onConfirm(titleValue.text.trim(), selectedType, selectedCurrency)
+        onConfirm(titleValue.text.trim(), selectedType, selectedCurrency, selectedTemplateId)
     }
 
     Dialog(
@@ -848,60 +859,170 @@ fun NewCalculationSetupSheet(
                                                 },
                                                 onClick = {
                                                     selectedModelName = null
+                                                    selectedTemplateId = null
                                                     titleValue = TextFieldValue("")
                                                     showModelDropdown = false
                                                 }
                                             )
 
-                                            val sampleTemplates = if (isRtl) {
-                                                listOf(
-                                                    "🛒 سلعة وتجارة",
-                                                    "🏗️ ورشة وبناء",
-                                                    "☕ مصاريف يومية",
-                                                    "🚗 تنقل وسفر",
-                                                    "🏠 كراء ومنزل"
+                                            // Section: Custom Templates (if any)
+                                            if (customTemplates.isNotEmpty()) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(1.dp)
+                                                        .background(JournalRule.copy(alpha = 0.35f))
                                                 )
-                                            } else {
-                                                listOf(
-                                                    "🛒 Commerce & Marchandise",
-                                                    "🏗️ Chantier & Travaux",
-                                                    "☕ Dépenses quotidiennes",
-                                                    "🚗 Transport & Carburant",
-                                                    "🏠 Loyer & Maison"
+                                                Box(
+                                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                                ) {
+                                                    Text(
+                                                        text = stringResource(R.string.templates_header_custom),
+                                                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                                        fontSize = 11.5.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = JournalMutedInk,
+                                                        style = TextStyle(platformStyle = NoFontPadding)
+                                                    )
+                                                }
+                                                customTemplates.forEach { tpl ->
+                                                    val isSelected = selectedTemplateId == tpl.id || selectedModelName == tpl.title
+                                                    DropdownMenuItem(
+                                                        text = {
+                                                            Row(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                verticalAlignment = Alignment.CenterVertically,
+                                                                horizontalArrangement = Arrangement.SpaceBetween
+                                                            ) {
+                                                                Row(
+                                                                    verticalAlignment = Alignment.CenterVertically,
+                                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                                ) {
+                                                                    if (isSelected) {
+                                                                        Text(
+                                                                            text = "✓",
+                                                                            fontSize = 12.sp,
+                                                                            fontWeight = FontWeight.Bold,
+                                                                            color = JournalInk
+                                                                        )
+                                                                    }
+                                                                    Text(
+                                                                        text = tpl.title,
+                                                                        fontFamily = resolveJournalFont(tpl.title, isRtl),
+                                                                        fontSize = 13.sp,
+                                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                                        color = JournalInk
+                                                                    )
+                                                                }
+                                                                Row(
+                                                                    verticalAlignment = Alignment.CenterVertically,
+                                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                                ) {
+                                                                    Text(
+                                                                        text = stringResource(R.string.template_items_count, tpl.itemLabels.size),
+                                                                        fontSize = 10.5.sp,
+                                                                        color = JournalMutedInk
+                                                                    )
+                                                                    Box(
+                                                                        modifier = Modifier
+                                                                            .size(20.dp)
+                                                                            .clip(CircleShape)
+                                                                            .clickable {
+                                                                                coroutineScope.launch {
+                                                                                    repo.deleteCustomTemplate(tpl.id)
+                                                                                }
+                                                                            },
+                                                                        contentAlignment = Alignment.Center
+                                                                    ) {
+                                                                        Text(
+                                                                            text = "✕",
+                                                                            fontSize = 10.sp,
+                                                                            color = JournalActionDelete.copy(alpha = 0.75f)
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        onClick = {
+                                                            selectedTemplateId = tpl.id
+                                                            selectedModelName = tpl.title
+                                                            titleValue = TextFieldValue(
+                                                                text = tpl.title,
+                                                                selection = TextRange(tpl.title.length)
+                                                            )
+                                                            selectedType = tpl.calcType
+                                                            selectedCurrency = runCatching { MoneyUnit.valueOf(tpl.currency) }.getOrDefault(selectedCurrency)
+                                                            showModelDropdown = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+
+                                            // Section: Built-in Templates
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(1.dp)
+                                                    .background(JournalRule.copy(alpha = 0.35f))
+                                            )
+                                            Box(
+                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                            ) {
+                                                Text(
+                                                    text = stringResource(R.string.templates_header_builtin),
+                                                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                                    fontSize = 11.5.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = JournalMutedInk,
+                                                    style = TextStyle(platformStyle = NoFontPadding)
                                                 )
                                             }
 
-                                            sampleTemplates.forEach { tpl ->
-                                                val isSelected = selectedModelName == tpl || (selectedModelName != null && tpl.startsWith(selectedModelName!!.take(4)))
+                                            builtInTemplates.forEach { tpl ->
+                                                val isSelected = selectedTemplateId == tpl.id || (selectedModelName != null && tpl.title.startsWith(selectedModelName!!.take(4)))
                                                 DropdownMenuItem(
                                                     text = {
                                                         Row(
+                                                            modifier = Modifier.fillMaxWidth(),
                                                             verticalAlignment = Alignment.CenterVertically,
-                                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                            horizontalArrangement = Arrangement.SpaceBetween
                                                         ) {
-                                                            if (isSelected) {
+                                                            Row(
+                                                                verticalAlignment = Alignment.CenterVertically,
+                                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                            ) {
+                                                                if (isSelected) {
+                                                                    Text(
+                                                                        text = "✓",
+                                                                        fontSize = 12.sp,
+                                                                        fontWeight = FontWeight.Bold,
+                                                                        color = JournalInk
+                                                                    )
+                                                                }
                                                                 Text(
-                                                                    text = "✓",
-                                                                    fontSize = 12.sp,
-                                                                    fontWeight = FontWeight.Bold,
+                                                                    text = tpl.title,
+                                                                    fontFamily = resolveJournalFont(tpl.title, isRtl),
+                                                                    fontSize = 13.sp,
+                                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                                                     color = JournalInk
                                                                 )
                                                             }
                                                             Text(
-                                                                text = tpl,
-                                                                fontFamily = resolveJournalFont(tpl, isRtl),
-                                                                fontSize = 13.sp,
-                                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                                color = JournalInk
+                                                                text = stringResource(R.string.template_items_count, tpl.itemLabels.size),
+                                                                fontSize = 10.5.sp,
+                                                                color = JournalMutedInk
                                                             )
                                                         }
                                                     },
                                                     onClick = {
-                                                        selectedModelName = tpl
+                                                        selectedTemplateId = tpl.id
+                                                        selectedModelName = tpl.title
                                                         titleValue = TextFieldValue(
-                                                            text = tpl,
-                                                            selection = TextRange(tpl.length)
+                                                            text = tpl.title,
+                                                            selection = TextRange(tpl.title.length)
                                                         )
+                                                        selectedType = tpl.calcType
+                                                        selectedCurrency = runCatching { MoneyUnit.valueOf(tpl.currency) }.getOrDefault(selectedCurrency)
                                                         showModelDropdown = false
                                                     }
                                                 )

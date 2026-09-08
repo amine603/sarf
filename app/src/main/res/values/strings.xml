@@ -252,4 +252,12 @@
     <string name="new_calc_templates_label">Modèles de calcul</string>
     <string name="new_calc_templates_soon">Bientôt disponible</string>
     <string name="new_calc_start_action">Commencer</string>
+    <string name="action_save_as_template">Enregistrer comme modèle</string>
+    <string name="template_saved_success">Modèle enregistré avec succès !</string>
+    <string name="template_deleted_success">Modèle supprimé</string>
+    <string name="templates_header_custom">Mes modèles :</string>
+    <string name="templates_header_builtin">Modèles prêts :</string>
+    <string name="template_items_count">%d articles</string>
+    <string name="action_duplicate_editor">Dupliquer ce calcul</string>
+    <string name="editor_options_title">Options du calcul</string>
 </resources>

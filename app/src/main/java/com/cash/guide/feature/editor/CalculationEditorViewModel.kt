@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.cash.guide.R
 import com.cash.guide.data.CalculationRepository
 import com.cash.guide.data.SettingsRepository
+import com.cash.guide.data.TemplateRepository
 import com.cash.guide.data.db.CalculationEntity
 import com.cash.guide.data.db.CalculationItemEntity
 import com.cash.guide.data.db.CalculationWithItems
@@ -47,6 +48,7 @@ data class DeletedRowAction(
 class CalculationEditorViewModel(
     private val calculationRepository: CalculationRepository,
     private val settingsRepository: SettingsRepository? = null,
+    private val templateRepository: TemplateRepository? = null,
     private val graphemeSegmenter: GraphemeSegmenter = AndroidIcuGraphemeSegmenter(),
     private val monotonicClock: () -> Long = { SystemClock.uptimeMillis() }
 ) : ViewModel() {
@@ -64,7 +66,8 @@ class CalculationEditorViewModel(
         initialGroupId: String? = null,
         initialType: String? = null,
         initialCurrency: MoneyUnit? = null,
-        initialTitle: String? = null
+        initialTitle: String? = null,
+        templateId: String? = null
     ) {
         undoStack.clear()
         viewModelScope.launch {
@@ -76,7 +79,7 @@ class CalculationEditorViewModel(
             }
 
             if (id == null) {
-                val hasExplicitParams = initialType != null || !initialTitle.isNullOrBlank() || initialCurrency != null
+                val hasExplicitParams = initialType != null || !initialTitle.isNullOrBlank() || initialCurrency != null || !templateId.isNullOrBlank()
                 // Check if an uncommitted new draft exists
                 val draft = if (hasExplicitParams) null else calculationRepository.getRecoverableDraft(null)
                 val effectiveGroupId = initialGroupId ?: draft?.calculation?.groupId
@@ -121,27 +124,50 @@ class CalculationEditorViewModel(
                 } else {
                     val initialId = draft?.calculation?.id ?: UUID.randomUUID().toString()
                     val targetType = initialType ?: "PERSONNEL"
-                    val targetPaymentStatus = if (targetType == "CREDIT") "UNPAID" else "PAID"
                     val targetCurrency = initialCurrency ?: defaultCurrency
                     val targetTitle = initialTitle ?: ""
+
+                    val isArabic = defaultLanguage == JournalKeyboardLanguage.ARABIC
+                    val template = if (!templateId.isNullOrBlank()) templateRepository?.getTemplate(templateId, isArabic) else null
+
+                    val effectiveTitle = if (targetTitle.isNotBlank()) targetTitle else (template?.title ?: "")
+                    val effectiveType = if (initialType != null) initialType else (template?.calcType ?: targetType)
+                    val effectivePaymentStatus = if (effectiveType == "CREDIT") "UNPAID" else "PAID"
+                    val effectiveCurrency = if (initialCurrency != null) initialCurrency else {
+                        template?.let { runCatching { MoneyUnit.valueOf(it.currency) }.getOrNull() } ?: targetCurrency
+                    }
+
+                    val initialRows = if (template != null && template.itemLabels.isNotEmpty()) {
+                        template.itemLabels.mapIndexed { idx, label ->
+                            EditorRowUiState(
+                                id = (idx + 1).toLong(),
+                                title = TextFieldValue(label, TextRange(label.length)),
+                                amount = TextFieldValue("", TextRange.Zero),
+                                rawExpression = ""
+                            )
+                        }
+                    } else {
+                        listOf(EditorRowUiState(id = 1L))
+                    }
+                    nextRowId = (initialRows.maxOfOrNull { it.id } ?: 1L) + 1
 
                     _uiState.update {
                         it.copy(
                             calculationId = initialId,
                             editingSavedId = null,
                             mode = EditorMode.NEW,
-                            title = TextFieldValue(targetTitle, TextRange(targetTitle.length)),
-                            currency = targetCurrency,
-                            rows = listOf(EditorRowUiState(id = 1L)),
-                            activeRowId = 1L,
-                            activeField = if (targetTitle.isNotBlank()) ActiveField.AMOUNT else ActiveField.TITLE,
-                            keyboardMode = if (targetTitle.isNotBlank()) JournalKeyboardMode.NUMBER else JournalKeyboardMode.TEXT,
+                            title = TextFieldValue(effectiveTitle, TextRange(effectiveTitle.length)),
+                            currency = effectiveCurrency,
+                            rows = initialRows,
+                            activeRowId = initialRows.firstOrNull()?.id ?: 1L,
+                            activeField = if (template != null) ActiveField.AMOUNT else if (effectiveTitle.isNotBlank()) ActiveField.AMOUNT else ActiveField.TITLE,
+                            keyboardMode = if (template != null || effectiveTitle.isNotBlank()) JournalKeyboardMode.NUMBER else JournalKeyboardMode.TEXT,
                             keyboardLanguage = defaultLanguage,
                             keyboardExpanded = true,
-                            isDirty = targetTitle.isNotBlank(),
+                            isDirty = effectiveTitle.isNotBlank() || template != null,
                             groupId = effectiveGroupId,
-                            paymentStatus = targetPaymentStatus,
-                            calcType = targetType
+                            paymentStatus = effectivePaymentStatus,
+                            calcType = effectiveType
                         )
                     }
                 }
@@ -1138,6 +1164,73 @@ class CalculationEditorViewModel(
                 mimeType = FileExportManager.MIME_CSV,
                 subject = titleText
             )
+        }
+    }
+
+    fun saveAsTemplate(context: Context) {
+        val currentState = _uiState.value
+        val title = currentState.title.text.trim().ifBlank {
+            context.getString(R.string.editor_new_title)
+        }
+        val items = currentState.rows.map { it.title.text.trim() }.filter { it.isNotBlank() }
+        val repo = templateRepository ?: TemplateRepository.getInstance(context)
+        viewModelScope.launch {
+            repo.saveCustomTemplate(
+                title = title,
+                calcType = currentState.calcType,
+                currency = currentState.currency.name,
+                itemLabels = items
+            )
+            withContext(Dispatchers.Main) {
+                android.widget.Toast.makeText(
+                    context,
+                    context.getString(R.string.template_saved_success),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    fun duplicateCurrentCalculation(onDuplicated: (String) -> Unit) {
+        val state = _uiState.value
+        val titleText = state.title.text.trim()
+        val targetId = state.editingSavedId ?: state.calculationId ?: UUID.randomUUID().toString()
+        viewModelScope.launch {
+            if (titleText.isNotEmpty()) {
+                val now = System.currentTimeMillis()
+                val populatedRows = state.rows.filter { it.isPopulated }
+                val itemEntities = populatedRows.mapIndexed { idx, row ->
+                    val centimes = MoneyMath.toCentimes(row.amount.text, state.currency) ?: 0L
+                    CalculationItemEntity(
+                        id = UUID.randomUUID().toString(),
+                        calculationId = targetId,
+                        label = row.title.text.trim(),
+                        amountCentimes = centimes,
+                        rawExpression = row.amount.text.trim(),
+                        position = idx,
+                        createdAtEpochMs = now,
+                        updatedAtEpochMs = now
+                    )
+                }
+                val calcEntity = CalculationEntity(
+                    id = targetId,
+                    title = titleText,
+                    currency = state.currency.name,
+                    createdAtEpochMs = state.createdAtEpochMs ?: now,
+                    updatedAtEpochMs = now,
+                    status = "SAVED",
+                    groupId = state.groupId,
+                    paymentStatus = state.paymentStatus,
+                    calcType = state.calcType
+                )
+                calculationRepository.saveCalculation(calcEntity, itemEntities)
+            }
+            val duplicated = calculationRepository.duplicateCalculation(targetId)
+            if (duplicated != null) {
+                withContext(Dispatchers.Main) {
+                    onDuplicated(duplicated.calculation.id)
+                }
+            }
         }
     }
 }

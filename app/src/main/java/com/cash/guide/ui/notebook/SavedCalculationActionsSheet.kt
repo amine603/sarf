@@ -61,6 +61,7 @@ fun SavedCalculationActionsSheet(
     onToggleCalcType: (() -> Unit)? = null,
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
+    onSaveAsTemplate: (() -> Unit)? = null,
     onShareImage: (() -> Unit)? = null,
     onExportPdf: (() -> Unit)? = null,
     onExportExcel: (() -> Unit)? = null,
@@ -206,6 +207,19 @@ fun SavedCalculationActionsSheet(
                         onDuplicate()
                     }
                 )
+
+                // Row: Enregistrer comme modèle (Save as Template)
+                if (onSaveAsTemplate != null) {
+                    ActionSheetRuledItem(
+                        label = stringResource(R.string.action_save_as_template),
+                        symbol = HisabiSymbol.Page,
+                        badgeColor = HighlighterPink.copy(alpha = 0.50f),
+                        onClick = {
+                            onDismiss()
+                            onSaveAsTemplate()
+                        }
+                    )
+                }
 
                 // Row: Partager en image (Share as Long Image)
                 if (onShareImage != null) {

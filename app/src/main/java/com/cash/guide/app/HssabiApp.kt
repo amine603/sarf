@@ -15,6 +15,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.cash.guide.data.CalculationRepository
 import com.cash.guide.data.SettingsRepository
+import com.cash.guide.data.TemplateRepository
 import com.cash.guide.data.backup.BackupManager
 import com.cash.guide.data.db.HssabiDatabase
 import com.cash.guide.feature.editor.CalculationEditorViewModel
@@ -94,6 +95,7 @@ fun HssabiApp() {
     }
     val layoutDirection = if (isArabicLanguage) LayoutDirection.Rtl else LayoutDirection.Ltr
 
+    val templateRepository = remember { TemplateRepository.getInstance(context) }
     val homeViewModel = viewModel { HomeViewModel(calculationRepository, settingsRepository) }
     val groupsViewModel = viewModel { GroupsViewModel(calculationRepository) }
     val historyViewModel = viewModel { HistoryViewModel(calculationRepository) }
@@ -167,7 +169,8 @@ fun HssabiApp() {
                     editorViewModelFactory = {
                         CalculationEditorViewModel(
                             calculationRepository = calculationRepository,
-                            settingsRepository = settingsRepository
+                            settingsRepository = settingsRepository,
+                            templateRepository = templateRepository
                         )
                     }
                 )
