@@ -468,6 +468,24 @@ fun SettingsScreen(
                 }
             )
 
+            // Setting: Recharger les exemples
+            JournalActionRow(
+                title = stringResource(R.string.settings_seed_data_title),
+                description = stringResource(R.string.settings_seed_data_desc),
+                bulletColor = Color(0xFFE5A93C),
+                badgeText = stringResource(R.string.settings_seed_data_badge),
+                onClick = {
+                    viewModel.reloadSampleData(context) { success ->
+                        val msg = if (success) {
+                            context.getString(R.string.settings_seed_data_success)
+                        } else {
+                            context.getString(R.string.backup_toast_error)
+                        }
+                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+
             // 1 empty notebook line spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 

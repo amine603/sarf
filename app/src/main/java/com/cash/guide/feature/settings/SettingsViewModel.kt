@@ -233,4 +233,21 @@ class SettingsViewModel(
             onResult(success, hasCalculations)
         }
     }
+
+    fun reloadSampleData(context: Context, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                com.cash.guide.data.DataSeeder.seedCleanData(context)
+                withContext(Dispatchers.Main) {
+                    onComplete(true)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    onComplete(false)
+                }
+            }
+        }
+    }
 }
+

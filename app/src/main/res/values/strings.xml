@@ -185,6 +185,10 @@
     <string name="settings_backup_action_restore">Restaurer une sauvegarde (.calc)</string>
     <string name="settings_backup_action_restore_desc">Charger vos données depuis un fichier .calc.</string>
     <string name="settings_action_badge_restore">Restaurer</string>
+    <string name="settings_seed_data_title">Recharger les exemples</string>
+    <string name="settings_seed_data_desc">Restaurer les calculs et catégories de démonstration.</string>
+    <string name="settings_seed_data_badge">Exemples</string>
+    <string name="settings_seed_data_success">Calculs d’exemples restaurés !</string>
     <string name="backup_dialog_restore_title">Restaurer les données</string>
     <string name="backup_dialog_restore_info">Sauvegarde du %1$s contenant %2$d calcul(s) et %3$d groupe(s).</string>
     <string name="backup_dialog_option_merge">Fusionner avec l’existant</string>

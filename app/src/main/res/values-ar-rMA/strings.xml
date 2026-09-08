@@ -185,6 +185,10 @@
     <string name="settings_backup_action_restore">استرجاع سوفغارد (.calc)</string>
     <string name="settings_backup_action_restore_desc">استيراد الحسابات من ملف .calc سابق.</string>
     <string name="settings_action_badge_restore">استرجاع</string>
+    <string name="settings_seed_data_title">استرجاع أمثلة الحسابات</string>
+    <string name="settings_seed_data_desc">رجّع الحسابات والكروبات النموذجية اللي وجدناهم للتجربة.</string>
+    <string name="settings_seed_data_badge">نماذج</string>
+    <string name="settings_seed_data_success">تم استرجاع الحسابات بنجاح !</string>
     <string name="backup_dialog_restore_title">استرجاع البيانات</string>
     <string name="backup_dialog_restore_info">تلقات نسخة بتاريخ %1$s فيها %2$d حساب و %3$d مجموعات.</string>
     <string name="backup_dialog_option_merge">دمج مع الحسابات الحالية</string>

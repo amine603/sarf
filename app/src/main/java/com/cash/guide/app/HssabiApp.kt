@@ -60,6 +60,15 @@ fun HssabiApp() {
     }
     val settingsRepository = remember { SettingsRepository(context) }
 
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val calcDao = database.calculationDao()
+            if (calcDao.getAllSaved().isEmpty()) {
+                com.cash.guide.data.DataSeeder.seedCleanData(context)
+            }
+        }
+    }
+
     val appLanguage by settingsRepository.appLanguage.collectAsState(initial = "fr")
     val configuration = LocalConfiguration.current
 

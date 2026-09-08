@@ -185,6 +185,10 @@
     <string name="settings_backup_action_restore">Restore backup (.calc)</string>
     <string name="settings_backup_action_restore_desc">Load your data from a .calc file.</string>
     <string name="settings_action_badge_restore">Restore</string>
+    <string name="settings_seed_data_title">Reload sample data</string>
+    <string name="settings_seed_data_desc">Restore demo calculations and categories.</string>
+    <string name="settings_seed_data_badge">Samples</string>
+    <string name="settings_seed_data_success">Sample calculations restored successfully!</string>
     <string name="backup_dialog_restore_title">Restore data</string>
     <string name="backup_dialog_restore_info">Backup from %1$s containing %2$d calculation(s) and %3$d group(s).</string>
     <string name="backup_dialog_option_merge">Merge with existing</string>

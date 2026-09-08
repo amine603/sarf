@@ -185,6 +185,10 @@
     <string name="settings_backup_action_restore">استرجاع نسخة احتياطية (.calc)</string>
     <string name="settings_backup_action_restore_desc">استيراد بياناتك من ملف .calc سابق.</string>
     <string name="settings_action_badge_restore">استرجاع</string>
+    <string name="settings_seed_data_title">استعادة الأمثلة</string>
+    <string name="settings_seed_data_desc">استرجاع الحسابات والمجموعات النموذجية للتجربة.</string>
+    <string name="settings_seed_data_badge">أمثلة</string>
+    <string name="settings_seed_data_success">تمت استعادة الحسابات النموذجية بنجاح !</string>
     <string name="backup_dialog_restore_title">استرجاع البيانات</string>
     <string name="backup_dialog_restore_info">تم العثور على نسخة بتاريخ %1$s تضم %2$d حساب و %3$d مجموعات.</string>
     <string name="backup_dialog_option_merge">دمج مع الحسابات الحالية</string>
