@@ -358,19 +358,19 @@ object JournalKeyboardController {
         )
         val r2 = listOf(
             charKey("q"), charKey("s"), charKey("d"), charKey("f"), charKey("g"),
-            charKey("h"), charKey("j"), charKey("k"), charKey("l"), charKey("m", cAlts)
+            charKey("h"), charKey("j"), charKey("k"), charKey("l"), charKey("m")
         )
         val r3 = listOf(
             JournalKeySpec(label = "⇧", contentDescription = "Majuscule", isShift = true, flexWeight = 1.3f),
             charKey("w"), charKey("x"), charKey("c", cAlts), charKey("v"), charKey("b"), charKey("n"),
-            JournalKeySpec(label = "'", output = "'", contentDescription = "Apostrophe"),
+            JournalKeySpec(label = "'", output = "'", contentDescription = "Apostrophe", alternatives = listOf("\"", "-", "«", "»")),
             JournalKeySpec(label = "⌫", contentDescription = "Effacer", isBackspace = true, flexWeight = 1.3f)
         )
         val r4 = listOf(
             JournalKeySpec(label = "123", contentDescription = "Chiffres", isModeSwitch = true, flexWeight = 1.3f),
             JournalKeySpec(label = "😊", contentDescription = "Émojis", isEmojiSwitch = true, flexWeight = 1.1f),
             JournalKeySpec(label = "espace", output = " ", contentDescription = "Espace", isSpace = true, flexWeight = 3.6f),
-            JournalKeySpec(label = ".", output = ".", contentDescription = "Point", flexWeight = 1.1f),
+            JournalKeySpec(label = ".", output = ".", contentDescription = "Point", alternatives = listOf(",", "?", "!", ":", ";"), flexWeight = 1.1f),
             JournalKeySpec(label = "OK ✓", contentDescription = "Valider", isConfirm = true, flexWeight = 1.7f)
         )
 
@@ -396,14 +396,14 @@ object JournalKeyboardController {
         val r3 = listOf(
             JournalKeySpec(label = "⇧", contentDescription = "Shift", isShift = true, flexWeight = 1.3f),
             charKey("z"), charKey("x"), charKey("c"), charKey("v"), charKey("b"), charKey("n"), charKey("m"),
-            JournalKeySpec(label = "'", output = "'", contentDescription = "Apostrophe"),
+            JournalKeySpec(label = "'", output = "'", contentDescription = "Apostrophe", alternatives = listOf("\"", "-", "'", "`")),
             JournalKeySpec(label = "⌫", contentDescription = "Backspace", isBackspace = true, flexWeight = 1.3f)
         )
         val r4 = listOf(
             JournalKeySpec(label = "123", contentDescription = "Numbers", isModeSwitch = true, flexWeight = 1.3f),
             JournalKeySpec(label = "😊", contentDescription = "Emojis", isEmojiSwitch = true, flexWeight = 1.1f),
             JournalKeySpec(label = "space", output = " ", contentDescription = "Space", isSpace = true, flexWeight = 3.6f),
-            JournalKeySpec(label = ".", output = ".", contentDescription = "Period", flexWeight = 1.1f),
+            JournalKeySpec(label = ".", output = ".", contentDescription = "Period", alternatives = listOf(",", "?", "!", ":", ";"), flexWeight = 1.1f),
             JournalKeySpec(label = "OK ✓", contentDescription = "Confirm", isConfirm = true, flexWeight = 1.7f)
         )
 
@@ -425,32 +425,34 @@ object JournalKeyboardController {
             return JournalKeySpec(label = c, output = c, contentDescription = c, alternatives = alts, flexWeight = flexWeight)
         }
 
-        val alifAlts = listOf("أ", "إ", "آ")
+        val alifAlts = listOf("أ", "إ", "آ", "ٱ")
         val laamAlts = listOf("لا", "لأ", "لإ", "لآ")
-        val yaaAlts = listOf("ئ", "ى")
-        val wawAlts = listOf("ؤ")
-        val haaAlts = listOf("ة")
-        val dalAlts = listOf("ذ")
+        val yaaAlts = listOf("ئ") // "ى" is a dedicated key in Row 3
+        val faAlts = listOf("ڤ") // Moroccan Ve (e.g. villa, virage)
+        val qafAlts = listOf("ڨ") // Moroccan Gaf (e.g. Guelmim, ga3)
+        val kafAlts = listOf("ڨ")
+        val baaAlts = listOf("پ") // Moroccan Pe (e.g. prix, parking)
+        val haaAlts = listOf("ـ") // Tatweel ("ة" is a dedicated key in Row 3)
 
         val r0 = createNumberRow(isArabic = true)
         val r1 = listOf(
-            arKey("ض"), arKey("ص"), arKey("ث"), arKey("ق"), arKey("ف"),
+            arKey("ض"), arKey("ص"), arKey("ث"), arKey("ق", qafAlts), arKey("ف", faAlts),
             arKey("غ"), arKey("ع"), arKey("ه", haaAlts), arKey("خ"), arKey("ح"), arKey("ج")
         )
         val r2 = listOf(
-            arKey("ش"), arKey("س"), arKey("ي", yaaAlts), arKey("ب"), arKey("ل", laamAlts),
-            arKey("ا", alifAlts), arKey("ت"), arKey("ن"), arKey("م"), arKey("ك"), arKey("ط")
+            arKey("ش"), arKey("س"), arKey("ي", yaaAlts), arKey("ب", baaAlts), arKey("ل", laamAlts),
+            arKey("ا", alifAlts), arKey("ت"), arKey("ن"), arKey("م"), arKey("ك", kafAlts), arKey("ط")
         )
         val r3 = listOf(
             arKey("ذ"), arKey("ء"), arKey("ؤ"), arKey("ر"), arKey("ى"),
-            arKey("ة"), arKey("و", wawAlts), arKey("ز"), arKey("ظ"), arKey("د", dalAlts),
+            arKey("ة"), arKey("و"), arKey("ز"), arKey("ظ"), arKey("د"),
             JournalKeySpec(label = "⌫", contentDescription = "حذف", isBackspace = true, flexWeight = 1.15f)
         )
         val r4 = listOf(
             JournalKeySpec(label = "123", contentDescription = "أرقام", isModeSwitch = true, flexWeight = 1.3f),
             JournalKeySpec(label = "😊", contentDescription = "رموز تعبيرية", isEmojiSwitch = true, flexWeight = 1.1f),
             JournalKeySpec(label = "مسافة", output = " ", contentDescription = "مسافة", isSpace = true, flexWeight = 3.6f),
-            JournalKeySpec(label = "،", output = "،", contentDescription = "فاصلة", flexWeight = 1.1f),
+            JournalKeySpec(label = "،", output = "،", contentDescription = "فاصلة", alternatives = listOf("؟", "!", "."), flexWeight = 1.1f),
             JournalKeySpec(label = "OK ✓", contentDescription = "تأكيد", isConfirm = true, flexWeight = 1.7f)
         )
 

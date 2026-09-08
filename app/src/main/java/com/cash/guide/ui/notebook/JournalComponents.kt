@@ -81,6 +81,8 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
@@ -3006,12 +3008,13 @@ fun JournalTextKeyboardDock(
                                         .weight(1f)
                                         .fillMaxWidth()
                                         .padding(horizontal = if (rowIndex == 2 && language == JournalKeyboardLanguage.ENGLISH) 6.dp else 0.dp)
-                                ) {
-                                    row.forEach { keySpec ->
+                                 ) {
+                                    row.forEachIndexed { keyIndex, keySpec ->
                                         JournalKeySpecCell(
                                             spec = keySpec,
                                             language = language,
                                             shiftMode = shiftMode,
+                                            showVerticalDivider = keyIndex < row.size - 1,
                                             modifier = Modifier.weight(keySpec.flexWeight),
                                             onTap = {
                                                 if (keySpec.isShift) {
@@ -3048,11 +3051,12 @@ fun JournalTextKeyboardDock(
                                     .weight(1f)
                                     .fillMaxWidth()
                             ) {
-                                utilityRow.forEach { keySpec ->
+                                utilityRow.forEachIndexed { keyIndex, keySpec ->
                                     JournalKeySpecCell(
                                         spec = keySpec,
                                         language = language,
                                         shiftMode = shiftMode,
+                                        showVerticalDivider = keyIndex < utilityRow.size - 1,
                                         modifier = Modifier.weight(keySpec.flexWeight),
                                         onTap = {
                                             when {
@@ -3110,11 +3114,13 @@ private fun JournalKeySpecCell(
     language: JournalKeyboardLanguage,
     shiftMode: JournalShiftMode,
     modifier: Modifier = Modifier,
+    showVerticalDivider: Boolean = false,
     onTap: () -> Unit,
     onLongPress: ((IntRect) -> Unit)?,
     backspaceController: BackspaceRepeatController?
 ) {
     var keyBounds by remember { mutableStateOf<IntRect?>(null) }
+    val haptic = LocalHapticFeedback.current
 
     val keyTestTag = when {
         spec.isBackspace -> if (language == JournalKeyboardLanguage.ARABIC) "tag_arabic_backspace" else "tag_key_backspace"
@@ -3135,6 +3141,9 @@ private fun JournalKeySpecCell(
             Modifier.pointerInput(backspaceController) {
                 detectTapGestures(
                     onPress = {
+                        try {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        } catch (_: Exception) {}
                         backspaceController.onPointerDown()
                         val released = tryAwaitRelease()
                         if (released) {
@@ -3149,8 +3158,16 @@ private fun JournalKeySpecCell(
         onLongPress != null && spec.alternatives.isNotEmpty() -> {
             Modifier.pointerInput(spec) {
                 detectTapGestures(
-                    onTap = { onTap() },
+                    onTap = {
+                        try {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        } catch (_: Exception) {}
+                        onTap()
+                    },
                     onLongPress = {
+                        try {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        } catch (_: Exception) {}
                         keyBounds?.let { onLongPress(it) }
                     }
                 )
@@ -3159,7 +3176,12 @@ private fun JournalKeySpecCell(
         else -> {
             Modifier.clickable(
                 role = Role.Button,
-                onClick = onTap
+                onClick = {
+                    try {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    } catch (_: Exception) {}
+                    onTap()
+                }
             )
         }
     }
@@ -3184,7 +3206,7 @@ private fun JournalKeySpecCell(
             .then(gestureModifier)
             .drawBehind {
                 val strokeW = 0.6.dp.toPx()
-                val dividerColor = JournalRule.copy(alpha = 0.35f)
+                val dividerColor = JournalMutedInk.copy(alpha = 0.18f)
                 // Subtle pencil bottom line
                 drawLine(
                     color = dividerColor,
@@ -3192,6 +3214,22 @@ private fun JournalKeySpecCell(
                     end = Offset(size.width, size.height),
                     strokeWidth = strokeW
                 )
+
+                // Subtle vertical divider between keys (chartat sghar verticaly)
+                if (showVerticalDivider) {
+                    val tickStrokeW = 0.9.dp.toPx()
+                    val tickColor = JournalMutedInk.copy(alpha = 0.35f)
+                    val startY = size.height * 0.22f
+                    val endY = size.height * 0.78f
+                    val x = size.width - 0.5f
+                    drawLine(
+                        color = tickColor,
+                        start = Offset(x, startY),
+                        end = Offset(x, endY),
+                        strokeWidth = tickStrokeW,
+                        cap = StrokeCap.Round
+                    )
+                }
 
                 // Shift mode indicator (Only for Latin Shift)
                 if (spec.isShift && language != JournalKeyboardLanguage.ARABIC) {

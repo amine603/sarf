@@ -223,6 +223,12 @@ class JournalKeyboardTest {
         assertEquals("e", rowsLower[1][2].label)
         assertTrue(rowsLower[1][2].alternatives.contains("é"))
 
+        // Row 2: m has no duplicate ç, Row 3: c has ç
+        val mKey = rowsLower[2].first { it.label == "m" }
+        assertFalse("Duplicate 'ç' should be removed from 'm'", mKey.alternatives.contains("ç"))
+        val cKey = rowsLower[3].first { it.label == "c" }
+        assertTrue("'c' must contain alternative 'ç'", cKey.alternatives.contains("ç"))
+
         // Row 4: Utility Row (123 / 😊 / espace / . / OK ✓)
         assertTrue(rowsLower[4][1].isEmojiSwitch)
         assertEquals("espace", rowsLower[4][2].label)
@@ -350,10 +356,20 @@ class JournalKeyboardTest {
         assertTrue(laamKey.alternatives.containsAll(listOf("لا", "لأ", "لإ", "لآ")))
 
         val dalKey = rows[3].first { it.label == "د" }
-        assertTrue(dalKey.alternatives.contains("ذ"))
+        assertFalse("Duplicate 'ذ' should be removed from 'د' alternatives", dalKey.alternatives.contains("ذ"))
 
         val dhalKey = rows[3].first { it.label == "ذ" }
         assertEquals("ذ", dhalKey.output)
+
+        // Verify Moroccan Darija letters
+        val faKey = rows[1].first { it.label == "ف" }
+        assertTrue("Moroccan 'ڤ' must be accessible on 'ف'", faKey.alternatives.contains("ڤ"))
+
+        val qafKey = rows[1].first { it.label == "ق" }
+        assertTrue("Moroccan 'ڨ' must be accessible on 'ق'", qafKey.alternatives.contains("ڨ"))
+
+        val baaKey = rows[2].first { it.label == "ب" }
+        assertTrue("Moroccan 'پ' must be accessible on 'ب'", baaKey.alternatives.contains("پ"))
     }
 
     @Test
