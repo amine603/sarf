@@ -8,6 +8,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -62,6 +64,7 @@ import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalWritingInk
 import com.cash.guide.ui.notebook.JournalNewCalculationButton
 import com.cash.guide.ui.notebook.JournalRecentHeader
+import com.cash.guide.ui.notebook.JournalRule
 import com.cash.guide.ui.notebook.JournalRuleSpacing
 import com.cash.guide.ui.notebook.resolveJournalFont
 import com.cash.guide.ui.notebook.JournalRuledDocument
@@ -230,23 +233,37 @@ fun HomeScreen(
                     .height(JournalRuleSpacing)
                     .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 // Filter: ALL (Tous / الكل)
                 val allSelected = state.selectedPaymentFilter == PaymentFilter.ALL
                 val allLabel = stringResource(R.string.filter_all)
                 Box(
                     modifier = Modifier
-                        .height(24.dp)
+                        .height(25.dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(
                             if (allSelected) JournalInk.copy(alpha = 0.08f)
-                            else androidx.compose.ui.graphics.Color.Transparent
+                            else Color.Transparent
                         )
                         .clickable(role = Role.Tab) {
                             viewModel.setPaymentFilter(PaymentFilter.ALL)
                         }
-                        .padding(horizontal = 10.dp, vertical = 2.dp),
+                        .drawBehind {
+                            if (allSelected) {
+                                val strokeW = 2.dp.toPx()
+                                val y = size.height - strokeW / 2
+                                val insetX = 6.dp.toPx()
+                                drawLine(
+                                    color = HighlighterPink,
+                                    start = Offset(insetX, y),
+                                    end = Offset(size.width - insetX, y),
+                                    strokeWidth = strokeW,
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                        }
+                        .padding(horizontal = 11.dp, vertical = 2.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -259,26 +276,43 @@ fun HomeScreen(
                     )
                 }
 
+                // Vertical Divider 1
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(11.dp)
+                        .background(JournalRule.copy(alpha = 0.70f), RoundedCornerShape(0.5.dp))
+                )
+
                 // Filter: UNPAID (Crédits / الكريدي)
                 val unpaidSelected = state.selectedPaymentFilter == PaymentFilter.UNPAID
                 val unpaidLabel = stringResource(R.string.filter_unpaid)
                 Box(
                     modifier = Modifier
-                        .height(24.dp)
+                        .height(25.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .then(
-                            if (unpaidSelected) {
-                                Modifier
-                                    .border(1.dp, androidx.compose.ui.graphics.Color(0xFFC2410C).copy(alpha = 0.7f), RoundedCornerShape(6.dp))
-                                    .background(androidx.compose.ui.graphics.Color(0xFFFFEDD5).copy(alpha = 0.85f))
-                            } else {
-                                Modifier.background(androidx.compose.ui.graphics.Color.Transparent)
-                            }
+                        .background(
+                            if (unpaidSelected) JournalInk.copy(alpha = 0.08f)
+                            else Color.Transparent
                         )
                         .clickable(role = Role.Tab) {
                             viewModel.setPaymentFilter(PaymentFilter.UNPAID)
                         }
-                        .padding(horizontal = 10.dp, vertical = 2.dp),
+                        .drawBehind {
+                            if (unpaidSelected) {
+                                val strokeW = 2.dp.toPx()
+                                val y = size.height - strokeW / 2
+                                val insetX = 6.dp.toPx()
+                                drawLine(
+                                    color = HighlighterPink,
+                                    start = Offset(insetX, y),
+                                    end = Offset(size.width - insetX, y),
+                                    strokeWidth = strokeW,
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                        }
+                        .padding(horizontal = 11.dp, vertical = 2.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -286,31 +320,48 @@ fun HomeScreen(
                         fontFamily = resolveJournalFont(unpaidLabel, isRtl),
                         fontSize = if (isRtl) 13.sp else 13.5.sp,
                         fontWeight = if (unpaidSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (unpaidSelected) androidx.compose.ui.graphics.Color(0xFFC2410C) else JournalMutedInk,
+                        color = if (unpaidSelected) JournalInk else JournalMutedInk,
                         style = TextStyle(platformStyle = NoFontPadding)
                     )
                 }
+
+                // Vertical Divider 2
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(11.dp)
+                        .background(JournalRule.copy(alpha = 0.70f), RoundedCornerShape(0.5.dp))
+                )
 
                 // Filter: PAID (Payés / الخالص)
                 val paidSelected = state.selectedPaymentFilter == PaymentFilter.PAID
                 val paidLabel = stringResource(R.string.filter_paid)
                 Box(
                     modifier = Modifier
-                        .height(24.dp)
+                        .height(25.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .then(
-                            if (paidSelected) {
-                                Modifier
-                                    .border(1.dp, androidx.compose.ui.graphics.Color(0xFF15803D).copy(alpha = 0.7f), RoundedCornerShape(6.dp))
-                                    .background(androidx.compose.ui.graphics.Color(0xFFDCFCE7).copy(alpha = 0.85f))
-                            } else {
-                                Modifier.background(androidx.compose.ui.graphics.Color.Transparent)
-                            }
+                        .background(
+                            if (paidSelected) JournalInk.copy(alpha = 0.08f)
+                            else Color.Transparent
                         )
                         .clickable(role = Role.Tab) {
                             viewModel.setPaymentFilter(PaymentFilter.PAID)
                         }
-                        .padding(horizontal = 10.dp, vertical = 2.dp),
+                        .drawBehind {
+                            if (paidSelected) {
+                                val strokeW = 2.dp.toPx()
+                                val y = size.height - strokeW / 2
+                                val insetX = 6.dp.toPx()
+                                drawLine(
+                                    color = HighlighterPink,
+                                    start = Offset(insetX, y),
+                                    end = Offset(size.width - insetX, y),
+                                    strokeWidth = strokeW,
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                        }
+                        .padding(horizontal = 11.dp, vertical = 2.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -318,7 +369,7 @@ fun HomeScreen(
                         fontFamily = resolveJournalFont(paidLabel, isRtl),
                         fontSize = if (isRtl) 13.sp else 13.5.sp,
                         fontWeight = if (paidSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (paidSelected) androidx.compose.ui.graphics.Color(0xFF15803D) else JournalMutedInk,
+                        color = if (paidSelected) JournalInk else JournalMutedInk,
                         style = TextStyle(platformStyle = NoFontPadding)
                     )
                 }

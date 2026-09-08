@@ -1,55 +1,77 @@
 package com.cash.guide.ui.notebook
 
+import android.os.SystemClock
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetDefaults
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
+import com.cash.guide.domain.AndroidIcuGraphemeSegmenter
+import com.cash.guide.domain.JournalKeyboardController
+import com.cash.guide.domain.JournalKeyboardLanguage
+import com.cash.guide.domain.JournalKeyboardMode
+import com.cash.guide.domain.JournalShiftMode
+import com.cash.guide.domain.JournalShiftState
 import com.cash.guide.domain.MoneyUnit
+import com.cash.guide.domain.ShiftAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,19 +85,41 @@ fun NewCalculationSetupSheet(
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
 
-    var titleText by remember { mutableStateOf("") }
+    var titleValue by remember { mutableStateOf(TextFieldValue("")) }
     var selectedType by remember { mutableStateOf("PERSONNEL") } // "PERSONNEL" or "CREDIT"
     var selectedCurrency by remember { mutableStateOf(defaultCurrency) }
 
+    var keyboardMode by remember { mutableStateOf(JournalKeyboardMode.NONE) }
+    var keyboardLanguage by remember {
+        mutableStateOf(if (isRtl) JournalKeyboardLanguage.ARABIC else JournalKeyboardLanguage.FRENCH)
+    }
+    var keyboardExpanded by remember { mutableStateOf(true) }
+    var shiftState by remember { mutableStateOf(JournalShiftState(mode = JournalShiftMode.ONE_SHOT)) }
+    val graphemeSegmenter = remember { AndroidIcuGraphemeSegmenter() }
+
+    val scope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     fun submit() {
-        onConfirm(titleText.trim(), selectedType, selectedCurrency)
+        onConfirm(titleValue.text.trim(), selectedType, selectedCurrency)
+    }
+
+    fun dismissWithAnimation() {
+        scope.launch { sheetState.hide() }.invokeOnCompletion {
+            if (!sheetState.isVisible) {
+                onDismiss()
+            }
+        }
     }
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            onDismiss()
+        },
         sheetState = sheetState,
+        properties = ModalBottomSheetProperties(
+            shouldDismissOnBackPress = false
+        ),
         containerColor = JournalPaper,
         shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
         tonalElevation = 0.dp,
@@ -100,13 +144,31 @@ fun NewCalculationSetupSheet(
             LocalConfiguration provides configuration,
             LocalLayoutDirection provides layoutDirection
         ) {
+            BackHandler(enabled = true) {
+                if (keyboardMode != JournalKeyboardMode.NONE) {
+                    keyboardMode = JournalKeyboardMode.NONE
+                } else {
+                    dismissWithAnimation()
+                }
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 18.dp)
                     .navigationBarsPadding()
+                    .then(
+                        if (keyboardMode != JournalKeyboardMode.NONE) Modifier.fillMaxHeight(0.92f)
+                        else Modifier
+                    )
             ) {
-                // Header: Title sitting on notebook paper
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 18.dp)
+                ) {
+                    // Header: Title sitting on notebook paper
                 val sheetTitle = stringResource(R.string.new_calc_sheet_title)
                 Text(
                     text = sheetTitle,
@@ -216,43 +278,120 @@ fun NewCalculationSetupSheet(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                val namePlaceholder = stringResource(R.string.new_calc_name_placeholder)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(38.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.50f))
-                        .border(1.dp, JournalRule, RoundedCornerShape(10.dp))
-                        .padding(horizontal = 12.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    if (titleText.isEmpty()) {
-                        Text(
-                            text = namePlaceholder,
-                            fontFamily = resolveJournalFont(namePlaceholder, isRtl),
-                            fontSize = 13.5.sp,
-                            color = JournalMutedInk.copy(alpha = 0.55f),
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    }
-                    BasicTextField(
-                        value = titleText,
-                        onValueChange = { titleText = it },
-                        singleLine = true,
-                        cursorBrush = SolidColor(JournalInk),
-                        textStyle = TextStyle(
-                            fontFamily = resolveJournalFont(titleText, isRtl),
-                            fontSize = 14.5.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = JournalInk,
-                            platformStyle = NoFontPadding
+                    val namePlaceholder = stringResource(R.string.new_calc_name_placeholder)
+                    val isEditingName = keyboardMode != JournalKeyboardMode.NONE
+                    val infiniteTransition = rememberInfiniteTransition(label = "new_calc_cursor")
+                    val cursorAlpha by infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = 0f,
+                        animationSpec = infiniteRepeatable(
+                            animation = keyframes {
+                                durationMillis = 1000
+                                1f at 0
+                                1f at 499
+                                0f at 500
+                                0f at 999
+                            },
+                            repeatMode = RepeatMode.Restart
                         ),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { submit() }),
-                        modifier = Modifier.fillMaxWidth()
+                        label = "cursor_blink"
                     )
-                }
+                    var titleLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+                    val titleScrollState = rememberScrollState()
+
+                    LaunchedEffect(titleScrollState.maxValue, titleValue.text, isEditingName) {
+                        if (isEditingName) {
+                            titleScrollState.scrollTo(titleScrollState.maxValue)
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color.White.copy(alpha = 0.55f))
+                            .border(
+                                width = if (isEditingName) 1.5.dp else 1.dp,
+                                color = if (isEditingName) JournalInk.copy(alpha = 0.65f) else JournalRule,
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .clickable {
+                                keyboardMode = JournalKeyboardMode.TEXT
+                            }
+                            .padding(horizontal = 12.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (titleValue.text.isEmpty()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable {
+                                        keyboardMode = JournalKeyboardMode.TEXT
+                                    },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (isEditingName && cursorAlpha > 0.5f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(2.dp)
+                                            .height(18.dp)
+                                            .background(JournalInk)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                }
+                                Text(
+                                    text = namePlaceholder,
+                                    fontFamily = resolveJournalFont(namePlaceholder, isRtl),
+                                    fontSize = 13.5.sp,
+                                    color = JournalMutedInk.copy(alpha = 0.55f),
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        keyboardMode = JournalKeyboardMode.TEXT
+                                    }
+                                    .horizontalScroll(titleScrollState),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    text = titleValue.text,
+                                    fontFamily = resolveJournalFont(titleValue.text, isRtl),
+                                    fontSize = 14.5.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = JournalInk,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    style = TextStyle(platformStyle = NoFontPadding),
+                                    onTextLayout = { titleLayoutResult = it },
+                                    modifier = Modifier.drawWithContent {
+                                        drawContent()
+                                        if (isEditingName && cursorAlpha > 0.5f) {
+                                            val layout = titleLayoutResult
+                                            val cursorX = if (layout != null && titleValue.text.isNotEmpty()) {
+                                                val offset = titleValue.selection.end.coerceIn(0, titleValue.text.length)
+                                                layout.getCursorRect(offset).left
+                                            } else {
+                                                0f
+                                            }
+                                            val topY = 3.dp.toPx()
+                                            val bottomY = size.height - 3.dp.toPx()
+                                            drawLine(
+                                                color = JournalInk,
+                                                start = Offset(cursorX, topY),
+                                                end = Offset(cursorX, bottomY),
+                                                strokeWidth = 2.dp.toPx()
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
@@ -386,7 +525,10 @@ fun NewCalculationSetupSheet(
                                 .height(32.dp)
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(Color.White.copy(alpha = 0.35f))
-                                .border(0.8.dp, JournalRule.copy(alpha = 0.70f), RoundedCornerShape(6.dp)),
+                                .border(0.8.dp, JournalRule.copy(alpha = 0.70f), RoundedCornerShape(6.dp))
+                                .clickable {
+                                    titleValue = TextFieldValue(tpl)
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -427,8 +569,78 @@ fun NewCalculationSetupSheet(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(if (keyboardMode != JournalKeyboardMode.NONE) 12.dp else 32.dp))
+            }
+
+            // Custom In-App Keyboard Dock
+            if (keyboardMode != JournalKeyboardMode.NONE) {
+                when (keyboardMode) {
+                    JournalKeyboardMode.TEXT -> {
+                        JournalTextKeyboardDock(
+                            language = keyboardLanguage,
+                            shiftMode = shiftState.mode,
+                            expanded = keyboardExpanded,
+                            onToggleExpand = { keyboardExpanded = !keyboardExpanded },
+                            onCycleLanguage = {
+                                keyboardLanguage = when (keyboardLanguage) {
+                                    JournalKeyboardLanguage.FRENCH -> JournalKeyboardLanguage.ARABIC
+                                    JournalKeyboardLanguage.ARABIC -> JournalKeyboardLanguage.ENGLISH
+                                    JournalKeyboardLanguage.ENGLISH -> JournalKeyboardLanguage.FRENCH
+                                }
+                            },
+                            onSelectLanguage = { keyboardLanguage = it },
+                            onToggleShift = {
+                                shiftState = JournalKeyboardController.reduceShift(
+                                    state = shiftState,
+                                    action = ShiftAction.UserTapShift(SystemClock.uptimeMillis()),
+                                    monotonicNow = { SystemClock.uptimeMillis() }
+                                )
+                            },
+                            onInsertText = { char ->
+                                titleValue = JournalKeyboardController.insertText(titleValue, char)
+                                if (keyboardLanguage != JournalKeyboardLanguage.ARABIC) {
+                                    shiftState = JournalKeyboardController.reduceShift(
+                                        state = shiftState,
+                                        action = ShiftAction.UserTypedText(char),
+                                        monotonicNow = { SystemClock.uptimeMillis() }
+                                    )
+                                }
+                            },
+                            onBackspace = {
+                                titleValue = JournalKeyboardController.deleteBackward(titleValue, graphemeSegmenter)
+                            },
+                            onSwitchToNumericMode = {
+                                keyboardMode = JournalKeyboardMode.NUMBER
+                            },
+                            onConfirm = {
+                                keyboardMode = JournalKeyboardMode.NONE
+                            }
+                        )
+                    }
+                    JournalKeyboardMode.NUMBER -> {
+                        JournalCompactNumericDock(
+                            expanded = keyboardExpanded,
+                            onToggleExpand = { keyboardExpanded = !keyboardExpanded },
+                            onKey = { key ->
+                                if (key == "⌫") {
+                                    titleValue = JournalKeyboardController.deleteBackward(titleValue, graphemeSegmenter)
+                                } else {
+                                    titleValue = JournalKeyboardController.insertText(titleValue, key)
+                                }
+                            },
+                            onSwitchToTextMode = {
+                                keyboardMode = JournalKeyboardMode.TEXT
+                            },
+                            onConfirm = {
+                                keyboardMode = JournalKeyboardMode.NONE
+                            }
+                        )
+                    }
+                    JournalKeyboardMode.NONE -> {}
+                }
             }
         }
     }
 }
+}
+
