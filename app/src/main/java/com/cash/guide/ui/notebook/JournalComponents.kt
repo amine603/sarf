@@ -3036,13 +3036,6 @@ fun JournalTextKeyboardDock(
                             }
                         }
 
-                        // Subtle 0.75dp divider before the utility row
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                            thickness = 0.75.dp,
-                            color = JournalRule.copy(alpha = 0.45f)
-                        )
-
                         // Row 4 (Utility Row: 123 / Emoji / Space / Punctuation / OK)
                         val utilityRow = rows.last()
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
