@@ -13,7 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CalculationItemEntity::class,
         CalculationGroupEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class HssabiDatabase : RoomDatabase() {
@@ -44,6 +44,14 @@ abstract class HssabiDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `calculations` ADD COLUMN `paymentStatus` TEXT NOT NULL DEFAULT 'PAID'")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_calculations_paymentStatus` ON `calculations` (`paymentStatus`)")
+                db.execSQL("UPDATE `calculations` SET `paymentStatus` = 'UNPAID' WHERE `title` LIKE '%Chantier%' OR `title` LIKE '%Salaires%' OR `title` LIKE '%Tissus%'")
+            }
+        }
+
         fun getInstance(context: Context): HssabiDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -51,7 +59,7 @@ abstract class HssabiDatabase : RoomDatabase() {
                     HssabiDatabase::class.java,
                     "hssabi.db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                     .also { INSTANCE = it }
             }

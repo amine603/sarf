@@ -228,4 +228,14 @@
     <string name="export_col_calc_title">عنوان الحساب</string>
     <string name="export_col_calc_total">مجموع الحساب</string>
     <string name="export_col_note">ملاحظة</string>
+
+    <!-- Payment / Credit status -->
+    <string name="payment_status_paid">خالص</string>
+    <string name="payment_status_unpaid">باقي</string>
+    <string name="filter_all">الكل</string>
+    <string name="filter_unpaid">الكريدي</string>
+    <string name="filter_paid">الخالص</string>
+    <string name="total_unpaid_banner">مجموع الكريدي :</string>
+    <string name="action_mark_paid">تعليم كخالص ✓</string>
+    <string name="action_mark_unpaid">تعليم كباقي / كريدي</string>
 </resources>

@@ -58,7 +58,8 @@ data class EditorUiState(
     val pendingFocusRowId: Long? = 1L,
     val createdAtEpochMs: Long? = null,
     val canUndo: Boolean = false,
-    val groupId: String? = null
+    val groupId: String? = null,
+    val paymentStatus: String = "PAID"
 ) {
     val hasInvalidRows: Boolean
         get() = rows.any { it.amount.text.isNotBlank() && !MoneyMath.isValidExpression(it.amount.text) }

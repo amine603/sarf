@@ -72,11 +72,28 @@ class HomeViewModel(
         filterByDate(null)
     }
 
+    fun setPaymentFilter(filter: PaymentFilter) {
+        _uiState.update { it.copy(selectedPaymentFilter = filter) }
+        lastContext?.let { applyFilters(it) }
+    }
+
+    fun togglePaymentStatus(calculationId: String, currentStatus: String) {
+        val nextStatus = if (currentStatus == "PAID") "UNPAID" else "PAID"
+        viewModelScope.launch {
+            repository.updatePaymentStatus(calculationId, nextStatus)
+        }
+    }
+
     private fun applyFilters(context: Context) {
         val query = _uiState.value.searchQuery.trim()
         val selectedDate = _uiState.value.selectedDateEpoch
+        val paymentFilter = _uiState.value.selectedPaymentFilter
         val pinnedIds = _uiState.value.pinnedCalculationIds
         val favorites = allItems.filter { it.calculation.id in pinnedIds }
+
+        val unpaidTotal = allItems
+            .filter { it.calculation.paymentStatus == "UNPAID" }
+            .sumOf { it.totalCentimes }
 
         val recentGroups = DateGroupHelper.groupByDate(
             items = allItems.take(10),
@@ -86,12 +103,13 @@ class HomeViewModel(
             locale = context.resources.configuration.locales[0]
         )
 
-        if (query.isBlank() && selectedDate == null) {
+        if (query.isBlank() && selectedDate == null && paymentFilter == PaymentFilter.ALL) {
             _uiState.update {
                 it.copy(
                     recentDateGroups = recentGroups,
                     filteredDateGroups = emptyList(),
                     favoriteCalculations = favorites,
+                    unpaidTotalCentimes = unpaidTotal,
                     isLoading = false
                 )
             }
@@ -104,7 +122,12 @@ class HomeViewModel(
                 val matchesDate = if (selectedDate == null) true else {
                     isSameDay(calc.calculation.updatedAtEpochMs, selectedDate)
                 }
-                matchesQuery && matchesDate
+                val matchesPayment = when (paymentFilter) {
+                    PaymentFilter.ALL -> true
+                    PaymentFilter.UNPAID -> calc.calculation.paymentStatus == "UNPAID"
+                    PaymentFilter.PAID -> calc.calculation.paymentStatus == "PAID"
+                }
+                matchesQuery && matchesDate && matchesPayment
             }
 
             val filteredGroups = DateGroupHelper.groupByDate(
@@ -120,6 +143,7 @@ class HomeViewModel(
                     recentDateGroups = recentGroups,
                     filteredDateGroups = filteredGroups,
                     favoriteCalculations = favorites,
+                    unpaidTotalCentimes = unpaidTotal,
                     isLoading = false
                 )
             }

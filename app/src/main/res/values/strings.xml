@@ -228,4 +228,14 @@
     <string name="export_col_calc_title">Titre du calcul</string>
     <string name="export_col_calc_total">Total calcul</string>
     <string name="export_col_note">Note</string>
+
+    <!-- Payment / Credit status -->
+    <string name="payment_status_paid">Payé</string>
+    <string name="payment_status_unpaid">Crédit</string>
+    <string name="filter_all">Tous</string>
+    <string name="filter_unpaid">Crédits</string>
+    <string name="filter_paid">Payés</string>
+    <string name="total_unpaid_banner">Total des crédits :</string>
+    <string name="action_mark_paid">Marquer comme payé</string>
+    <string name="action_mark_unpaid">Marquer comme crédit</string>
 </resources>

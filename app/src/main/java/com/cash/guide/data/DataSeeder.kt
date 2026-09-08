@@ -86,6 +86,7 @@ object DataSeeder {
             val currency: String,
             val offsetMs: Long,
             val note: String? = null,
+            val paymentStatus: String = "PAID",
             val items: List<SeedItem>
         )
 
@@ -178,6 +179,7 @@ object DataSeeder {
                 groupId = "group_chantier",
                 currency = "DIRHAM",
                 offsetMs = 48 * hour,
+                paymentStatus = "UNPAID",
                 items = listOf(
                     SeedItem("2 Sradel Vinyl Mat Blanc Astral", 76000L, "760"),
                     SeedItem("Sattel Kolat Ciment Sika", 18000L, "180"),
@@ -206,6 +208,7 @@ object DataSeeder {
                 currency = "DIRHAM",
                 offsetMs = 74 * hour,
                 note = "Règlement semaine du 31 Août au 05 Septembre",
+                paymentStatus = "UNPAID",
                 items = listOf(
                     SeedItem("Rachid (M3ellem plâtrier)", 180000L, "1800"),
                     SeedItem("Hassan (Ouvrier qualifié)", 130000L, "1300"),
@@ -319,6 +322,7 @@ object DataSeeder {
                 currency = "RIAL",
                 offsetMs = 300 * hour,
                 note = "Sel3a d l-khiyata dial l-3id",
+                paymentStatus = "UNPAID",
                 items = listOf(
                     SeedItem("Toub Mlifa première qualité (15m)", 210000L, "42000"),
                     SeedItem("Toub Soie pour doublure (20m)", 100000L, "20000"),
@@ -338,7 +342,8 @@ object DataSeeder {
                 updatedAtEpochMs = time,
                 status = "SAVED",
                 note = seed.note,
-                groupId = seed.groupId
+                groupId = seed.groupId,
+                paymentStatus = seed.paymentStatus
             )
 
             val itemEntities = seed.items.mapIndexed { idx, item ->

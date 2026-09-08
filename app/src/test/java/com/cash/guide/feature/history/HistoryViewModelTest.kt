@@ -69,6 +69,12 @@ class HistoryViewModelTest {
         override suspend fun deleteItemsForCalculation(calculationId: String) { items.remove(calculationId) }
         override suspend fun deleteCalculation(id: String) { calculations.remove(id); items.remove(id) }
         override suspend fun deleteDrafts(draftId: String, targetId: String?) {}
+        override suspend fun updatePaymentStatus(id: String, paymentStatus: String, now: Long) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(paymentStatus = paymentStatus, updatedAtEpochMs = now)
+            }
+        }
         override suspend fun getAllSaved(): List<CalculationWithItems> {
             return calculations.values
                 .filter { it.status == "SAVED" }

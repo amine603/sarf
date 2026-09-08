@@ -56,6 +56,12 @@ class HomeViewModelTest {
         override suspend fun deleteItemsForCalculation(calculationId: String) { items.remove(calculationId) }
         override suspend fun deleteCalculation(id: String) { calculations.remove(id); items.remove(id) }
         override suspend fun deleteDrafts(draftId: String, targetId: String?) {}
+        override suspend fun updatePaymentStatus(id: String, paymentStatus: String, now: Long) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(paymentStatus = paymentStatus, updatedAtEpochMs = now)
+            }
+        }
         override suspend fun getAllSaved(): List<CalculationWithItems> {
             return calculations.values
                 .filter { it.status == "SAVED" }
@@ -137,5 +143,23 @@ class HomeViewModelTest {
         val allSaved = dao.calculations.values.filter { it.status == "SAVED" }
         assertEquals(1, allSaved.size)
         assertEquals("src-1", allSaved.first().id)
+    }
+
+    @Test
+    fun togglePaymentStatus_togglesStatusInRepository() = runTest {
+        val calc = CalculationEntity("calc-pay-1", "Achat", "DIRHAM", 100, 100, "SAVED", paymentStatus = "PAID")
+        dao.insertCalculation(calc)
+
+        viewModel.togglePaymentStatus("calc-pay-1", "PAID")
+        advanceUntilIdle()
+
+        val updated = dao.getCalculation("calc-pay-1")
+        assertEquals("UNPAID", updated?.calculation?.paymentStatus)
+
+        viewModel.togglePaymentStatus("calc-pay-1", "UNPAID")
+        advanceUntilIdle()
+
+        val updated2 = dao.getCalculation("calc-pay-1")
+        assertEquals("PAID", updated2?.calculation?.paymentStatus)
     }
 }

@@ -1823,6 +1823,7 @@ fun NotebookCalculationRow(
     subtitle: String = "",
     isPinned: Boolean = false,
     dotColorOverride: Color? = null,
+    paymentStatus: String = "PAID",
     modifier: Modifier = Modifier
 ) {
     val layoutDirection = LocalLayoutDirection.current
@@ -1916,11 +1917,37 @@ fun NotebookCalculationRow(
                     }
             )
 
-            // End: Amount + Suffix + 3 dots (⋮)
+            // End: [Credit badge if UNPAID] + Amount + Suffix + 3 dots (⋮)
             Row(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
+                if (paymentStatus == "UNPAID") {
+                    Box(
+                        modifier = Modifier
+                            .offset(y = (-3).dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .border(
+                                width = 1.dp,
+                                color = Color(0xFFC2410C).copy(alpha = 0.85f),
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .background(Color(0xFFFFF7ED).copy(alpha = 0.90f))
+                            .padding(horizontal = 4.dp, vertical = 0.5.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val unpaidLabel = stringResource(R.string.payment_status_unpaid)
+                        Text(
+                            text = unpaidLabel,
+                            fontFamily = resolveJournalFont(unpaidLabel, isRtl),
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFC2410C),
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+                    }
+                }
+
                 Text(
                     text = totalAmount,
                     fontFamily = PatrickHandFamily,
@@ -2063,6 +2090,7 @@ fun NotebookDateGroupBlock(
                     currencySuffix = currencySuffix,
                     isPinned = false,
                     dotColorOverride = timelineStyle.dotColor,
+                    paymentStatus = calc.calculation.paymentStatus,
                     onClick = { onOpenCalculation(calc.calculation.id) },
                     onMoreClick = { onMoreClick(calc) }
                 )

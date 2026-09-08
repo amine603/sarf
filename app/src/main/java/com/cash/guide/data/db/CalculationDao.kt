@@ -83,6 +83,9 @@ interface CalculationDao {
     @Query("DELETE FROM calculations WHERE status = 'DRAFT' AND (id = :draftId OR editingCalculationId = :targetId)")
     suspend fun deleteDrafts(draftId: String, targetId: String?)
 
+    @Query("UPDATE calculations SET paymentStatus = :paymentStatus, updatedAtEpochMs = :now WHERE id = :id")
+    suspend fun updatePaymentStatus(id: String, paymentStatus: String, now: Long = System.currentTimeMillis())
+
     @Transaction
     suspend fun upsertCalculationWithItems(
         calculation: CalculationEntity,

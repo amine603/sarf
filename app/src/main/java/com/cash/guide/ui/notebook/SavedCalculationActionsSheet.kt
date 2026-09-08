@@ -55,6 +55,8 @@ fun SavedCalculationActionsSheet(
     calculationTitle: String,
     isPinned: Boolean = false,
     onTogglePin: () -> Unit = {},
+    paymentStatus: String = "PAID",
+    onTogglePaymentStatus: (() -> Unit)? = null,
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
     onShareImage: (() -> Unit)? = null,
@@ -146,6 +148,23 @@ fun SavedCalculationActionsSheet(
                         onTogglePin()
                     }
                 )
+
+                // Row: Marquer comme payé / Marquer comme crédit
+                if (onTogglePaymentStatus != null) {
+                    val isPaid = paymentStatus == "PAID"
+                    val label = stringResource(if (isPaid) R.string.action_mark_unpaid else R.string.action_mark_paid)
+                    val symbol = if (isPaid) HisabiSymbol.Clock else HisabiSymbol.Check
+                    val badgeColor = if (isPaid) HighlighterYellow.copy(alpha = 0.55f) else HighlighterGreen.copy(alpha = 0.55f)
+                    ActionSheetRuledItem(
+                        label = label,
+                        symbol = symbol,
+                        badgeColor = badgeColor,
+                        onClick = {
+                            onDismiss()
+                            onTogglePaymentStatus()
+                        }
+                    )
+                }
 
                 // Row 3: Modifier (Edit)
                 ActionSheetRuledItem(

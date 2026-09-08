@@ -88,6 +88,13 @@ class CalculationEditorViewModelTest {
             idsToRemove.forEach { deleteCalculation(it) }
         }
 
+        override suspend fun updatePaymentStatus(id: String, paymentStatus: String, now: Long) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(paymentStatus = paymentStatus, updatedAtEpochMs = now)
+            }
+        }
+
         override suspend fun getAllSaved(): List<CalculationWithItems> = emptyList()
         override suspend fun deleteAllCalculations() {
             calculations.clear()
@@ -378,5 +385,20 @@ class CalculationEditorViewModelTest {
         assertEquals("Brouillon", state.title.text)
         assertEquals("600 + 250", state.rows[0].amount.text)
         assertEquals("600 + 250", state.rows[0].rawExpression)
+    }
+
+    @Test
+    fun togglePaymentStatus_flipsBetweenPaidAndUnpaid() = runTest {
+        viewModel.loadCalculation(null)
+        advanceUntilIdle()
+
+        assertEquals("PAID", viewModel.uiState.value.paymentStatus)
+
+        viewModel.togglePaymentStatus()
+        assertEquals("UNPAID", viewModel.uiState.value.paymentStatus)
+        assertTrue(viewModel.uiState.value.isDirty)
+
+        viewModel.togglePaymentStatus()
+        assertEquals("PAID", viewModel.uiState.value.paymentStatus)
     }
 }

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
@@ -62,6 +63,7 @@ import com.cash.guide.ui.notebook.JournalWritingInk
 import com.cash.guide.ui.notebook.JournalNewCalculationButton
 import com.cash.guide.ui.notebook.JournalRecentHeader
 import com.cash.guide.ui.notebook.JournalRuleSpacing
+import com.cash.guide.ui.notebook.resolveJournalFont
 import com.cash.guide.ui.notebook.JournalRuledDocument
 import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
@@ -212,14 +214,157 @@ fun HomeScreen(
             // Line 6: 1 rule spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Section: Recent Calculations ("Calculs récents" / "الحسابات الأخيرة") in soft blue band
-            if (!state.isEmpty) {
-                NotebookSectionBand(
-                    title = stringResource(R.string.home_recent_title),
-                    highlightColor = HighlighterBlue,
-                    isCentered = true
-                )
+            // Notebook Filter Tabs Row (29dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Filter: ALL (Tous / الكل)
+                val allSelected = state.selectedPaymentFilter == PaymentFilter.ALL
+                val allLabel = stringResource(R.string.filter_all)
+                Box(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(
+                            if (allSelected) JournalInk.copy(alpha = 0.08f)
+                            else androidx.compose.ui.graphics.Color.Transparent
+                        )
+                        .clickable(role = Role.Tab) {
+                            viewModel.setPaymentFilter(PaymentFilter.ALL)
+                        }
+                        .padding(horizontal = 10.dp, vertical = 2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = allLabel,
+                        fontFamily = resolveJournalFont(allLabel, isRtl),
+                        fontSize = if (isRtl) 13.sp else 13.5.sp,
+                        fontWeight = if (allSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (allSelected) JournalInk else JournalMutedInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
 
+                // Filter: UNPAID (Crédits / الكريدي)
+                val unpaidSelected = state.selectedPaymentFilter == PaymentFilter.UNPAID
+                val unpaidLabel = stringResource(R.string.filter_unpaid)
+                Box(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .then(
+                            if (unpaidSelected) {
+                                Modifier
+                                    .border(1.dp, androidx.compose.ui.graphics.Color(0xFFC2410C).copy(alpha = 0.7f), RoundedCornerShape(6.dp))
+                                    .background(androidx.compose.ui.graphics.Color(0xFFFFEDD5).copy(alpha = 0.85f))
+                            } else {
+                                Modifier.background(androidx.compose.ui.graphics.Color.Transparent)
+                            }
+                        )
+                        .clickable(role = Role.Tab) {
+                            viewModel.setPaymentFilter(PaymentFilter.UNPAID)
+                        }
+                        .padding(horizontal = 10.dp, vertical = 2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = unpaidLabel,
+                        fontFamily = resolveJournalFont(unpaidLabel, isRtl),
+                        fontSize = if (isRtl) 13.sp else 13.5.sp,
+                        fontWeight = if (unpaidSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (unpaidSelected) androidx.compose.ui.graphics.Color(0xFFC2410C) else JournalMutedInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+
+                // Filter: PAID (Payés / الخالص)
+                val paidSelected = state.selectedPaymentFilter == PaymentFilter.PAID
+                val paidLabel = stringResource(R.string.filter_paid)
+                Box(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .then(
+                            if (paidSelected) {
+                                Modifier
+                                    .border(1.dp, androidx.compose.ui.graphics.Color(0xFF15803D).copy(alpha = 0.7f), RoundedCornerShape(6.dp))
+                                    .background(androidx.compose.ui.graphics.Color(0xFFDCFCE7).copy(alpha = 0.85f))
+                            } else {
+                                Modifier.background(androidx.compose.ui.graphics.Color.Transparent)
+                            }
+                        )
+                        .clickable(role = Role.Tab) {
+                            viewModel.setPaymentFilter(PaymentFilter.PAID)
+                        }
+                        .padding(horizontal = 10.dp, vertical = 2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = paidLabel,
+                        fontFamily = resolveJournalFont(paidLabel, isRtl),
+                        fontSize = if (isRtl) 13.sp else 13.5.sp,
+                        fontWeight = if (paidSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (paidSelected) androidx.compose.ui.graphics.Color(0xFF15803D) else JournalMutedInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+            }
+
+            // If filtering by UNPAID, show the total debt banner
+            if (state.selectedPaymentFilter == PaymentFilter.UNPAID) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(JournalRuleSpacing)
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(27.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .border(1.dp, androidx.compose.ui.graphics.Color(0xFFF59E0B).copy(alpha = 0.55f), RoundedCornerShape(6.dp))
+                            .background(androidx.compose.ui.graphics.Color(0xFFFFFBEB))
+                            .padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        val bannerTitle = stringResource(R.string.total_unpaid_banner)
+                        Text(
+                            text = bannerTitle,
+                            fontFamily = resolveJournalFont(bannerTitle, isRtl),
+                            fontSize = if (isRtl) 13.sp else 13.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = androidx.compose.ui.graphics.Color(0xFFB45309),
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+
+                        val totalStr = JournalLedgerManager.formatTotal(state.unpaidTotalCentimes, MoneyUnit.DIRHAM)
+                        val dirhamSuffix = stringResource(R.string.currency_dirham)
+                        Text(
+                            text = "$totalStr $dirhamSuffix",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = androidx.compose.ui.graphics.Color(0xFFB45309),
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+                    }
+                }
+            }
+
+            // 1 rule spacer before calculations list
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Recent calculations list directly under spacer
+            if (!state.isEmpty) {
                 // Date-grouped saved calculations with vertical grouping guide
                 state.displayDateGroups.forEachIndexed { groupIndex, group ->
                     NotebookDateGroupBlock(
@@ -349,6 +494,10 @@ fun HomeScreen(
                 isPinned = isPinned,
                 onTogglePin = {
                     viewModel.togglePin(actionCalc.calculation.id)
+                },
+                paymentStatus = actionCalc.calculation.paymentStatus,
+                onTogglePaymentStatus = {
+                    viewModel.togglePaymentStatus(actionCalc.calculation.id, actionCalc.calculation.paymentStatus)
                 },
                 onEdit = {
                     onOpenCalculation(actionCalc.calculation.id)

@@ -106,7 +106,8 @@ class CalculationEditorViewModel(
                             isDirty = true,
                             recoveredDraft = true,
                             createdAtEpochMs = draft.calculation.createdAtEpochMs,
-                            groupId = effectiveGroupId
+                            groupId = effectiveGroupId,
+                            paymentStatus = draft.calculation.paymentStatus
                         )
                     }
                 } else {
@@ -125,7 +126,8 @@ class CalculationEditorViewModel(
                             keyboardLanguage = defaultLanguage,
                             keyboardExpanded = true,
                             isDirty = false,
-                            groupId = effectiveGroupId
+                            groupId = effectiveGroupId,
+                            paymentStatus = "PAID"
                         )
                     }
                 }
@@ -163,7 +165,8 @@ class CalculationEditorViewModel(
                             isDirty = true,
                             recoveredDraft = true,
                             createdAtEpochMs = originalCreatedAt ?: draft.calculation.createdAtEpochMs,
-                            groupId = effectiveGroupId
+                            groupId = effectiveGroupId,
+                            paymentStatus = draft.calculation.paymentStatus
                         )
                     }
                 } else if (saved != null) {
@@ -197,7 +200,8 @@ class CalculationEditorViewModel(
                             keyboardExpanded = false,
                             isDirty = false,
                             createdAtEpochMs = saved.calculation.createdAtEpochMs,
-                            groupId = effectiveGroupId
+                            groupId = effectiveGroupId,
+                            paymentStatus = saved.calculation.paymentStatus
                         )
                     }
                 }
@@ -873,7 +877,8 @@ class CalculationEditorViewModel(
                 updatedAtEpochMs = now,
                 status = "SAVED",
                 editingCalculationId = null,
-                groupId = state.groupId
+                groupId = state.groupId,
+                paymentStatus = state.paymentStatus
             )
 
             calculationRepository.saveCalculation(calculationEntity, itemEntities)
@@ -893,6 +898,20 @@ class CalculationEditorViewModel(
             }
             onSuccess?.invoke()
         }
+    }
+
+    fun togglePaymentStatus() {
+        _uiState.update { state ->
+            val nextStatus = if (state.paymentStatus == "PAID") "UNPAID" else "PAID"
+            state.copy(paymentStatus = nextStatus, isDirty = true)
+        }
+        val current = _uiState.value
+        if (current.mode == EditorMode.EXISTING && current.editingSavedId != null) {
+            viewModelScope.launch {
+                calculationRepository.updatePaymentStatus(current.editingSavedId, current.paymentStatus)
+            }
+        }
+        scheduleDraftSave()
     }
 
     private fun scheduleDraftSave() {
@@ -936,7 +955,8 @@ class CalculationEditorViewModel(
                 updatedAtEpochMs = now,
                 status = "DRAFT",
                 editingCalculationId = editingSavedId,
-                groupId = state.groupId
+                groupId = state.groupId,
+                paymentStatus = state.paymentStatus
             )
 
             calculationRepository.saveDraft(draftEntity, itemEntities)

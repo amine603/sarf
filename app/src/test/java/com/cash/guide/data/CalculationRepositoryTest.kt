@@ -104,6 +104,13 @@ class CalculationRepositoryTest {
             toRemove.forEach { deleteCalculation(it) }
         }
 
+        override suspend fun updatePaymentStatus(id: String, paymentStatus: String, now: Long) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(paymentStatus = paymentStatus, updatedAtEpochMs = now)
+            }
+        }
+
         override suspend fun getAllSaved(): List<CalculationWithItems> {
             return calculations.values
                 .filter { it.status == "SAVED" }
@@ -365,5 +372,16 @@ class CalculationRepositoryTest {
         repository.searchSaved("factures").collect { results = it }
         assertEquals(1, results?.size)
         assertEquals("c1", results?.first()?.calculation?.id)
+    }
+
+    @Test
+    fun updatePaymentStatus_updatesSuccessfully() = runBlocking {
+        val calc = CalculationEntity(id = "c1", title = "Crédit Hanout", currency = "DIRHAM", createdAtEpochMs = 10, updatedAtEpochMs = 10, status = "SAVED", paymentStatus = "UNPAID")
+        repository.saveCalculation(calc, emptyList())
+
+        assertEquals("UNPAID", repository.getCalculation("c1")?.calculation?.paymentStatus)
+
+        repository.updatePaymentStatus("c1", "PAID")
+        assertEquals("PAID", repository.getCalculation("c1")?.calculation?.paymentStatus)
     }
 }

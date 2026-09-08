@@ -52,7 +52,8 @@ class CalculationRepository(
             createdAtEpochMs = originalCreatedAt,
             updatedAtEpochMs = now,
             editingCalculationId = null,
-            groupId = calculation.groupId ?: existing?.calculation?.groupId
+            groupId = calculation.groupId ?: existing?.calculation?.groupId,
+            paymentStatus = calculation.paymentStatus
         )
         val remappedItems = items.mapIndexed { index, item ->
             val existingItem = existing?.items?.firstOrNull { it.id == item.id }
@@ -91,6 +92,11 @@ class CalculationRepository(
 
     suspend fun deleteDraft(draftId: String) {
         dao.deleteCalculation(draftId)
+    }
+
+    suspend fun updatePaymentStatus(id: String, paymentStatus: String) {
+        val now = System.currentTimeMillis()
+        dao.updatePaymentStatus(id, paymentStatus, now)
     }
 
     suspend fun getRecoverableDraft(editingCalculationId: String?): CalculationWithItems? {

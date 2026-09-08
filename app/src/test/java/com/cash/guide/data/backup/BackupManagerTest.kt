@@ -113,6 +113,7 @@ class BackupManagerTest {
         override suspend fun deleteItemsForCalculation(calculationId: String) {}
         override suspend fun deleteCalculation(id: String) {}
         override suspend fun deleteDrafts(draftId: String, targetId: String?) {}
+        override suspend fun updatePaymentStatus(id: String, paymentStatus: String, now: Long) {}
         override suspend fun getAllSaved(): List<CalculationWithItems> = emptyList()
         override suspend fun deleteAllCalculations() {}
     }

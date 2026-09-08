@@ -10,7 +10,8 @@ import androidx.room.PrimaryKey
         Index("updatedAtEpochMs"),
         Index("status"),
         Index("editingCalculationId"),
-        Index("groupId")
+        Index("groupId"),
+        Index("paymentStatus")
     ]
 )
 data class CalculationEntity(
@@ -22,5 +23,6 @@ data class CalculationEntity(
     val status: String, // "DRAFT" or "SAVED"
     val note: String? = null,
     val editingCalculationId: String? = null,
-    val groupId: String? = null
+    val groupId: String? = null,
+    val paymentStatus: String = "PAID" // "PAID" or "UNPAID"
 )

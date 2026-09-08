@@ -8,9 +8,11 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -147,6 +149,8 @@ fun CalculationEditorScreen(
                     val next = if (state.currency == MoneyUnit.DIRHAM) MoneyUnit.RIAL else MoneyUnit.DIRHAM
                     viewModel.selectUnit(next)
                 },
+                paymentStatus = state.paymentStatus,
+                onPaymentStatusToggle = { viewModel.togglePaymentStatus() },
                 canUndo = state.canUndo,
                 onUndoClick = { viewModel.undoDelete() },
                 onCalculatorClick = { viewModel.openCalculatorPopup(state.activeRowId) },
@@ -327,6 +331,8 @@ private fun EditorTopBar(
     keyboardLanguage: JournalKeyboardLanguage,
     currency: MoneyUnit,
     onCurrencyToggle: () -> Unit,
+    paymentStatus: String = "PAID",
+    onPaymentStatusToggle: () -> Unit = {},
     canUndo: Boolean,
     onUndoClick: () -> Unit,
     onCalculatorClick: () -> Unit,
@@ -588,7 +594,43 @@ private fun EditorTopBar(
                     }
                 }
 
-                // 2. Calculator Button (Center)
+                // 2. Payment Status Rubber Stamp (Kredi / Khlass)
+                val isPaid = paymentStatus == "PAID"
+                val stampColor = if (isPaid) Color(0xFF15803D) else Color(0xFFC2410C)
+                val stampBg = if (isPaid) Color(0xFFDCFCE7).copy(alpha = 0.65f) else Color(0xFFFFEDD5).copy(alpha = 0.65f)
+                val stampText = if (isPaid) {
+                    stringResource(R.string.payment_status_paid) + " ✓"
+                } else {
+                    stringResource(R.string.payment_status_unpaid)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .graphicsLayer {
+                            rotationZ = if (isPaid) -2f else 2f
+                        }
+                        .clip(RoundedCornerShape(6.dp))
+                        .border(
+                            width = 1.35.dp,
+                            color = stampColor.copy(alpha = 0.85f),
+                            shape = RoundedCornerShape(6.dp)
+                        )
+                        .background(stampBg)
+                        .clickable(role = Role.Button, onClick = onPaymentStatusToggle)
+                        .padding(horizontal = 9.dp, vertical = 3.5.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stampText,
+                        fontFamily = resolveJournalFont(stampText, isRtl),
+                        fontSize = if (isRtl) 12.5.sp else 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = stampColor,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+
+                // 3. Calculator Button (Center)
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
