@@ -194,9 +194,9 @@ fun NewCalculationSetupSheet(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .verticalScroll(rememberScrollState())
-                                    .padding(vertical = 10.dp)
+                                    .padding(top = 0.dp, bottom = 18.dp)
                             ) {
-                                // 1. Header: Title + Close Button (Height: 29.dp, sitting on blue rule line)
+                                // 1. Header: Title + Close Button (Sitting directly on top line, height 29.dp)
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -251,7 +251,22 @@ fun NewCalculationSetupSheet(
                                     }
                                 }
 
-                                // 2. Row 1: Name Case (Top) - "Nom du calcul ou client"
+                                // 2. Skipped Line 1: Empty ruled notebook line
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(JournalRuleSpacing)
+                                        .drawBehind {
+                                            drawLine(
+                                                color = JournalRule.copy(alpha = 0.50f),
+                                                start = Offset(0f, size.height),
+                                                end = Offset(size.width, size.height),
+                                                strokeWidth = 0.8.dp.toPx()
+                                            )
+                                        }
+                                )
+
+                                // 3. Title Line: "Titre :" + placeholder / typed text + blinking cursor + ✕ clear
                                 val namePlaceholder = stringResource(R.string.new_calc_name_placeholder)
                                 val isEditingName = keyboardMode != JournalKeyboardMode.NONE
                                 val infiniteTransition = rememberInfiniteTransition(label = "new_calc_cursor")
@@ -304,17 +319,21 @@ fun NewCalculationSetupSheet(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
+                                        val titleLabel = if (isRtl) "العنوان :" else "Titre :"
                                         Text(
-                                            text = "✏️",
-                                            fontSize = 12.sp,
-                                            modifier = Modifier.offset(y = (-0.5).dp)
+                                            text = titleLabel,
+                                            fontFamily = resolveJournalFont(titleLabel, isRtl),
+                                            fontSize = if (isRtl) 13.5.sp else 14.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            color = JournalMutedInk,
+                                            style = TextStyle(platformStyle = NoFontPadding)
                                         )
 
                                         if (titleValue.text.isEmpty()) {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                if (isEditingName && cursorAlpha > 0.5f) {
+                                                if (cursorAlpha > 0.5f) {
                                                     Box(
                                                         modifier = Modifier
                                                             .width(2.dp)
@@ -327,7 +346,7 @@ fun NewCalculationSetupSheet(
                                                     text = namePlaceholder,
                                                     fontFamily = resolveJournalFont(namePlaceholder, isRtl),
                                                     fontSize = 13.5.sp,
-                                                    color = JournalMutedInk.copy(alpha = 0.55f),
+                                                    color = JournalMutedInk.copy(alpha = 0.50f),
                                                     style = TextStyle(platformStyle = NoFontPadding),
                                                     maxLines = 1
                                                 )
@@ -351,7 +370,7 @@ fun NewCalculationSetupSheet(
                                                     onTextLayout = { titleLayoutResult = it },
                                                     modifier = Modifier.drawWithContent {
                                                         drawContent()
-                                                        if (isEditingName && cursorAlpha > 0.5f) {
+                                                        if (cursorAlpha > 0.5f) {
                                                             val layout = titleLayoutResult
                                                             val cursorX = if (layout != null && titleValue.text.isNotEmpty()) {
                                                                 val offset = titleValue.selection.end.coerceIn(0, titleValue.text.length)
@@ -397,7 +416,22 @@ fun NewCalculationSetupSheet(
                                     }
                                 }
 
-                                // 3. Row 2: Type de calcul ("Type de calcul" on left, "Personnel | Crédit" on right)
+                                // 4. Skipped Line 2: Empty ruled notebook line
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(JournalRuleSpacing)
+                                        .drawBehind {
+                                            drawLine(
+                                                color = JournalRule.copy(alpha = 0.50f),
+                                                start = Offset(0f, size.height),
+                                                end = Offset(size.width, size.height),
+                                                strokeWidth = 0.8.dp.toPx()
+                                            )
+                                        }
+                                )
+
+                                // 5. Row: Type de calcul ("Type de calcul" on left, "Personnel | Crédit" on right)
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -512,7 +546,7 @@ fun NewCalculationSetupSheet(
                                     }
                                 }
 
-                                // 4. Row 3: Devise ("Devise" on left, "DH | Rial" on right)
+                                // 6. Row: Devise ("Devise" on left, "DH | Rial" on right)
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -627,7 +661,7 @@ fun NewCalculationSetupSheet(
                                     }
                                 }
 
-                                // 5. Row 4: Modèles de calcul ("Modèles de calcul" on left, Dropdown on right)
+                                // 7. Row: Modèles de calcul ("Modèles de calcul" on left, Dropdown on right)
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -753,9 +787,10 @@ fun NewCalculationSetupSheet(
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(14.dp))
+                                // 8. Extra space between models and Commencer (larger than standard line)
+                                Spacer(modifier = Modifier.height(38.dp))
 
-                                // 6. Action Button: "Commencer" / "ابدأ الحساب"
+                                // 9. Action Button: "Commencer" / "ابدأ الحساب"
                                 val startLabel = stringResource(R.string.new_calc_start_action)
                                 Box(
                                     modifier = Modifier
