@@ -193,18 +193,22 @@ class JournalKeyboardAndroidTest {
         }
         composeTestRule.waitForIdle()
 
-        // 1. Verify text keyboard, 😊 key, and quick emoji bar are visible
+        // 1. Verify text keyboard, top number row (1..0), and bottom 😊 key are visible
         composeTestRule.onNodeWithTag("tag_text_keypad").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("tag_key_digit_1").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("tag_key_digit_3").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("tag_key_digit_7").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("tag_key_digit_0").assertIsDisplayed()
         composeTestRule.onNodeWithTag("tag_key_emoji_switch").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("tag_quick_emoji_🛒").assertIsDisplayed()
-        captureUiScreenshot("screen_kb_quick_emoji.png")
+        captureUiScreenshot("screen_kb_number_row.png")
 
-        // 2. Click a quick emoji (e.g. ☕)
-        composeTestRule.onNodeWithTag("tag_quick_emoji_☕").performClick()
+        // 2. Click digits (e.g. 3 and 7, widely used in Darija Arabizi)
+        composeTestRule.onNodeWithTag("tag_key_digit_3").performClick()
+        composeTestRule.onNodeWithTag("tag_key_digit_7").performClick()
         composeTestRule.waitForIdle()
-        org.junit.Assert.assertEquals("☕", insertedText)
+        org.junit.Assert.assertEquals("37", insertedText)
 
-        // 3. Click 😊 key in row 4 to open full emoji panel
+        // 3. Click 😊 key in row 4 next to 123 to open full emoji panel
         composeTestRule.onNodeWithTag("tag_key_emoji_switch").performClick()
         composeTestRule.waitForIdle()
 
@@ -223,7 +227,7 @@ class JournalKeyboardAndroidTest {
         // 5. Click emoji 🏗️ to insert
         composeTestRule.onNodeWithTag("tag_emoji_item_🏗️").performClick()
         composeTestRule.waitForIdle()
-        org.junit.Assert.assertEquals("☕🏗️", insertedText)
+        org.junit.Assert.assertEquals("37🏗️", insertedText)
 
         // 6. Switch back to ABC via bottom utility bar
         composeTestRule.onNodeWithTag("tag_emoji_to_abc").performClick()

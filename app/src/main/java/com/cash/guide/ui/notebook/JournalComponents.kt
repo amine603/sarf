@@ -2888,37 +2888,32 @@ fun JournalTextKeyboardDock(
                     activePopupAnchor = null
                     onToggleExpand()
                 },
-                centerContent = if (!isEmojiMode) {
-                    {
-                        JournalQuickEmojiBar(
-                            onSelectEmoji = { emoji ->
-                                if (emoji == "😊") {
-                                    isEmojiMode = true
-                                } else {
-                                    onInsertText(emoji)
-                                }
-                            }
-                        )
-                    }
-                } else null,
+                centerContent = null,
                 rightContent = {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .widthIn(min = 36.dp)
+                            .fillMaxHeight()
                             .clickable(
                                 role = Role.Button,
-                                onClickLabel = if (isEmojiMode) "Clavier texte" else "Pack d'émojis",
-                                onClick = { isEmojiMode = !isEmojiMode }
+                                onClickLabel = "Confirmer la saisie",
+                                onClick = {
+                                    backspaceController.cancel()
+                                    activePopupAnchor = null
+                                    onConfirm()
+                                }
                             )
-                            .semantics { testTag = "tag_emoji_toggle_top" },
+                            .semantics { testTag = "tag_keyboard_confirm_top" },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (isEmojiMode) "ABC" else "😊",
-                            fontSize = if (isEmojiMode) 14.sp else 18.sp,
-                            fontFamily = if (isEmojiMode) JournalHandFamily else null,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk
+                            text = "OK",
+                            style = TextStyle(
+                                fontFamily = JournalHandFamily,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalActionConfirm
+                            )
                         )
                     }
                 },
@@ -3000,17 +2995,17 @@ fun JournalTextKeyboardDock(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(180.dp)
+                            .height(220.dp)
                     ) {
-                        // Rows 1, 2, 3 (Letter Rows)
-                        for (rowIndex in 0..2) {
+                        // Rows 0 to 3 (Number Row + Letter Rows)
+                        for (rowIndex in 0 until (rows.size - 1)) {
                             val row = rows[rowIndex]
                             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                 Row(
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxWidth()
-                                        .padding(horizontal = if (rowIndex == 1 && language != JournalKeyboardLanguage.ARABIC) 6.dp else 0.dp)
+                                        .padding(horizontal = if (rowIndex == 2 && language == JournalKeyboardLanguage.ENGLISH) 6.dp else 0.dp)
                                 ) {
                                     row.forEach { keySpec ->
                                         JournalKeySpecCell(
@@ -3046,7 +3041,7 @@ fun JournalTextKeyboardDock(
                         )
 
                         // Row 4 (Utility Row: 123 / Emoji / Space / Punctuation / OK)
-                        val utilityRow = rows[3]
+                        val utilityRow = rows.last()
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                             Row(
                                 modifier = Modifier
@@ -3128,6 +3123,7 @@ private fun JournalKeySpecCell(
         spec.isShift -> "tag_key_shift"
         spec.isModeSwitch -> "tag_switch_to_num_key_top"
         spec.isEmojiSwitch -> "tag_key_emoji_switch"
+        spec.label.length == 1 && spec.label[0].isDigit() -> "tag_key_digit_${spec.output}"
         language == JournalKeyboardLanguage.FRENCH -> "tag_key_fr_${spec.output.lowercase()}"
         language == JournalKeyboardLanguage.ENGLISH -> "tag_key_en_${spec.output.lowercase()}"
         language == JournalKeyboardLanguage.ARABIC -> "tag_key_ar_${spec.output}"
@@ -3294,6 +3290,7 @@ private fun JournalKeySpecCell(
                 spec.isConfirm -> 17.sp
                 spec.label == "123" -> 18.sp
                 spec.label == "." || spec.label == "،" -> 22.sp
+                spec.label.length == 1 && spec.label[0].isDigit() -> 19.sp
                 isArabicChar -> 19.5.sp
                 else -> 21.sp
             }

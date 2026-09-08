@@ -300,8 +300,40 @@ object JournalKeyboardController {
     }
 
     // ==========================================
-    // Layout Definitions (Rows 1 to 4)
+    // Layout Definitions (Rows 0 to 4)
+    // Row 0: Top Number Row (1 2 3 4 5 6 7 8 9 0)
+    // Rows 1-3: Letter Rows
+    // Row 4: Utility Row (123, 😊, Space, Punctuation, OK ✓)
     // ==========================================
+
+    fun createNumberRow(isArabic: Boolean = false): List<JournalKeySpec> {
+        val digits = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
+        val arabicAlts = listOf(
+            listOf("١"), listOf("٢"), listOf("٣"), listOf("٤"), listOf("٥"),
+            listOf("٦"), listOf("٧"), listOf("٨"), listOf("٩"), listOf("٠")
+        )
+        val latinAlts = listOf(
+            listOf("¹", "½"),
+            listOf("²", "⅓"),
+            listOf("³", "¼"),
+            listOf("⁴"),
+            listOf("⁵"),
+            listOf("⁶"),
+            listOf("⁷"),
+            listOf("⁸"),
+            listOf("⁹"),
+            listOf("⁰", "°")
+        )
+        return digits.mapIndexed { index, digit ->
+            JournalKeySpec(
+                label = digit,
+                output = digit,
+                contentDescription = digit,
+                alternatives = if (isArabic) arabicAlts[index] else latinAlts[index],
+                flexWeight = 1.0f
+            )
+        }
+    }
 
     fun getFrenchRows(shiftMode: JournalShiftMode): List<List<JournalKeySpec>> {
         val isUpper = shiftMode != JournalShiftMode.OFF
@@ -319,6 +351,7 @@ object JournalKeyboardController {
         val iAlts = listOf("î", "ï")
         val oAlts = listOf("ô", "ö")
 
+        val r0 = createNumberRow(isArabic = false)
         val r1 = listOf(
             charKey("a", aAlts), charKey("z"), charKey("e", eAlts), charKey("r"), charKey("t"),
             charKey("y"), charKey("u", uAlts), charKey("i", iAlts), charKey("o", oAlts), charKey("p")
@@ -341,7 +374,7 @@ object JournalKeyboardController {
             JournalKeySpec(label = "OK ✓", contentDescription = "Valider", isConfirm = true, flexWeight = 1.7f)
         )
 
-        return listOf(r1, r2, r3, r4)
+        return listOf(r0, r1, r2, r3, r4)
     }
 
     fun getEnglishRows(shiftMode: JournalShiftMode): List<List<JournalKeySpec>> {
@@ -351,6 +384,7 @@ object JournalKeyboardController {
             return JournalKeySpec(label = label, output = label, contentDescription = label)
         }
 
+        val r0 = createNumberRow(isArabic = false)
         val r1 = listOf(
             charKey("q"), charKey("w"), charKey("e"), charKey("r"), charKey("t"),
             charKey("y"), charKey("u"), charKey("i"), charKey("o"), charKey("p")
@@ -373,22 +407,18 @@ object JournalKeyboardController {
             JournalKeySpec(label = "OK ✓", contentDescription = "Confirm", isConfirm = true, flexWeight = 1.7f)
         )
 
-        return listOf(r1, r2, r3, r4)
+        return listOf(r0, r1, r2, r3, r4)
     }
 
     const val ALL_ARABIC_ALPHABET_LETTERS = "ابتثجحخدذرزسشصضطظعغفقكلمنهوي"
 
     /**
      * Arabic mobile layout stored in left-to-right visual order matching Samsung keyboard:
+     * Row 0: 1 2 3 4 5 6 7 8 9 0 (Number Row)
      * Row 1: ض ص ث ق ف غ ع ه خ ح ج (11 keys)
      * Row 2: ش س ي ب ل ا ت ن م ك ط (11 keys)
      * Row 3: ذ ء ؤ ر ى ة و ز ظ د ⌫ (10 letters + Backspace = 11 keys)
-     * Row 4: 123 مسافة ، OK ✓ (Utility Row)
-     *
-     * Reading from right-to-left:
-     * Row 1: ج ح خ ه ع غ ف ق ث ص ض
-     * Row 2: ط ك م ن ت ا ل ب ي س ش
-     * Row 3: ⌫ د ظ ز و ة ى ر ؤ ء ذ
+     * Row 4: 123 😊 مسافة ، OK ✓ (Utility Row)
      */
     fun getArabicRows(): List<List<JournalKeySpec>> {
         fun arKey(c: String, alts: List<String> = emptyList(), flexWeight: Float = 1.0f): JournalKeySpec {
@@ -402,6 +432,7 @@ object JournalKeyboardController {
         val haaAlts = listOf("ة")
         val dalAlts = listOf("ذ")
 
+        val r0 = createNumberRow(isArabic = true)
         val r1 = listOf(
             arKey("ض"), arKey("ص"), arKey("ث"), arKey("ق"), arKey("ف"),
             arKey("غ"), arKey("ع"), arKey("ه", haaAlts), arKey("خ"), arKey("ح"), arKey("ج")
@@ -423,7 +454,7 @@ object JournalKeyboardController {
             JournalKeySpec(label = "OK ✓", contentDescription = "تأكيد", isConfirm = true, flexWeight = 1.7f)
         )
 
-        return listOf(r1, r2, r3, r4)
+        return listOf(r0, r1, r2, r3, r4)
     }
 
     /**

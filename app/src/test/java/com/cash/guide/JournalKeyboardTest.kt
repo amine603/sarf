@@ -210,60 +210,87 @@ class JournalKeyboardTest {
     @Test
     fun testFrenchAzertyLayout_structure() {
         val rowsLower = JournalKeyboardController.getFrenchRows(JournalShiftMode.OFF)
-        assertEquals(4, rowsLower.size)
-        assertEquals("a", rowsLower[0][0].label)
-        assertEquals("z", rowsLower[0][1].label)
-        assertEquals("e", rowsLower[0][2].label)
-        assertTrue(rowsLower[0][2].alternatives.contains("é"))
-        assertTrue(rowsLower[3][1].isEmojiSwitch)
-        assertEquals("espace", rowsLower[3][2].label)
+        assertEquals(5, rowsLower.size)
+
+        // Row 0: Top Number Row (1 2 3 4 5 6 7 8 9 0)
+        assertEquals(10, rowsLower[0].size)
+        assertEquals("1", rowsLower[0][0].label)
+        assertEquals("0", rowsLower[0][9].label)
+
+        // Row 1: Letter Row 1 (a z e r t y u i o p)
+        assertEquals("a", rowsLower[1][0].label)
+        assertEquals("z", rowsLower[1][1].label)
+        assertEquals("e", rowsLower[1][2].label)
+        assertTrue(rowsLower[1][2].alternatives.contains("é"))
+
+        // Row 4: Utility Row (123 / 😊 / espace / . / OK ✓)
+        assertTrue(rowsLower[4][1].isEmojiSwitch)
+        assertEquals("espace", rowsLower[4][2].label)
 
         val rowsUpper = JournalKeyboardController.getFrenchRows(JournalShiftMode.ONE_SHOT)
-        assertEquals("A", rowsUpper[0][0].label)
-        assertEquals("Z", rowsUpper[0][1].label)
-        assertEquals("E", rowsUpper[0][2].label)
-        assertTrue(rowsUpper[0][2].alternatives.contains("É"))
+        assertEquals(5, rowsUpper.size)
+        assertEquals("1", rowsUpper[0][0].label)
+        assertEquals("A", rowsUpper[1][0].label)
+        assertEquals("Z", rowsUpper[1][1].label)
+        assertEquals("E", rowsUpper[1][2].label)
+        assertTrue(rowsUpper[1][2].alternatives.contains("É"))
     }
 
     @Test
     fun testEnglishQwertyLayout_structure() {
         val rows = JournalKeyboardController.getEnglishRows(JournalShiftMode.OFF)
-        assertEquals(4, rows.size)
-        assertEquals("q", rows[0][0].label)
-        assertEquals("w", rows[0][1].label)
-        assertEquals("e", rows[0][2].label)
-        assertTrue(rows[3][1].isEmojiSwitch)
-        assertEquals("space", rows[3][2].label)
+        assertEquals(5, rows.size)
+
+        // Row 0: Top Number Row (1 2 3 4 5 6 7 8 9 0)
+        assertEquals(10, rows[0].size)
+        assertEquals("1", rows[0][0].label)
+        assertEquals("0", rows[0][9].label)
+
+        // Row 1: Letter Row 1 (q w e r t y u i o p)
+        assertEquals("q", rows[1][0].label)
+        assertEquals("w", rows[1][1].label)
+        assertEquals("e", rows[1][2].label)
+
+        // Row 4: Utility Row (123 / 😊 / space / . / OK ✓)
+        assertTrue(rows[4][1].isEmojiSwitch)
+        assertEquals("space", rows[4][2].label)
     }
 
     @Test
     fun testArabicLayout_structure() {
         val rows = JournalKeyboardController.getArabicRows()
-        assertEquals(4, rows.size)
+        assertEquals(5, rows.size)
+
+        // Row 0: Top Number Row (1 2 3 4 5 6 7 8 9 0)
+        assertEquals(10, rows[0].size)
+        assertEquals("1", rows[0][0].label)
+        assertEquals("0", rows[0][9].label)
+        assertTrue(rows[0][0].alternatives.contains("١"))
+        assertTrue(rows[0][9].alternatives.contains("٠"))
 
         // Row 1: 11 keys (ض ص ث ق ف غ ع ه خ ح ج)
-        assertEquals(11, rows[0].size)
-        assertEquals("ض", rows[0][0].label)
-        assertEquals("ج", rows[0][10].label)
+        assertEquals(11, rows[1].size)
+        assertEquals("ض", rows[1][0].label)
+        assertEquals("ج", rows[1][10].label)
 
         // Row 2: 11 keys (ش س ي ب ل ا ت ن م ك ط)
-        assertEquals(11, rows[1].size)
-        assertEquals("ش", rows[1][0].label)
-        assertEquals("ط", rows[1][10].label)
+        assertEquals(11, rows[2].size)
+        assertEquals("ش", rows[2][0].label)
+        assertEquals("ط", rows[2][10].label)
 
         // Row 3: 11 keys (ذ ء ؤ ر ى ة و ز ظ د ⌫)
-        assertEquals(11, rows[2].size)
-        assertEquals("ذ", rows[2][0].label)
-        assertEquals("د", rows[2][9].label)
-        assertTrue(rows[2][10].isBackspace)
+        assertEquals(11, rows[3].size)
+        assertEquals("ذ", rows[3][0].label)
+        assertEquals("د", rows[3][9].label)
+        assertTrue(rows[3][10].isBackspace)
 
         // Row 4: Utility row (123 / 😊 / مسافة / ، / OK ✓)
-        assertEquals(5, rows[3].size)
-        assertTrue(rows[3][0].isModeSwitch)
-        assertTrue(rows[3][1].isEmojiSwitch)
-        assertEquals("مسافة", rows[3][2].label)
-        assertEquals("،", rows[3][3].label)
-        assertTrue(rows[3][4].isConfirm)
+        assertEquals(5, rows[4].size)
+        assertTrue(rows[4][0].isModeSwitch)
+        assertTrue(rows[4][1].isEmojiSwitch)
+        assertEquals("مسافة", rows[4][2].label)
+        assertEquals("،", rows[4][3].label)
+        assertTrue(rows[4][4].isConfirm)
     }
 
     @Test
@@ -316,16 +343,16 @@ class JournalKeyboardTest {
         }
 
         // Verify key alternatives
-        val alifKey = rows[1].first { it.label == "ا" }
+        val alifKey = rows[2].first { it.label == "ا" }
         assertTrue(alifKey.alternatives.containsAll(listOf("أ", "إ", "آ")))
 
-        val laamKey = rows[1].first { it.label == "ل" }
+        val laamKey = rows[2].first { it.label == "ل" }
         assertTrue(laamKey.alternatives.containsAll(listOf("لا", "لأ", "لإ", "لآ")))
 
-        val dalKey = rows[2].first { it.label == "د" }
+        val dalKey = rows[3].first { it.label == "د" }
         assertTrue(dalKey.alternatives.contains("ذ"))
 
-        val dhalKey = rows[2].first { it.label == "ذ" }
+        val dhalKey = rows[3].first { it.label == "ذ" }
         assertEquals("ذ", dhalKey.output)
     }
 
