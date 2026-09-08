@@ -86,6 +86,7 @@ data class JournalKeySpec(
     val isBackspace: Boolean = false,
     val isSpace: Boolean = false,
     val isModeSwitch: Boolean = false,
+    val isEmojiSwitch: Boolean = false,
     val isConfirm: Boolean = false,
     val flexWeight: Float = 1.0f
 )
@@ -333,10 +334,11 @@ object JournalKeyboardController {
             JournalKeySpec(label = "⌫", contentDescription = "Effacer", isBackspace = true, flexWeight = 1.3f)
         )
         val r4 = listOf(
-            JournalKeySpec(label = "123", contentDescription = "Chiffres", isModeSwitch = true, flexWeight = 1.4f),
-            JournalKeySpec(label = "espace", output = " ", contentDescription = "Espace", isSpace = true, flexWeight = 4.4f),
-            JournalKeySpec(label = ".", output = ".", contentDescription = "Point", flexWeight = 1.2f),
-            JournalKeySpec(label = "OK ✓", contentDescription = "Valider", isConfirm = true, flexWeight = 1.8f)
+            JournalKeySpec(label = "123", contentDescription = "Chiffres", isModeSwitch = true, flexWeight = 1.3f),
+            JournalKeySpec(label = "😊", contentDescription = "Émojis", isEmojiSwitch = true, flexWeight = 1.1f),
+            JournalKeySpec(label = "espace", output = " ", contentDescription = "Espace", isSpace = true, flexWeight = 3.6f),
+            JournalKeySpec(label = ".", output = ".", contentDescription = "Point", flexWeight = 1.1f),
+            JournalKeySpec(label = "OK ✓", contentDescription = "Valider", isConfirm = true, flexWeight = 1.7f)
         )
 
         return listOf(r1, r2, r3, r4)
@@ -364,10 +366,11 @@ object JournalKeyboardController {
             JournalKeySpec(label = "⌫", contentDescription = "Backspace", isBackspace = true, flexWeight = 1.3f)
         )
         val r4 = listOf(
-            JournalKeySpec(label = "123", contentDescription = "Numbers", isModeSwitch = true, flexWeight = 1.4f),
-            JournalKeySpec(label = "space", output = " ", contentDescription = "Space", isSpace = true, flexWeight = 4.4f),
-            JournalKeySpec(label = ".", output = ".", contentDescription = "Period", flexWeight = 1.2f),
-            JournalKeySpec(label = "OK ✓", contentDescription = "Confirm", isConfirm = true, flexWeight = 1.8f)
+            JournalKeySpec(label = "123", contentDescription = "Numbers", isModeSwitch = true, flexWeight = 1.3f),
+            JournalKeySpec(label = "😊", contentDescription = "Emojis", isEmojiSwitch = true, flexWeight = 1.1f),
+            JournalKeySpec(label = "space", output = " ", contentDescription = "Space", isSpace = true, flexWeight = 3.6f),
+            JournalKeySpec(label = ".", output = ".", contentDescription = "Period", flexWeight = 1.1f),
+            JournalKeySpec(label = "OK ✓", contentDescription = "Confirm", isConfirm = true, flexWeight = 1.7f)
         )
 
         return listOf(r1, r2, r3, r4)
@@ -413,10 +416,11 @@ object JournalKeyboardController {
             JournalKeySpec(label = "⌫", contentDescription = "حذف", isBackspace = true, flexWeight = 1.15f)
         )
         val r4 = listOf(
-            JournalKeySpec(label = "123", contentDescription = "أرقام", isModeSwitch = true, flexWeight = 1.4f),
-            JournalKeySpec(label = "مسافة", output = " ", contentDescription = "مسافة", isSpace = true, flexWeight = 4.4f),
-            JournalKeySpec(label = "،", output = "،", contentDescription = "فاصلة", flexWeight = 1.2f),
-            JournalKeySpec(label = "OK ✓", contentDescription = "تأكيد", isConfirm = true, flexWeight = 1.8f)
+            JournalKeySpec(label = "123", contentDescription = "أرقام", isModeSwitch = true, flexWeight = 1.3f),
+            JournalKeySpec(label = "😊", contentDescription = "رموز تعبيرية", isEmojiSwitch = true, flexWeight = 1.1f),
+            JournalKeySpec(label = "مسافة", output = " ", contentDescription = "مسافة", isSpace = true, flexWeight = 3.6f),
+            JournalKeySpec(label = "،", output = "،", contentDescription = "فاصلة", flexWeight = 1.1f),
+            JournalKeySpec(label = "OK ✓", contentDescription = "تأكيد", isConfirm = true, flexWeight = 1.7f)
         )
 
         return listOf(r1, r2, r3, r4)

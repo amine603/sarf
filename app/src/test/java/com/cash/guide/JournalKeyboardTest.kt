@@ -215,7 +215,8 @@ class JournalKeyboardTest {
         assertEquals("z", rowsLower[0][1].label)
         assertEquals("e", rowsLower[0][2].label)
         assertTrue(rowsLower[0][2].alternatives.contains("é"))
-        assertEquals("espace", rowsLower[3][1].label)
+        assertTrue(rowsLower[3][1].isEmojiSwitch)
+        assertEquals("espace", rowsLower[3][2].label)
 
         val rowsUpper = JournalKeyboardController.getFrenchRows(JournalShiftMode.ONE_SHOT)
         assertEquals("A", rowsUpper[0][0].label)
@@ -231,7 +232,8 @@ class JournalKeyboardTest {
         assertEquals("q", rows[0][0].label)
         assertEquals("w", rows[0][1].label)
         assertEquals("e", rows[0][2].label)
-        assertEquals("space", rows[3][1].label)
+        assertTrue(rows[3][1].isEmojiSwitch)
+        assertEquals("space", rows[3][2].label)
     }
 
     @Test
@@ -255,12 +257,39 @@ class JournalKeyboardTest {
         assertEquals("د", rows[2][9].label)
         assertTrue(rows[2][10].isBackspace)
 
-        // Row 4: Utility row (123 / مسافة / ، / OK ✓)
-        assertEquals(4, rows[3].size)
+        // Row 4: Utility row (123 / 😊 / مسافة / ، / OK ✓)
+        assertEquals(5, rows[3].size)
         assertTrue(rows[3][0].isModeSwitch)
-        assertEquals("مسافة", rows[3][1].label)
-        assertEquals("،", rows[3][2].label)
-        assertTrue(rows[3][3].isConfirm)
+        assertTrue(rows[3][1].isEmojiSwitch)
+        assertEquals("مسافة", rows[3][2].label)
+        assertEquals("،", rows[3][3].label)
+        assertTrue(rows[3][4].isConfirm)
+    }
+
+    @Test
+    fun testMoroccanEmojiPack_structureAndContent() {
+        val categories = com.cash.guide.ui.notebook.JournalEmojiData.categories
+        assertEquals(8, categories.size)
+        val totalEmojis = categories.sumOf { it.emojis.size }
+        assertTrue("Total emojis should be at least 180, found $totalEmojis", totalEmojis >= 180)
+
+        // Check specific Moroccan business categories
+        val names = categories.map { it.nameFr }
+        assertTrue(names.any { it.contains("Commerce") })
+        assertTrue(names.any { it.contains("Chantier") })
+        assertTrue(names.any { it.contains("Café") })
+        assertTrue(names.any { it.contains("Transport") })
+        assertTrue(names.any { it.contains("Maison") })
+        assertTrue(names.any { it.contains("Flous") })
+        assertTrue(names.any { it.contains("Équipe") })
+        assertTrue(names.any { it.contains("Symboles") })
+
+        // Check quick emojis
+        val quick = com.cash.guide.ui.notebook.JournalEmojiData.quickEmojis
+        assertTrue("Quick emojis should have at least 10 items", quick.size >= 10)
+        assertTrue(quick.contains("🛒"))
+        assertTrue(quick.contains("🏗️"))
+        assertTrue(quick.contains("💰"))
     }
 
     @Test

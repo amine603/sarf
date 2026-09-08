@@ -2360,6 +2360,7 @@ fun JournalKeyboardHandleBar(
     onLeftLongClick: (() -> Unit)? = null,
     expanded: Boolean,
     onToggleExpand: () -> Unit,
+    centerContent: (@Composable () -> Unit)? = null,
     rightContent: @Composable () -> Unit = { Spacer(modifier = Modifier.size(36.dp)) },
     leftTestTag: String? = null
 ) {
@@ -2413,67 +2414,134 @@ fun JournalKeyboardHandleBar(
             )
         }
 
-        // Center Slot: Geometrically centered Chevron
         val centerClickMod = Modifier.clickable(
             role = Role.Button,
             onClickLabel = if (expanded) "Réduire le clavier" else "Développer le clavier",
             onClick = onToggleExpand
         )
 
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .then(centerClickMod),
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(modifier = Modifier.size(18.dp, 10.dp)) {
-                val strokeW = 1.4.dp.toPx()
-                val inkColor = JournalInk.copy(alpha = 0.85f)
-                if (expanded) {
-                    // Chevron Down
-                    drawLine(
-                        color = inkColor,
-                        start = Offset(1.dp.toPx(), 2.dp.toPx()),
-                        end = Offset(size.width / 2f, size.height - 2.dp.toPx()),
-                        strokeWidth = strokeW,
-                        cap = StrokeCap.Round
-                    )
-                    drawLine(
-                        color = inkColor,
-                        start = Offset(size.width / 2f, size.height - 2.dp.toPx()),
-                        end = Offset(size.width - 1.dp.toPx(), 2.dp.toPx()),
-                        strokeWidth = strokeW,
-                        cap = StrokeCap.Round
-                    )
-                } else {
-                    // Chevron Up
-                    drawLine(
-                        color = inkColor,
-                        start = Offset(1.dp.toPx(), size.height - 2.dp.toPx()),
-                        end = Offset(size.width / 2f, 2.dp.toPx()),
-                        strokeWidth = strokeW,
-                        cap = StrokeCap.Round
-                    )
-                    drawLine(
-                        color = inkColor,
-                        start = Offset(size.width / 2f, 2.dp.toPx()),
-                        end = Offset(size.width - 1.dp.toPx(), size.height - 2.dp.toPx()),
-                        strokeWidth = strokeW,
-                        cap = StrokeCap.Round
-                    )
+        if (centerContent != null) {
+            // Flexible center content (e.g. Quick Emoji Bar)
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                centerContent()
+            }
+
+            // Dedicated Chevron Toggle
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .fillMaxHeight()
+                    .then(centerClickMod),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.size(16.dp, 9.dp)) {
+                    val strokeW = 1.4.dp.toPx()
+                    val inkColor = JournalInk.copy(alpha = 0.85f)
+                    if (expanded) {
+                        drawLine(
+                            color = inkColor,
+                            start = Offset(1.dp.toPx(), 2.dp.toPx()),
+                            end = Offset(size.width / 2f, size.height - 2.dp.toPx()),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
+                        )
+                        drawLine(
+                            color = inkColor,
+                            start = Offset(size.width / 2f, size.height - 2.dp.toPx()),
+                            end = Offset(size.width - 1.dp.toPx(), 2.dp.toPx()),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
+                        )
+                    } else {
+                        drawLine(
+                            color = inkColor,
+                            start = Offset(1.dp.toPx(), size.height - 2.dp.toPx()),
+                            end = Offset(size.width / 2f, 2.dp.toPx()),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
+                        )
+                        drawLine(
+                            color = inkColor,
+                            start = Offset(size.width / 2f, 2.dp.toPx()),
+                            end = Offset(size.width - 1.dp.toPx(), size.height - 2.dp.toPx()),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
+                        )
+                    }
                 }
             }
-        }
 
-        // Right Slot
-        Box(
-            modifier = Modifier
-                .widthIn(min = 40.dp)
-                .fillMaxHeight(),
-            contentAlignment = Alignment.Center
-        ) {
-            rightContent()
+            // Right Slot
+            Box(
+                modifier = Modifier
+                    .widthIn(min = 36.dp)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                rightContent()
+            }
+        } else {
+            // Center Slot: Geometrically centered Chevron
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .then(centerClickMod),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.size(18.dp, 10.dp)) {
+                    val strokeW = 1.4.dp.toPx()
+                    val inkColor = JournalInk.copy(alpha = 0.85f)
+                    if (expanded) {
+                        // Chevron Down
+                        drawLine(
+                            color = inkColor,
+                            start = Offset(1.dp.toPx(), 2.dp.toPx()),
+                            end = Offset(size.width / 2f, size.height - 2.dp.toPx()),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
+                        )
+                        drawLine(
+                            color = inkColor,
+                            start = Offset(size.width / 2f, size.height - 2.dp.toPx()),
+                            end = Offset(size.width - 1.dp.toPx(), 2.dp.toPx()),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
+                        )
+                    } else {
+                        // Chevron Up
+                        drawLine(
+                            color = inkColor,
+                            start = Offset(1.dp.toPx(), size.height - 2.dp.toPx()),
+                            end = Offset(size.width / 2f, 2.dp.toPx()),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
+                        )
+                        drawLine(
+                            color = inkColor,
+                            start = Offset(size.width / 2f, 2.dp.toPx()),
+                            end = Offset(size.width - 1.dp.toPx(), size.height - 2.dp.toPx()),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
+                        )
+                    }
+                }
+            }
+
+            // Right Slot
+            Box(
+                modifier = Modifier
+                    .widthIn(min = 40.dp)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                rightContent()
+            }
         }
     }
 }
@@ -2770,6 +2838,7 @@ fun JournalTextKeyboardDock(
     modifier: Modifier = Modifier
 ) {
     var showLanguageChooser by remember { mutableStateOf(false) }
+    var isEmojiMode by remember { mutableStateOf(false) }
     var activePopupAnchor by remember { mutableStateOf<IntRect?>(null) }
     var activeAlternatives by remember { mutableStateOf<List<String>>(emptyList()) }
 
@@ -2786,6 +2855,7 @@ fun JournalTextKeyboardDock(
             backspaceController.cancel()
             activePopupAnchor = null
             showLanguageChooser = false
+            isEmojiMode = false
         }
     }
 
@@ -2795,24 +2865,64 @@ fun JournalTextKeyboardDock(
         // Handle bar
         if (expanded) {
             JournalKeyboardHandleBar(
-                leftText = language.label,
+                leftText = if (isEmojiMode) "ABC" else language.label,
                 onLeftClick = {
-                    backspaceController.cancel()
-                    activePopupAnchor = null
-                    onCycleLanguage()
+                    if (isEmojiMode) {
+                        isEmojiMode = false
+                    } else {
+                        backspaceController.cancel()
+                        activePopupAnchor = null
+                        onCycleLanguage()
+                    }
                 },
-                onLeftLongClick = {
-                    backspaceController.cancel()
-                    activePopupAnchor = null
-                    showLanguageChooser = true
-                },
+                onLeftLongClick = if (!isEmojiMode) {
+                    {
+                        backspaceController.cancel()
+                        activePopupAnchor = null
+                        showLanguageChooser = true
+                    }
+                } else null,
                 expanded = true,
                 onToggleExpand = {
                     backspaceController.cancel()
                     activePopupAnchor = null
                     onToggleExpand()
                 },
-                leftTestTag = "tag_language_key_top"
+                centerContent = if (!isEmojiMode) {
+                    {
+                        JournalQuickEmojiBar(
+                            onSelectEmoji = { emoji ->
+                                if (emoji == "😊") {
+                                    isEmojiMode = true
+                                } else {
+                                    onInsertText(emoji)
+                                }
+                            }
+                        )
+                    }
+                } else null,
+                rightContent = {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clickable(
+                                role = Role.Button,
+                                onClickLabel = if (isEmojiMode) "Clavier texte" else "Pack d'émojis",
+                                onClick = { isEmojiMode = !isEmojiMode }
+                            )
+                            .semantics { testTag = "tag_emoji_toggle_top" },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isEmojiMode) "ABC" else "😊",
+                            fontSize = if (isEmojiMode) 14.sp else 18.sp,
+                            fontFamily = if (isEmojiMode) JournalHandFamily else null,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalInk
+                        )
+                    }
+                },
+                leftTestTag = if (isEmojiMode) "tag_emoji_to_abc_top" else "tag_language_key_top"
             )
         } else {
             JournalKeyboardHandleBar(
@@ -2860,120 +2970,139 @@ fun JournalTextKeyboardDock(
         }
 
         if (expanded) {
-            val rows = remember(language, shiftMode) {
-                when (language) {
-                    JournalKeyboardLanguage.FRENCH -> JournalKeyboardController.getFrenchRows(shiftMode)
-                    JournalKeyboardLanguage.ENGLISH -> JournalKeyboardController.getEnglishRows(shiftMode)
-                    JournalKeyboardLanguage.ARABIC -> JournalKeyboardController.getArabicRows()
+            if (isEmojiMode) {
+                JournalEmojiKeyboardPanel(
+                    onInsertEmoji = { emoji -> onInsertText(emoji) },
+                    onSwitchToAlphabet = { isEmojiMode = false },
+                    onSwitchToNumericMode = {
+                        isEmojiMode = false
+                        onSwitchToNumericMode()
+                    },
+                    onBackspace = onBackspace,
+                    onConfirm = onConfirm,
+                    backspaceController = backspaceController,
+                    spaceLabel = when (language) {
+                        JournalKeyboardLanguage.FRENCH -> "espace"
+                        JournalKeyboardLanguage.ENGLISH -> "space"
+                        JournalKeyboardLanguage.ARABIC -> "مسافة"
+                    }
+                )
+            } else {
+                val rows = remember(language, shiftMode) {
+                    when (language) {
+                        JournalKeyboardLanguage.FRENCH -> JournalKeyboardController.getFrenchRows(shiftMode)
+                        JournalKeyboardLanguage.ENGLISH -> JournalKeyboardController.getEnglishRows(shiftMode)
+                        JournalKeyboardLanguage.ARABIC -> JournalKeyboardController.getArabicRows()
+                    }
                 }
-            }
 
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                ) {
-                    // Rows 1, 2, 3 (Letter Rows)
-                    for (rowIndex in 0..2) {
-                        val row = rows[rowIndex]
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                    ) {
+                        // Rows 1, 2, 3 (Letter Rows)
+                        for (rowIndex in 0..2) {
+                            val row = rows[rowIndex]
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxWidth()
+                                        .padding(horizontal = if (rowIndex == 1 && language != JournalKeyboardLanguage.ARABIC) 6.dp else 0.dp)
+                                ) {
+                                    row.forEach { keySpec ->
+                                        JournalKeySpecCell(
+                                            spec = keySpec,
+                                            language = language,
+                                            shiftMode = shiftMode,
+                                            modifier = Modifier.weight(keySpec.flexWeight),
+                                            onTap = {
+                                                if (keySpec.isShift) {
+                                                    onToggleShift()
+                                                } else {
+                                                    onInsertText(keySpec.output)
+                                                }
+                                            },
+                                            onLongPress = { bounds ->
+                                                if (keySpec.alternatives.isNotEmpty()) {
+                                                    activePopupAnchor = bounds
+                                                    activeAlternatives = keySpec.alternatives
+                                                }
+                                            },
+                                            backspaceController = if (keySpec.isBackspace) backspaceController else null
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Subtle 0.75dp divider before the utility row
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            thickness = 0.75.dp,
+                            color = JournalRule.copy(alpha = 0.45f)
+                        )
+
+                        // Row 4 (Utility Row: 123 / Emoji / Space / Punctuation / OK)
+                        val utilityRow = rows[3]
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                             Row(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxWidth()
-                                    .padding(horizontal = if (rowIndex == 1 && language != JournalKeyboardLanguage.ARABIC) 6.dp else 0.dp)
                             ) {
-                                row.forEach { keySpec ->
+                                utilityRow.forEach { keySpec ->
                                     JournalKeySpecCell(
                                         spec = keySpec,
                                         language = language,
                                         shiftMode = shiftMode,
                                         modifier = Modifier.weight(keySpec.flexWeight),
                                         onTap = {
-                                            if (keySpec.isShift) {
-                                                onToggleShift()
-                                            } else {
-                                                onInsertText(keySpec.output)
+                                            when {
+                                                keySpec.isModeSwitch -> onSwitchToNumericMode()
+                                                keySpec.isEmojiSwitch -> isEmojiMode = true
+                                                keySpec.isConfirm -> onConfirm()
+                                                else -> onInsertText(keySpec.output)
                                             }
                                         },
-                                        onLongPress = { bounds ->
-                                            if (keySpec.alternatives.isNotEmpty()) {
-                                                activePopupAnchor = bounds
-                                                activeAlternatives = keySpec.alternatives
-                                            }
-                                        },
-                                        backspaceController = if (keySpec.isBackspace) backspaceController else null
+                                        onLongPress = null,
+                                        backspaceController = null
                                     )
                                 }
                             }
                         }
                     }
 
-                    // Subtle 0.75dp divider before the utility row
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                        thickness = 0.75.dp,
-                        color = JournalRule.copy(alpha = 0.45f)
-                    )
+                    // Anchored Popup for Alternatives / Accents
+                    if (activePopupAnchor != null && activeAlternatives.isNotEmpty()) {
+                        JournalAnchoredPopup(
+                            anchorBounds = activePopupAnchor!!,
+                            alternatives = activeAlternatives,
+                            onSelect = { selectedAlt ->
+                                onInsertText(selectedAlt)
+                                activePopupAnchor = null
+                            },
+                            onDismiss = { activePopupAnchor = null }
+                        )
+                    }
 
-                    // Row 4 (Utility Row: 123 / Space / Punctuation / OK)
-                    val utilityRow = rows[3]
-                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                        Row(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                        ) {
-                            utilityRow.forEach { keySpec ->
-                                JournalKeySpecCell(
-                                    spec = keySpec,
-                                    language = language,
-                                    shiftMode = shiftMode,
-                                    modifier = Modifier.weight(keySpec.flexWeight),
-                                    onTap = {
-                                        when {
-                                            keySpec.isModeSwitch -> onSwitchToNumericMode()
-                                            keySpec.isConfirm -> onConfirm()
-                                            else -> onInsertText(keySpec.output)
-                                        }
-                                    },
-                                    onLongPress = null,
-                                    backspaceController = null
-                                )
-                            }
-                        }
+                    // Paper-style Language Chooser Popup
+                    if (showLanguageChooser) {
+                        JournalLanguageChooserPopup(
+                            currentLanguage = language,
+                            onSelectLanguage = { selected ->
+                                onSelectLanguage(selected)
+                                showLanguageChooser = false
+                            },
+                            onDismiss = { showLanguageChooser = false }
+                        )
                     }
                 }
-
-                // Anchored Popup for Alternatives / Accents
-                if (activePopupAnchor != null && activeAlternatives.isNotEmpty()) {
-                    JournalAnchoredPopup(
-                        anchorBounds = activePopupAnchor!!,
-                        alternatives = activeAlternatives,
-                        onSelect = { selectedAlt ->
-                            onInsertText(selectedAlt)
-                            activePopupAnchor = null
-                        },
-                        onDismiss = { activePopupAnchor = null }
-                    )
-                }
-
-                // Paper-style Language Chooser Popup
-                if (showLanguageChooser) {
-                    JournalLanguageChooserPopup(
-                        currentLanguage = language,
-                        onSelectLanguage = { selected ->
-                            onSelectLanguage(selected)
-                            showLanguageChooser = false
-                        },
-                        onDismiss = { showLanguageChooser = false }
-                    )
-                }
             }
-
-            Spacer(modifier = Modifier.height(4.dp))
         }
+        Spacer(modifier = Modifier.height(4.dp))
     }
 }
 
@@ -2998,6 +3127,7 @@ private fun JournalKeySpecCell(
         spec.isConfirm -> "tag_keyboard_confirm"
         spec.isShift -> "tag_key_shift"
         spec.isModeSwitch -> "tag_switch_to_num_key_top"
+        spec.isEmojiSwitch -> "tag_key_emoji_switch"
         language == JournalKeyboardLanguage.FRENCH -> "tag_key_fr_${spec.output.lowercase()}"
         language == JournalKeyboardLanguage.ENGLISH -> "tag_key_en_${spec.output.lowercase()}"
         language == JournalKeyboardLanguage.ARABIC -> "tag_key_ar_${spec.output}"
@@ -3152,13 +3282,14 @@ private fun JournalKeySpecCell(
             }
         } else {
             val isArabicChar = spec.label.any { it in '\u0600'..'\u06FF' }
-            val font = if (isArabicChar) TajawalFamily else JournalHandFamily
+            val font = if (spec.isEmojiSwitch) null else if (isArabicChar) TajawalFamily else JournalHandFamily
             val textColor = when {
                 spec.isConfirm -> JournalActionConfirm
                 spec.isSpace -> JournalMutedInk
                 else -> JournalInk
             }
             val fontSize = when {
+                spec.isEmojiSwitch -> 17.5.sp
                 spec.isSpace -> if (isArabicChar) 16.sp else 18.sp
                 spec.isConfirm -> 17.sp
                 spec.label == "123" -> 18.sp
