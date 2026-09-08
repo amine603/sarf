@@ -3215,12 +3215,12 @@ private fun JournalKeySpecCell(
                     strokeWidth = strokeW
                 )
 
-                // Subtle vertical divider between keys (chartat sghar verticaly)
+                // Subtle vertical divider between keys (charta sghira w bahta)
                 if (showVerticalDivider) {
-                    val tickStrokeW = 0.9.dp.toPx()
-                    val tickColor = JournalMutedInk.copy(alpha = 0.35f)
-                    val startY = size.height * 0.22f
-                    val endY = size.height * 0.78f
+                    val tickStrokeW = 0.65.dp.toPx()
+                    val tickColor = JournalMutedInk.copy(alpha = 0.18f)
+                    val startY = size.height * 0.32f
+                    val endY = size.height * 0.68f
                     val x = size.width - 0.5f
                     drawLine(
                         color = tickColor,
