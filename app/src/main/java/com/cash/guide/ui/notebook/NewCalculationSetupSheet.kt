@@ -449,6 +449,8 @@ fun NewCalculationSetupSheet(
                                         }
                                 )
 
+                                val labelColumnWidth = if (isRtl) 95.dp else 122.dp
+
                                 // 5. Row: Type de calcul ("Type de calcul" on left, "Personnel | Crédit" on right)
                                 Row(
                                     modifier = Modifier
@@ -463,23 +465,31 @@ fun NewCalculationSetupSheet(
                                             )
                                         }
                                         .padding(horizontal = 16.dp),
-                                    verticalAlignment = Alignment.Bottom,
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    verticalAlignment = Alignment.Bottom
                                 ) {
                                     val typeLabel = stringResource(R.string.new_calc_type_label)
-                                    Text(
-                                        text = typeLabel,
-                                        fontFamily = resolveJournalFont(typeLabel, isRtl),
-                                        fontSize = if (isRtl) 13.sp else 13.5.sp,
-                                        color = JournalMutedInk,
-                                        style = TextStyle(platformStyle = NoFontPadding),
-                                        modifier = Modifier.journalBaselineOnRule()
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .width(labelColumnWidth)
+                                            .height(JournalRuleSpacing),
+                                        contentAlignment = Alignment.BottomStart
+                                    ) {
+                                        Text(
+                                            text = typeLabel,
+                                            fontFamily = resolveJournalFont(typeLabel, isRtl),
+                                            fontSize = if (isRtl) 13.sp else 13.5.sp,
+                                            color = JournalMutedInk,
+                                            style = TextStyle(platformStyle = NoFontPadding),
+                                            modifier = Modifier.journalBaselineOnRule()
+                                        )
+                                    }
 
-                                    // In same row: Personnel | Crédit
+                                    Spacer(modifier = Modifier.width(10.dp))
+
+                                    // In same row: Personnel | Crédit (starts at exact column line!)
                                     Row(
                                         verticalAlignment = Alignment.Bottom,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                                         modifier = Modifier.height(JournalRuleSpacing)
                                     ) {
                                         val isPersonnel = selectedType == "PERSONNEL"
@@ -500,10 +510,19 @@ fun NewCalculationSetupSheet(
                                                         val washY = washCenterY - (washHeight / 2f)
                                                         val padH = 6.dp.toPx()
                                                         drawRoundRect(
-                                                            color = HighlighterYellow.copy(alpha = 0.45f),
+                                                            color = HighlighterYellow.copy(alpha = 0.50f),
                                                             topLeft = Offset(-padH, washY),
                                                             size = Size(w + padH * 2, washHeight),
                                                             cornerRadius = CornerRadius(4.dp.toPx())
+                                                        )
+                                                        val strokeW = 1.8.dp.toPx()
+                                                        val lineY = h - strokeW / 2
+                                                        drawLine(
+                                                            color = JournalInk.copy(alpha = 0.85f),
+                                                            start = Offset(-padH, lineY),
+                                                            end = Offset(w + padH, lineY),
+                                                            strokeWidth = strokeW,
+                                                            cap = StrokeCap.Round
                                                         )
                                                     }
                                                 }
@@ -551,6 +570,15 @@ fun NewCalculationSetupSheet(
                                                             size = Size(w + padH * 2, washHeight),
                                                             cornerRadius = CornerRadius(4.dp.toPx())
                                                         )
+                                                        val strokeW = 1.8.dp.toPx()
+                                                        val lineY = h - strokeW / 2
+                                                        drawLine(
+                                                            color = Color(0xFFC2410C),
+                                                            start = Offset(-padH, lineY),
+                                                            end = Offset(w + padH, lineY),
+                                                            strokeWidth = strokeW,
+                                                            cap = StrokeCap.Round
+                                                        )
                                                     }
                                                 }
                                         ) {
@@ -581,23 +609,31 @@ fun NewCalculationSetupSheet(
                                             )
                                         }
                                         .padding(horizontal = 16.dp),
-                                    verticalAlignment = Alignment.Bottom,
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    verticalAlignment = Alignment.Bottom
                                 ) {
                                     val currencyLabel = stringResource(R.string.new_calc_currency_label)
-                                    Text(
-                                        text = currencyLabel,
-                                        fontFamily = resolveJournalFont(currencyLabel, isRtl),
-                                        fontSize = if (isRtl) 13.sp else 13.5.sp,
-                                        color = JournalMutedInk,
-                                        style = TextStyle(platformStyle = NoFontPadding),
-                                        modifier = Modifier.journalBaselineOnRule()
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .width(labelColumnWidth)
+                                            .height(JournalRuleSpacing),
+                                        contentAlignment = Alignment.BottomStart
+                                    ) {
+                                        Text(
+                                            text = currencyLabel,
+                                            fontFamily = resolveJournalFont(currencyLabel, isRtl),
+                                            fontSize = if (isRtl) 13.sp else 13.5.sp,
+                                            color = JournalMutedInk,
+                                            style = TextStyle(platformStyle = NoFontPadding),
+                                            modifier = Modifier.journalBaselineOnRule()
+                                        )
+                                    }
 
-                                    // In same row: DH | Rial
+                                    Spacer(modifier = Modifier.width(10.dp))
+
+                                    // In same row: DH | Rial (starts at exact same X position as Personnel!)
                                     Row(
                                         verticalAlignment = Alignment.Bottom,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                                         modifier = Modifier.height(JournalRuleSpacing)
                                     ) {
                                         val isDirham = selectedCurrency == MoneyUnit.DIRHAM
@@ -622,6 +658,15 @@ fun NewCalculationSetupSheet(
                                                             topLeft = Offset(-padH, washY),
                                                             size = Size(w + padH * 2, washHeight),
                                                             cornerRadius = CornerRadius(4.dp.toPx())
+                                                        )
+                                                        val strokeW = 1.8.dp.toPx()
+                                                        val lineY = h - strokeW / 2
+                                                        drawLine(
+                                                            color = JournalInk.copy(alpha = 0.85f),
+                                                            start = Offset(-padH, lineY),
+                                                            end = Offset(w + padH, lineY),
+                                                            strokeWidth = strokeW,
+                                                            cap = StrokeCap.Round
                                                         )
                                                     }
                                                 }
@@ -669,6 +714,15 @@ fun NewCalculationSetupSheet(
                                                             size = Size(w + padH * 2, washHeight),
                                                             cornerRadius = CornerRadius(4.dp.toPx())
                                                         )
+                                                        val strokeW = 1.8.dp.toPx()
+                                                        val lineY = h - strokeW / 2
+                                                        drawLine(
+                                                            color = JournalInk.copy(alpha = 0.85f),
+                                                            start = Offset(-padH, lineY),
+                                                            end = Offset(w + padH, lineY),
+                                                            strokeWidth = strokeW,
+                                                            cap = StrokeCap.Round
+                                                        )
                                                     }
                                                 }
                                         ) {
@@ -699,30 +753,64 @@ fun NewCalculationSetupSheet(
                                             )
                                         }
                                         .padding(horizontal = 16.dp),
-                                    verticalAlignment = Alignment.Bottom,
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    verticalAlignment = Alignment.Bottom
                                 ) {
                                     val templatesLabel = stringResource(R.string.new_calc_templates_label)
-                                    Text(
-                                        text = templatesLabel,
-                                        fontFamily = resolveJournalFont(templatesLabel, isRtl),
-                                        fontSize = if (isRtl) 13.sp else 13.5.sp,
-                                        color = JournalMutedInk,
-                                        style = TextStyle(platformStyle = NoFontPadding),
-                                        modifier = Modifier.journalBaselineOnRule()
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .width(labelColumnWidth)
+                                            .height(JournalRuleSpacing),
+                                        contentAlignment = Alignment.BottomStart
+                                    ) {
+                                        Text(
+                                            text = templatesLabel,
+                                            fontFamily = resolveJournalFont(templatesLabel, isRtl),
+                                            fontSize = if (isRtl) 13.sp else 13.5.sp,
+                                            color = JournalMutedInk,
+                                            style = TextStyle(platformStyle = NoFontPadding),
+                                            modifier = Modifier.journalBaselineOnRule()
+                                        )
+                                    }
 
-                                    // In same row: Dropdown menu selector
+                                    Spacer(modifier = Modifier.width(10.dp))
+
+                                    // In same row: Dropdown menu selector (starts at exact same X position as Personnel and DH!)
                                     Box(
                                         modifier = Modifier.height(JournalRuleSpacing)
                                     ) {
                                         val anchorText = selectedModelName ?: if (isRtl) "اختر نموذجاً" else "Choisir..."
+                                        val hasModel = selectedModelName != null
                                         Row(
                                             modifier = Modifier
                                                 .clickable(
                                                     interactionSource = remember { MutableInteractionSource() },
                                                     indication = null
-                                                ) { showModelDropdown = true },
+                                                ) { showModelDropdown = true }
+                                                .drawBehind {
+                                                    if (hasModel) {
+                                                        val h = size.height
+                                                        val w = size.width
+                                                        val washHeight = 21.dp.toPx()
+                                                        val washCenterY = h - 6.5.dp.toPx()
+                                                        val washY = washCenterY - (washHeight / 2f)
+                                                        val padH = 6.dp.toPx()
+                                                        drawRoundRect(
+                                                            color = HighlighterYellow.copy(alpha = 0.50f),
+                                                            topLeft = Offset(-padH, washY),
+                                                            size = Size(w + padH * 2, washHeight),
+                                                            cornerRadius = CornerRadius(4.dp.toPx())
+                                                        )
+                                                        val strokeW = 1.8.dp.toPx()
+                                                        val lineY = h - strokeW / 2
+                                                        drawLine(
+                                                            color = JournalInk.copy(alpha = 0.85f),
+                                                            start = Offset(-padH, lineY),
+                                                            end = Offset(w + padH, lineY),
+                                                            strokeWidth = strokeW,
+                                                            cap = StrokeCap.Round
+                                                        )
+                                                    }
+                                                },
                                             verticalAlignment = Alignment.Bottom,
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
@@ -730,8 +818,8 @@ fun NewCalculationSetupSheet(
                                                 text = anchorText,
                                                 fontFamily = resolveJournalFont(anchorText, isRtl),
                                                 fontSize = 12.5.sp,
-                                                fontWeight = if (selectedModelName != null) FontWeight.Medium else FontWeight.Normal,
-                                                color = if (selectedModelName != null) JournalInk else JournalMutedInk,
+                                                fontWeight = if (hasModel) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (hasModel) JournalInk else JournalMutedInk,
                                                 style = TextStyle(platformStyle = NoFontPadding),
                                                 maxLines = 1,
                                                 modifier = Modifier.journalBaselineOnRule()
@@ -739,7 +827,7 @@ fun NewCalculationSetupSheet(
                                             Text(
                                                 text = "▾",
                                                 fontSize = 11.sp,
-                                                color = JournalMutedInk,
+                                                color = if (hasModel) JournalInk else JournalMutedInk,
                                                 style = TextStyle(platformStyle = NoFontPadding),
                                                 modifier = Modifier.padding(bottom = 5.dp)
                                             )
