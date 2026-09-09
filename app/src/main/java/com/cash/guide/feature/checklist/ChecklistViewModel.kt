@@ -1,21 +1,41 @@
 package com.cash.guide.feature.checklist
 
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cash.guide.data.ChecklistRepository
 import com.cash.guide.data.db.ChecklistWithItems
+import com.cash.guide.domain.AndroidIcuGraphemeSegmenter
+import com.cash.guide.domain.GraphemeSegmenter
+import com.cash.guide.domain.JournalKeyboardController
+import com.cash.guide.domain.JournalKeyboardLanguage
+import com.cash.guide.domain.JournalShiftMode
+import com.cash.guide.domain.JournalShiftState
+import com.cash.guide.domain.ShiftAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+enum class ChecklistInputTarget {
+    NONE,
+    ITEM_INPUT,
+    TITLE
+}
 
 data class ChecklistUiState(
     val allChecklists: List<ChecklistWithItems> = emptyList(),
     val currentChecklist: ChecklistWithItems? = null,
-    val inputText: String = "",
+    val inputText: TextFieldValue = TextFieldValue(""),
     val isTitleEditing: Boolean = false,
-    val titleInput: String = "",
+    val titleInput: TextFieldValue = TextFieldValue("Checklist"),
+    val activeInputTarget: ChecklistInputTarget = ChecklistInputTarget.NONE,
+    val keyboardLanguage: JournalKeyboardLanguage = JournalKeyboardLanguage.FRENCH,
+    val shiftState: JournalShiftState = JournalShiftState(),
+    val shiftMode: JournalShiftMode = JournalShiftMode.OFF,
+    val keyboardExpanded: Boolean = true,
     val isLoading: Boolean = true,
     val showChecklistListDialog: Boolean = false,
     val showCreateNewDialog: Boolean = false,
@@ -24,7 +44,8 @@ data class ChecklistUiState(
 
 class ChecklistViewModel(
     private val checklistRepository: ChecklistRepository,
-    initialChecklistId: String? = null
+    initialChecklistId: String? = null,
+    private val graphemeSegmenter: GraphemeSegmenter = AndroidIcuGraphemeSegmenter()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChecklistUiState())
@@ -47,12 +68,18 @@ class ChecklistViewModel(
                     activeId = newId
                 } else {
                     activeId = target?.checklist?.id
-                    _uiState.value = _uiState.value.copy(
-                        allChecklists = all,
-                        currentChecklist = target,
-                        titleInput = target?.checklist?.title ?: "Checklist",
-                        isLoading = false
-                    )
+                    _uiState.update { s ->
+                        s.copy(
+                            allChecklists = all,
+                            currentChecklist = target,
+                            titleInput = if (s.activeInputTarget != ChecklistInputTarget.TITLE) {
+                                TextFieldValue(target?.checklist?.title ?: "Checklist")
+                            } else {
+                                s.titleInput
+                            },
+                            isLoading = false
+                        )
+                    }
                 }
             }
         }
@@ -61,24 +88,165 @@ class ChecklistViewModel(
     fun selectChecklist(id: String) {
         activeId = id
         val target = _uiState.value.allChecklists.find { it.checklist.id == id }
-        _uiState.value = _uiState.value.copy(
-            currentChecklist = target,
-            titleInput = target?.checklist?.title ?: "Checklist",
-            showChecklistListDialog = false
-        )
+        _uiState.update { s ->
+            s.copy(
+                currentChecklist = target,
+                titleInput = TextFieldValue(target?.checklist?.title ?: "Checklist"),
+                activeInputTarget = ChecklistInputTarget.NONE,
+                isTitleEditing = false,
+                showChecklistListDialog = false
+            )
+        }
     }
 
-    fun setInputText(text: String) {
-        _uiState.value = _uiState.value.copy(inputText = text)
+    fun setInputText(value: TextFieldValue) {
+        _uiState.update { it.copy(inputText = value) }
+    }
+
+    fun focusItemInput() {
+        _uiState.update {
+            it.copy(
+                activeInputTarget = ChecklistInputTarget.ITEM_INPUT,
+                isTitleEditing = false
+            )
+        }
+    }
+
+    fun focusTitle() {
+        val curTitle = _uiState.value.currentChecklist?.checklist?.title ?: "Checklist"
+        _uiState.update {
+            it.copy(
+                activeInputTarget = ChecklistInputTarget.TITLE,
+                isTitleEditing = true,
+                titleInput = TextFieldValue(curTitle, selection = androidx.compose.ui.text.TextRange(curTitle.length))
+            )
+        }
+    }
+
+    fun hideKeyboard() {
+        if (_uiState.value.activeInputTarget == ChecklistInputTarget.TITLE) {
+            saveTitle()
+        }
+        _uiState.update {
+            it.copy(
+                activeInputTarget = ChecklistInputTarget.NONE,
+                isTitleEditing = false
+            )
+        }
+    }
+
+    fun toggleKeyboardExpanded() {
+        _uiState.update { it.copy(keyboardExpanded = !it.keyboardExpanded) }
+    }
+
+    fun cycleLanguage() {
+        val next = when (_uiState.value.keyboardLanguage) {
+            JournalKeyboardLanguage.FRENCH -> JournalKeyboardLanguage.ARABIC
+            JournalKeyboardLanguage.ARABIC -> JournalKeyboardLanguage.ENGLISH
+            JournalKeyboardLanguage.ENGLISH -> JournalKeyboardLanguage.FRENCH
+        }
+        _uiState.update { it.copy(keyboardLanguage = next) }
+    }
+
+    fun selectLanguage(lang: JournalKeyboardLanguage) {
+        _uiState.update { it.copy(keyboardLanguage = lang) }
+    }
+
+    fun toggleShift() {
+        val now = System.currentTimeMillis()
+        val nextState = JournalKeyboardController.reduceShift(
+            state = _uiState.value.shiftState,
+            action = ShiftAction.UserTapShift(now),
+            monotonicNow = { now }
+        )
+        _uiState.update { it.copy(shiftState = nextState, shiftMode = nextState.mode) }
+    }
+
+    fun applyTextKey(key: String) {
+        val state = _uiState.value
+        val now = System.currentTimeMillis()
+
+        var newShiftState = state.shiftState
+        var newShiftMode = state.shiftMode
+        if (state.keyboardLanguage != JournalKeyboardLanguage.ARABIC) {
+            newShiftState = JournalKeyboardController.reduceShift(
+                state = state.shiftState,
+                action = ShiftAction.UserTypedText(key),
+                monotonicNow = { now }
+            )
+            newShiftMode = newShiftState.mode
+        }
+
+        when (state.activeInputTarget) {
+            ChecklistInputTarget.ITEM_INPUT -> {
+                val newVal = JournalKeyboardController.insertText(state.inputText, key)
+                _uiState.update {
+                    it.copy(
+                        inputText = newVal,
+                        shiftState = newShiftState,
+                        shiftMode = newShiftMode
+                    )
+                }
+            }
+            ChecklistInputTarget.TITLE -> {
+                val newVal = JournalKeyboardController.insertText(state.titleInput, key)
+                _uiState.update {
+                    it.copy(
+                        titleInput = newVal,
+                        shiftState = newShiftState,
+                        shiftMode = newShiftMode
+                    )
+                }
+            }
+            ChecklistInputTarget.NONE -> {
+                val newVal = JournalKeyboardController.insertText(state.inputText, key)
+                _uiState.update {
+                    it.copy(
+                        activeInputTarget = ChecklistInputTarget.ITEM_INPUT,
+                        inputText = newVal,
+                        shiftState = newShiftState,
+                        shiftMode = newShiftMode
+                    )
+                }
+            }
+        }
+    }
+
+    fun applyTextBackspace() {
+        val state = _uiState.value
+        when (state.activeInputTarget) {
+            ChecklistInputTarget.ITEM_INPUT -> {
+                val newVal = JournalKeyboardController.deleteBackward(state.inputText, graphemeSegmenter)
+                _uiState.update { it.copy(inputText = newVal) }
+            }
+            ChecklistInputTarget.TITLE -> {
+                val newVal = JournalKeyboardController.deleteBackward(state.titleInput, graphemeSegmenter)
+                _uiState.update { it.copy(titleInput = newVal) }
+            }
+            ChecklistInputTarget.NONE -> {}
+        }
+    }
+
+    fun confirmInput() {
+        when (_uiState.value.activeInputTarget) {
+            ChecklistInputTarget.ITEM_INPUT -> {
+                addItem()
+            }
+            ChecklistInputTarget.TITLE -> {
+                saveTitle()
+                hideKeyboard()
+            }
+            ChecklistInputTarget.NONE -> {}
+        }
     }
 
     fun addItem() {
-        val text = _uiState.value.inputText.trim()
+        val text = _uiState.value.inputText.text.trim()
         val current = _uiState.value.currentChecklist ?: return
         if (text.isEmpty()) return
         viewModelScope.launch {
             checklistRepository.addItem(current.checklist.id, text)
-            _uiState.value = _uiState.value.copy(inputText = "")
+            _uiState.update { it.copy(inputText = TextFieldValue("")) }
         }
     }
 
@@ -108,32 +276,26 @@ class ChecklistViewModel(
         }
     }
 
-    fun startEditingTitle() {
-        _uiState.value = _uiState.value.copy(
-            isTitleEditing = true,
-            titleInput = _uiState.value.currentChecklist?.checklist?.title ?: "Checklist"
-        )
-    }
-
-    fun setTitleInput(text: String) {
-        _uiState.value = _uiState.value.copy(titleInput = text)
-    }
-
     fun saveTitle() {
         val current = _uiState.value.currentChecklist ?: return
-        val newTitle = _uiState.value.titleInput.trim().ifBlank { "Checklist" }
+        val newTitle = _uiState.value.titleInput.text.trim().ifBlank { "Checklist" }
         viewModelScope.launch {
             checklistRepository.updateTitle(current.checklist.id, newTitle)
-            _uiState.value = _uiState.value.copy(isTitleEditing = false)
+            _uiState.update {
+                it.copy(
+                    isTitleEditing = false,
+                    activeInputTarget = if (it.activeInputTarget == ChecklistInputTarget.TITLE) ChecklistInputTarget.NONE else it.activeInputTarget
+                )
+            }
         }
     }
 
     fun openCreateDialog() {
-        _uiState.value = _uiState.value.copy(showCreateNewDialog = true, newChecklistTitle = "")
+        _uiState.update { it.copy(showCreateNewDialog = true, newChecklistTitle = "") }
     }
 
     fun setNewChecklistTitle(title: String) {
-        _uiState.value = _uiState.value.copy(newChecklistTitle = title)
+        _uiState.update { it.copy(newChecklistTitle = title) }
     }
 
     fun confirmCreateChecklist() {
@@ -141,20 +303,20 @@ class ChecklistViewModel(
         viewModelScope.launch {
             val newId = checklistRepository.createChecklist(title)
             activeId = newId
-            _uiState.value = _uiState.value.copy(showCreateNewDialog = false)
+            _uiState.update { it.copy(showCreateNewDialog = false) }
         }
     }
 
     fun dismissCreateDialog() {
-        _uiState.value = _uiState.value.copy(showCreateNewDialog = false)
+        _uiState.update { it.copy(showCreateNewDialog = false) }
     }
 
     fun showListsDialog() {
-        _uiState.value = _uiState.value.copy(showChecklistListDialog = true)
+        _uiState.update { it.copy(showChecklistListDialog = true) }
     }
 
     fun dismissListsDialog() {
-        _uiState.value = _uiState.value.copy(showChecklistListDialog = false)
+        _uiState.update { it.copy(showChecklistListDialog = false) }
     }
 
     fun deleteCurrentChecklist() {

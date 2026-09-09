@@ -1,39 +1,39 @@
 package com.cash.guide.feature.checklist
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,46 +46,44 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
-import com.cash.guide.data.db.ChecklistItemEntity
 import com.cash.guide.domain.ChecklistShareHelper
 import com.cash.guide.ui.notebook.HisabiSketchIcon
 import com.cash.guide.ui.notebook.HisabiSymbol
-import com.cash.guide.ui.notebook.HighlighterBlue
 import com.cash.guide.ui.notebook.HighlighterPink
 import com.cash.guide.ui.notebook.HighlighterYellow
+import com.cash.guide.ui.notebook.JournalActionDelete
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalPaper
 import com.cash.guide.ui.notebook.JournalRule
 import com.cash.guide.ui.notebook.JournalRuleSpacing
+import com.cash.guide.ui.notebook.JournalRuledDocument
+import com.cash.guide.ui.notebook.JournalTextKeyboardDock
 import com.cash.guide.ui.notebook.JournalWritingInk
 import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
+import com.cash.guide.ui.notebook.journalBaselineOnRule
 import com.cash.guide.ui.notebook.resolveJournalFont
 
 private val ColorEmerald = Color(0xFF1B7A4B)
@@ -98,418 +96,591 @@ fun ChecklistScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val keyboardController = LocalSoftwareKeyboardController.current
     val coroutineScope = rememberCoroutineScope()
-    val focusManager = LocalFocusManager.current
+    val listState = rememberLazyListState()
 
-    val density = LocalDensity.current
-    val rowHeightPx = with(density) { JournalRuleSpacing.toPx() }
-    val ruleColor = JournalRule
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
 
     var showShareMenu by remember { mutableStateOf(false) }
-    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    BackHandler {
+        if (state.activeInputTarget != ChecklistInputTarget.NONE) {
+            viewModel.hideKeyboard()
+        } else {
+            onNavigateBack()
+        }
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "checklist_cursor")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 1000
+                1f at 0
+                1f at 499
+                0f at 500
+                0f at 999
+            },
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "cursor_blink"
+    )
+
+    val rowDotColors = remember {
+        listOf(
+            Color(0xFF3B82B6),
+            Color(0xFFD65D82),
+            Color(0xFF5E8C3B),
+            Color(0xFFC7881E),
+            Color(0xFF7E5AA8),
+            Color(0xFFCC673B)
+        )
+    }
+
+    val current = state.currentChecklist
+    val items = current?.sortedItems ?: emptyList()
+    val totalCount = current?.totalCount ?: 0
+    val completedCount = current?.completedCount ?: 0
+    val isAllCompleted = totalCount > 0 && completedCount == totalCount
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(JournalPaper)
-            .drawBehind {
-                // Continuous background notebook blue ruled lines
-                var y = rowHeightPx
-                while (y < size.height) {
-                    drawLine(
-                        color = ruleColor,
-                        start = Offset(0f, y),
-                        end = Offset(size.width, y),
-                        strokeWidth = 0.6.dp.toPx()
-                    )
-                    y += rowHeightPx
-                }
-            }
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .imePadding()
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Line 1: Header bar (Back button, Title, Actions)
-            Row(
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(JournalRuleSpacing)
-                    .padding(horizontal = 14.dp),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .statusBarsPadding(),
+                color = JournalPaper,
+                tonalElevation = 0.dp
             ) {
-                // Back & Title
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
                         modifier = Modifier
-                            .width(28.dp)
-                            .height(JournalRuleSpacing)
-                            .clickable(
-                                role = Role.Button,
-                                onClick = onNavigateBack
-                            ),
-                        contentAlignment = Alignment.BottomCenter
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Back,
-                            contentDescription = stringResource(R.string.cd_back),
-                            tint = JournalInk,
-                            size = 20.dp,
-                            modifier = Modifier.offset(y = (-4.5).dp)
-                        )
-                    }
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .clickable(role = Role.Button, onClick = {
+                                    if (state.activeInputTarget != ChecklistInputTarget.NONE) {
+                                        viewModel.hideKeyboard()
+                                    }
+                                    onNavigateBack()
+                                }),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            HisabiSketchIcon(
+                                symbol = HisabiSymbol.Back,
+                                contentDescription = stringResource(R.string.cd_back),
+                                tint = JournalInk,
+                                size = 20.dp
+                            )
+                        }
 
-                    Text(
-                        text = "Checklist",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 21.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = JournalInk,
-                        style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.offset(y = (-4).dp)
-                    )
-                }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 6.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    if (state.activeInputTarget == ChecklistInputTarget.TITLE) HighlighterPink.copy(alpha = 0.55f)
+                                    else HighlighterPink.copy(alpha = 0.35f)
+                                )
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    keyboardController?.hide()
+                                    viewModel.focusTitle()
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = (if (state.activeInputTarget == ChecklistInputTarget.TITLE) state.titleInput.text else current?.checklist?.title ?: "Checklist").ifBlank { "Checklist" },
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = JournalWritingInk,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
 
-                // Top right action buttons: Switch/New Lists, Share, Menu
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Switch list button
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(HighlighterYellow.copy(alpha = 0.45f))
-                            .clickable { viewModel.showListsDialog() }
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                            .offset(y = (-3).dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                if (state.activeInputTarget == ChecklistInputTarget.TITLE && cursorAlpha > 0f) {
+                                    Spacer(modifier = Modifier.width(2.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .width(2.dp)
+                                            .height(16.dp)
+                                            .background(JournalWritingInk.copy(alpha = cursorAlpha))
+                                    )
+                                }
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(HighlighterYellow.copy(alpha = 0.50f))
+                                .clickable(role = Role.Button) {
+                                    viewModel.hideKeyboard()
+                                    viewModel.showListsDialog()
+                                }
+                                .padding(horizontal = 8.dp, vertical = 5.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "≡ Listes (${state.allChecklists.size})",
                                 fontFamily = PatrickHandFamily,
-                                fontSize = 13.sp,
+                                fontSize = 13.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = JournalWritingInk,
                                 style = TextStyle(platformStyle = NoFontPadding)
                             )
                         }
-                    }
 
-                    // Share button
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(HighlighterPink.copy(alpha = 0.45f))
-                            .clickable { showShareMenu = true }
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                            .offset(y = (-3).dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(HighlighterPink.copy(alpha = 0.45f))
+                                .clickable(role = Role.Button) {
+                                    viewModel.hideKeyboard()
+                                    showShareMenu = true
+                                }
+                                .padding(horizontal = 8.dp, vertical = 5.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "Partager ↗",
                                 fontFamily = PatrickHandFamily,
-                                fontSize = 13.sp,
+                                fontSize = 13.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = JournalWritingInk,
                                 style = TextStyle(platformStyle = NoFontPadding)
                             )
-                        }
 
-                        DropdownMenu(
-                            expanded = showShareMenu,
-                            onDismissRequest = { showShareMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("🖼️ Partager comme image (Image carnet)") },
-                                onClick = {
-                                    showShareMenu = false
-                                    val current = state.currentChecklist ?: return@DropdownMenuItem
-                                    ChecklistShareHelper.shareAsImage(
-                                        context = context,
-                                        checklistId = current.checklist.id,
-                                        title = current.checklist.title,
-                                        items = current.sortedItems,
-                                        isRtl = isRtl,
-                                        coroutineScope = coroutineScope
-                                    )
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("💬 Partager sur WhatsApp (Texte + Lien cliquable)") },
-                                onClick = {
-                                    showShareMenu = false
-                                    val current = state.currentChecklist ?: return@DropdownMenuItem
-                                    ChecklistShareHelper.shareAsWhatsAppTextAndLink(
-                                        context = context,
-                                        title = current.checklist.title,
-                                        items = current.sortedItems
-                                    )
-                                }
-                            )
+                            DropdownMenu(
+                                expanded = showShareMenu,
+                                onDismissRequest = { showShareMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("🖼️ Partager comme image (Image carnet)") },
+                                    onClick = {
+                                        showShareMenu = false
+                                        val cl = state.currentChecklist ?: return@DropdownMenuItem
+                                        ChecklistShareHelper.shareAsImage(
+                                            context = context,
+                                            checklistId = cl.checklist.id,
+                                            title = cl.checklist.title,
+                                            items = cl.sortedItems,
+                                            isRtl = isRtl,
+                                            coroutineScope = coroutineScope
+                                        )
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("🔗 Partager sur WhatsApp (Texte + Lien cliquable)") },
+                                    onClick = {
+                                        showShareMenu = false
+                                        val cl = state.currentChecklist ?: return@DropdownMenuItem
+                                        ChecklistShareHelper.shareAsWhatsAppTextAndLink(
+                                            context = context,
+                                            title = cl.checklist.title,
+                                            items = cl.sortedItems
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
+
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(JournalRule.copy(alpha = 0.35f))
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Sub-header: Current Checklist Title & Counters (sitting on rule)
-            val current = state.currentChecklist
-            if (current != null) {
+            JournalRuledDocument(
+                listState = listState,
+                clearFocusOnTap = true,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(JournalRuleSpacing)
                         .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Editable Title
-                    if (state.isTitleEditing) {
-                        BasicTextField(
-                            value = state.titleInput,
-                            onValueChange = { viewModel.setTitleInput(it) },
-                            textStyle = TextStyle(
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalWritingInk,
-                                platformStyle = NoFontPadding
-                            ),
-                            singleLine = true,
-                            cursorBrush = SolidColor(JournalInk),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(onDone = {
-                                viewModel.saveTitle()
-                                focusManager.clearFocus()
-                            }),
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            text = "✓",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ColorEmerald,
-                            modifier = Modifier
-                                .clickable {
-                                    viewModel.saveTitle()
-                                    focusManager.clearFocus()
-                                }
-                                .padding(horizontal = 6.dp)
-                        )
-                    } else {
-                        Row(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { viewModel.startEditingTitle() },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = current.checklist.title,
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalWritingInk,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                            HisabiSketchIcon(
-                                symbol = HisabiSymbol.Pencil,
-                                contentDescription = null,
-                                tint = JournalMutedInk.copy(alpha = 0.6f),
-                                size = 13.dp
-                            )
-                        }
-                    }
-
-                    // Progress counter pill
-                    val completed = current.completedCount
-                    val total = current.totalCount
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (total > 0 && completed == total) ColorEmerald.copy(alpha = 0.15f)
-                                else HighlighterBlue.copy(alpha = 0.35f)
-                            )
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "$completed / $total faits",
+                            text = "$completedCount / $totalCount faits",
                             fontFamily = PatrickHandFamily,
-                            fontSize = 13.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (total > 0 && completed == total) ColorEmerald else JournalWritingInk,
-                            style = TextStyle(platformStyle = NoFontPadding)
+                            color = if (isAllCompleted) ColorEmerald else JournalWritingInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.journalBaselineOnRule()
                         )
-                    }
-                }
-
-                // Action sub-bar: (Tout cocher / Supprimer cochés)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = if (current.isAllCompleted) "Tout décocher" else "Tout cocher",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = JournalMutedInk,
-                            modifier = Modifier
-                                .clickable { viewModel.setAllItemsChecked(!current.isAllCompleted) }
-                                .padding(vertical = 2.dp)
-                        )
-                        if (current.completedCount > 0) {
+                        if (isAllCompleted) {
                             Text(
-                                text = "• Supprimer les cochés",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = ColorCoral,
-                                modifier = Modifier
-                                    .clickable { viewModel.deleteCompletedItems() }
-                                    .padding(vertical = 2.dp)
-                            )
-                        }
-                    }
-
-                    Text(
-                        text = "Supprimer la liste",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 12.sp,
-                        color = ColorCoral.copy(alpha = 0.8f),
-                        modifier = Modifier
-                            .clickable { showDeleteConfirm = true }
-                            .padding(vertical = 2.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Main Items List
-            val itemsList = current?.sortedItems ?: emptyList()
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
-            ) {
-                if (itemsList.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(JournalRuleSpacing * 3),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Tapez un article ci-dessous pour commencer votre liste ✍️",
+                                text = "✓",
                                 fontFamily = PatrickHandFamily,
                                 fontSize = 16.sp,
-                                color = JournalMutedInk.copy(alpha = 0.6f),
-                                style = TextStyle(platformStyle = NoFontPadding)
+                                fontWeight = FontWeight.Bold,
+                                color = ColorEmerald,
+                                style = TextStyle(platformStyle = NoFontPadding),
+                                modifier = Modifier.journalBaselineOnRule()
                             )
                         }
                     }
-                } else {
-                    items(itemsList, key = { it.id }) { item ->
-                        ChecklistItemRow(
-                            item = item,
-                            onToggle = { isChecked -> viewModel.toggleItem(item.id, isChecked) },
-                            onDelete = { viewModel.deleteItem(item.id) }
+
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        if (totalCount > 0) {
+                            val allChecked = completedCount == totalCount
+                            Text(
+                                text = if (allChecked) "Tout décocher" else "Tout cocher",
+                                fontFamily = PatrickHandFamily,
+                                fontSize = 13.sp,
+                                color = JournalMutedInk,
+                                style = TextStyle(platformStyle = NoFontPadding),
+                                modifier = Modifier
+                                    .journalBaselineOnRule()
+                                    .clickable { viewModel.setAllItemsChecked(!allChecked) }
+                            )
+
+                            if (completedCount > 0) {
+                                Text(
+                                    text = "Supprimer les cochés",
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 13.sp,
+                                    color = ColorCoral,
+                                    style = TextStyle(platformStyle = NoFontPadding),
+                                    modifier = Modifier
+                                        .journalBaselineOnRule()
+                                        .clickable { viewModel.deleteCompletedItems() }
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = "Supprimer la liste",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 13.sp,
+                            color = ColorCoral.copy(alpha = 0.85f),
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier
+                                .journalBaselineOnRule()
+                                .clickable { showDeleteConfirmDialog = true }
                         )
                     }
                 }
+
+                if (items.isEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(JournalRuleSpacing)
+                            .padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Text(
+                            text = "Tapez un article ci-dessous pour commencer votre liste ✍️",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 15.sp,
+                            color = JournalMutedInk.copy(alpha = 0.50f),
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.journalBaselineOnRule()
+                        )
+                    }
+                }
+
+                items.forEachIndexed { index, item ->
+                    val rowNumber = index + 1
+                    val dotColor = rowDotColors[index % rowDotColors.size]
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(JournalRuleSpacing)
+                            .padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "$rowNumber",
+                                fontFamily = PatrickHandFamily,
+                                fontSize = 16.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = dotColor,
+                                style = TextStyle(platformStyle = NoFontPadding),
+                                modifier = Modifier
+                                    .widthIn(min = 16.dp)
+                                    .journalBaselineOnRule()
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .width(1.dp)
+                                    .height(JournalRuleSpacing)
+                                    .background(Color(0xFFE57373).copy(alpha = 0.45f))
+                            )
+
+                            Text(
+                                text = item.text,
+                                fontFamily = PatrickHandFamily,
+                                fontSize = 16.sp,
+                                fontWeight = if (item.isChecked) FontWeight.Normal else FontWeight.Medium,
+                                color = if (item.isChecked) JournalMutedInk.copy(alpha = 0.50f) else JournalInk,
+                                style = TextStyle(platformStyle = NoFontPadding),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .journalBaselineOnRule()
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null
+                                    ) {
+                                        viewModel.toggleItem(item.id, !item.isChecked)
+                                    }
+                                    .drawWithContent {
+                                        drawContent()
+                                        if (item.isChecked) {
+                                            val strikeY = size.height * 0.54f
+                                            drawLine(
+                                                color = JournalInk.copy(alpha = 0.65f),
+                                                start = Offset(0f, strikeY),
+                                                end = Offset(size.width, strikeY),
+                                                strokeWidth = 1.8.dp.toPx(),
+                                                cap = StrokeCap.Round
+                                            )
+                                        }
+                                    }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable(
+                                        role = Role.Button,
+                                        onClickLabel = "Supprimer l'élément",
+                                        onClick = { viewModel.deleteItem(item.id) }
+                                    )
+                                    .journalBaselineOnRule(opticalOffsetFromBottom = 0.dp),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                HisabiSketchIcon(
+                                    symbol = HisabiSymbol.Trash,
+                                    contentDescription = "Supprimer",
+                                    tint = JournalActionDelete.copy(alpha = 0.75f),
+                                    size = 17.dp,
+                                    modifier = Modifier.offset(y = 1.dp)
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable(
+                                        role = Role.Checkbox,
+                                        onClickLabel = if (item.isChecked) "Décocher" else "Cocher",
+                                        onClick = { viewModel.toggleItem(item.id, !item.isChecked) }
+                                    )
+                                    .journalBaselineOnRule(opticalOffsetFromBottom = 0.dp),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                Canvas(
+                                    modifier = Modifier
+                                        .size(19.dp)
+                                        .offset(y = 1.dp)
+                                ) {
+                                    val strokeWidth = 1.5.dp.toPx()
+                                    val corner = 3.dp.toPx()
+                                    val rect = androidx.compose.ui.geometry.RoundRect(
+                                        left = strokeWidth / 2f,
+                                        top = strokeWidth / 2f,
+                                        right = size.width - strokeWidth / 2f,
+                                        bottom = size.height - strokeWidth / 2f,
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner, corner)
+                                    )
+                                    val path = Path().apply { addRoundRect(rect) }
+
+                                    if (item.isChecked) {
+                                        drawPath(
+                                            path = path,
+                                            color = Color(0xFFDCFCE7).copy(alpha = 0.75f),
+                                            style = Fill
+                                        )
+                                        drawPath(
+                                            path = path,
+                                            color = Color(0xFF16A34A),
+                                            style = Stroke(width = strokeWidth)
+                                        )
+                                        val checkPath = Path().apply {
+                                            moveTo(size.width * 0.20f, size.height * 0.52f)
+                                            lineTo(size.width * 0.42f, size.height * 0.76f)
+                                            lineTo(size.width * 0.82f, size.height * 0.22f)
+                                        }
+                                        drawPath(
+                                            path = checkPath,
+                                            color = Color(0xFF15803D),
+                                            style = Stroke(
+                                                width = 2.2.dp.toPx(),
+                                                cap = StrokeCap.Round,
+                                                join = StrokeJoin.Round
+                                            )
+                                        )
+                                    } else {
+                                        drawPath(
+                                            path = path,
+                                            color = JournalInk.copy(alpha = 0.40f),
+                                            style = Stroke(width = strokeWidth)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
             }
 
-            // Bottom Docked Quick Input Row
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(JournalPaper)
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(46.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White.copy(alpha = 0.85f))
+                        .background(JournalPaper)
                         .border(
-                            BorderStroke(1.2.dp, JournalWritingInk.copy(alpha = 0.5f)),
+                            BorderStroke(
+                                width = 1.3.dp,
+                                color = if (state.activeInputTarget == ChecklistInputTarget.ITEM_INPUT) JournalInk else JournalMutedInk.copy(alpha = 0.35f)
+                            ),
                             RoundedCornerShape(12.dp)
                         )
-                        .padding(horizontal = 12.dp),
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            keyboardController?.hide()
+                            viewModel.focusItemInput()
+                        }
+                        .padding(horizontal = 12.dp, vertical = 9.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "+",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = JournalWritingInk
-                    )
-
-                    BasicTextField(
-                        value = state.inputText,
-                        onValueChange = { viewModel.setInputText(it) },
+                    Row(
                         modifier = Modifier.weight(1f),
-                        textStyle = TextStyle(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "+",
                             fontFamily = PatrickHandFamily,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = JournalWritingInk,
-                            platformStyle = NoFontPadding
-                        ),
-                        singleLine = true,
-                        cursorBrush = SolidColor(JournalInk),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = {
-                            viewModel.addItem()
-                        }),
-                        decorationBox = { innerTextField ->
-                            if (state.inputText.isEmpty()) {
-                                Text(
-                                    text = "Ajouter un élément (ex: Pain, Lait...)",
-                                    fontFamily = PatrickHandFamily,
-                                    fontSize = 16.sp,
-                                    color = JournalMutedInk.copy(alpha = 0.45f),
-                                    style = TextStyle(platformStyle = NoFontPadding)
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalInk
+                        )
+
+                        if (state.inputText.text.isEmpty()) {
+                            Text(
+                                text = "Ajouter un élément (ex: Pain, Lait...)",
+                                fontFamily = PatrickHandFamily,
+                                fontSize = 15.sp,
+                                color = JournalMutedInk.copy(alpha = 0.45f),
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                            if (state.activeInputTarget == ChecklistInputTarget.ITEM_INPUT && cursorAlpha > 0f) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(2.dp)
+                                        .height(16.dp)
+                                        .background(JournalInk.copy(alpha = cursorAlpha))
                                 )
                             }
-                            innerTextField()
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = state.inputText.text,
+                                    fontFamily = resolveJournalFont(state.inputText.text, isRtl),
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = JournalInk,
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
+                                if (state.activeInputTarget == ChecklistInputTarget.ITEM_INPUT && cursorAlpha > 0f) {
+                                    Spacer(modifier = Modifier.width(2.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .width(2.dp)
+                                            .height(16.dp)
+                                            .background(JournalInk.copy(alpha = cursorAlpha))
+                                    )
+                                }
+                            }
                         }
-                    )
+                    }
 
-                    if (state.inputText.isNotBlank()) {
+                    if (state.inputText.text.isNotBlank()) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(HighlighterPink.copy(alpha = 0.6f))
+                                .background(HighlighterPink.copy(alpha = 0.65f))
                                 .clickable { viewModel.addItem() }
                                 .padding(horizontal = 10.dp, vertical = 5.dp),
                             contentAlignment = Alignment.Center
@@ -526,10 +697,27 @@ fun ChecklistScreen(
                     }
                 }
             }
+
+            if (state.activeInputTarget != ChecklistInputTarget.NONE) {
+                JournalTextKeyboardDock(
+                    language = state.keyboardLanguage,
+                    shiftMode = state.shiftMode,
+                    expanded = state.keyboardExpanded,
+                    onToggleExpand = { viewModel.toggleKeyboardExpanded() },
+                    onCycleLanguage = { viewModel.cycleLanguage() },
+                    onSelectLanguage = { viewModel.selectLanguage(it) },
+                    onToggleShift = { viewModel.toggleShift() },
+                    onInsertText = { viewModel.applyTextKey(it) },
+                    onBackspace = { viewModel.applyTextBackspace() },
+                    onSwitchToNumericMode = { },
+                    onConfirm = { viewModel.confirmInput() }
+                )
+            } else {
+                Spacer(modifier = Modifier.navigationBarsPadding())
+            }
         }
     }
 
-    // Dialog: List of Checklists / Create New
     if (state.showChecklistListDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissListsDialog() },
@@ -554,7 +742,7 @@ fun ChecklistScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(
-                                    if (isSelected) HighlighterYellow.copy(alpha = 0.4f)
+                                    if (isSelected) HighlighterYellow.copy(alpha = 0.40f)
                                     else Color.Transparent
                                 )
                                 .clickable { viewModel.selectChecklist(cl.checklist.id) }
@@ -605,7 +793,6 @@ fun ChecklistScreen(
         )
     }
 
-    // Dialog: Create New Checklist
     if (state.showCreateNewDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissCreateDialog() },
@@ -618,7 +805,8 @@ fun ChecklistScreen(
                 )
             },
             text = {
-                BasicTextField(
+                // Simplified text field for dialog
+                androidx.compose.foundation.text.BasicTextField(
                     value = state.newChecklistTitle,
                     onValueChange = { viewModel.setNewChecklistTitle(it) },
                     modifier = Modifier
@@ -630,18 +818,7 @@ fun ChecklistScreen(
                         fontSize = 17.sp,
                         color = JournalWritingInk
                     ),
-                    singleLine = true,
-                    decorationBox = { inner ->
-                        if (state.newChecklistTitle.isEmpty()) {
-                            Text(
-                                "Titre de la liste (ex: Courses, Souk...)",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 16.sp,
-                                color = JournalMutedInk.copy(alpha = 0.5f)
-                            )
-                        }
-                        inner()
-                    }
+                    singleLine = true
                 )
             },
             confirmButton = {
@@ -651,117 +828,53 @@ fun ChecklistScreen(
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.dismissCreateDialog() }) {
-                    Text("Annuler", fontFamily = PatrickHandFamily, fontSize = 15.sp)
+                    Text("Annuler", fontFamily = PatrickHandFamily, fontSize = 16.sp)
                 }
             }
         )
     }
 
-    // Dialog: Confirm Delete
-    if (showDeleteConfirm) {
+    if (showDeleteConfirmDialog) {
         AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Supprimer cette liste ?") },
-            text = { Text("Êtes-vous sûr de vouloir supprimer définitivement cette checklist ?") },
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Supprimer la checklist ?",
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ColorCoral
+                )
+            },
+            text = {
+                Text(
+                    text = "Êtes-vous sûr de vouloir supprimer cette checklist ? Cette action est irréversible.",
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 16.sp,
+                    color = JournalInk
+                )
+            },
             confirmButton = {
-                TextButton(onClick = {
-                    showDeleteConfirm = false
-                    viewModel.deleteCurrentChecklist()
-                }) {
-                    Text("Supprimer", color = ColorCoral, fontWeight = FontWeight.Bold)
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        viewModel.deleteCurrentChecklist()
+                    }
+                ) {
+                    Text(
+                        text = "Supprimer",
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorCoral
+                    )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("Annuler")
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Annuler", fontFamily = PatrickHandFamily, fontSize = 16.sp)
                 }
             }
-        )
-    }
-}
-
-@Composable
-private fun ChecklistItemRow(
-    item: ChecklistItemEntity,
-    onToggle: (Boolean) -> Unit,
-    onDelete: () -> Unit
-) {
-    val haptic = LocalHapticFeedback.current
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(JournalRuleSpacing)
-            .clickable {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onToggle(!item.isChecked)
-            }
-            .padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // Checkbox icon
-            Canvas(modifier = Modifier.size(19.dp)) {
-                val boxSize = size.width
-                val corner = 4.dp.toPx()
-                val strokeW = 1.6.dp.toPx()
-
-                if (item.isChecked) {
-                    drawRoundRect(
-                        color = ColorEmerald.copy(alpha = 0.2f),
-                        size = size,
-                        cornerRadius = CornerRadius(corner, corner)
-                    )
-                    drawRoundRect(
-                        color = ColorEmerald,
-                        size = size,
-                        cornerRadius = CornerRadius(corner, corner),
-                        style = Stroke(width = strokeW)
-                    )
-                    // Checkmark
-                    val p1 = Offset(boxSize * 0.22f, boxSize * 0.52f)
-                    val p2 = Offset(boxSize * 0.44f, boxSize * 0.76f)
-                    val p3 = Offset(boxSize * 0.80f, boxSize * 0.26f)
-                    drawLine(ColorEmerald, p1, p2, strokeWidth = 2.4.dp.toPx(), cap = StrokeCap.Round)
-                    drawLine(ColorEmerald, p2, p3, strokeWidth = 2.4.dp.toPx(), cap = StrokeCap.Round)
-                } else {
-                    drawRoundRect(
-                        color = JournalWritingInk.copy(alpha = 0.85f),
-                        size = size,
-                        cornerRadius = CornerRadius(corner, corner),
-                        style = Stroke(width = strokeW)
-                    )
-                }
-            }
-
-            // Item Text
-            Text(
-                text = item.text,
-                fontFamily = PatrickHandFamily,
-                fontSize = 18.sp,
-                fontWeight = if (item.isChecked) FontWeight.Normal else FontWeight.Medium,
-                color = if (item.isChecked) JournalMutedInk.copy(alpha = 0.5f) else JournalWritingInk,
-                textDecoration = if (item.isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = TextStyle(platformStyle = NoFontPadding)
-            )
-        }
-
-        // Delete button '×'
-        Text(
-            text = "×",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = JournalMutedInk.copy(alpha = 0.4f),
-            modifier = Modifier
-                .clickable { onDelete() }
-                .padding(horizontal = 8.dp)
         )
     }
 }

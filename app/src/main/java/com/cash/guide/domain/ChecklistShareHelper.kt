@@ -113,6 +113,14 @@ object ChecklistShareHelper {
         val mutedInkColor = Color.rgb(0x75, 0x75, 0x70)       // Muted Ink
         val lineRuleColor = Color.argb(45, 0x1E, 0x5C, 0xA8)  // Ruled Notebook Blue
         val checkGreenColor = Color.rgb(0x1B, 0x7A, 0x4B)     // Emerald Ink
+        val rowDotColors = listOf(
+            Color.rgb(0x3B, 0x82, 0xB6),
+            Color.rgb(0xD6, 0x5D, 0x82),
+            Color.rgb(0x5E, 0x8C, 0x3B),
+            Color.rgb(0xC7, 0x88, 0x1E),
+            Color.rgb(0x7E, 0x5A, 0xA8),
+            Color.rgb(0xCC, 0x67, 0x3B)
+        )
 
         // Calculate dynamic height
         val topPaddingRules = 3
@@ -146,30 +154,35 @@ object ChecklistShareHelper {
             strokeWidth = 2.5f
             isAntiAlias = true
         }
-        val redLineX = if (isRtl) width - marginX * 1.5f else marginX * 1.5f
+        val redLineX = 130f
         canvas.drawLine(redLineX, 0f, redLineX, height.toFloat(), marginLinePaint)
 
-        val textPaint = Paint().apply {
-            typeface = primaryFont
-            color = inkColor
-            isAntiAlias = true
-            textSize = 42f
-        }
-
-        // Header
+        // Header Title in Pink Pill
         var baselineY = (topPaddingRules + 1) * ruleSpacing - 18f
-        val headerTitle = if (title.isBlank()) "Checklist" else "Checklist : $title"
+        val headerTitle = if (title.isBlank()) "Checklist" else title
 
         val titlePaint = Paint().apply {
             typeface = primaryFont
             color = inkColor
             isAntiAlias = true
-            textSize = 52f
+            textSize = 50f
+            textAlign = Paint.Align.CENTER
         }
 
-        val contentStartX = if (isRtl) width - marginX * 2.2f else marginX * 2.2f
-        titlePaint.textAlign = if (isRtl) Paint.Align.RIGHT else Paint.Align.LEFT
-        canvas.drawText(headerTitle, contentStartX, baselineY, titlePaint)
+        val titleWidth = titlePaint.measureText(headerTitle)
+        val pillRect = RectF(
+            (width - titleWidth) / 2f - 30f,
+            baselineY - 44f,
+            (width + titleWidth) / 2f + 30f,
+            baselineY + 14f
+        )
+        val pillPaint = Paint().apply {
+            color = Color.argb(90, 0xF4, 0x8F, 0xB1) // Pink pill
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(pillRect, 20f, 20f, pillPaint)
+        canvas.drawText(headerTitle, width / 2f, baselineY, titlePaint)
 
         // Date and progress line
         baselineY += ruleSpacing
@@ -183,9 +196,9 @@ object ChecklistShareHelper {
             color = mutedInkColor
             isAntiAlias = true
             textSize = 28f
-            textAlign = if (isRtl) Paint.Align.RIGHT else Paint.Align.LEFT
+            textAlign = Paint.Align.LEFT
         }
-        canvas.drawText(statusStr, contentStartX, baselineY, subPaint)
+        canvas.drawText(statusStr, 150f, baselineY, subPaint)
 
         // Draw separator
         val dividerPaint = Paint().apply {
@@ -194,10 +207,10 @@ object ChecklistShareHelper {
             style = Paint.Style.STROKE
         }
         baselineY += ruleSpacing * 0.4f
-        canvas.drawLine(marginX * 2f, baselineY, width - marginX * 2f, baselineY, dividerPaint)
+        canvas.drawLine(40f, baselineY, width - 40f, baselineY, dividerPaint)
 
         // Draw Items
-        val checkboxSize = 36f
+        val checkboxSize = 40f
         val checkStrokePaint = Paint().apply {
             color = inkColor
             strokeWidth = 3f
@@ -206,53 +219,82 @@ object ChecklistShareHelper {
         }
         val checkFillPaint = Paint().apply {
             color = checkGreenColor
-            strokeWidth = 4f
+            strokeWidth = 4.5f
             style = Paint.Style.STROKE
             strokeCap = Paint.Cap.ROUND
             isAntiAlias = true
         }
 
-        items.forEach { item ->
+        val textPaint = Paint().apply {
+            typeface = primaryFont
+            color = inkColor
+            isAntiAlias = true
+            textSize = 42f
+            textAlign = Paint.Align.LEFT
+        }
+
+        val numberPaint = Paint().apply {
+            typeface = primaryFont
+            isAntiAlias = true
+            textSize = 42f
+            textAlign = Paint.Align.CENTER
+        }
+
+        items.forEachIndexed { index, item ->
             baselineY += ruleSpacing
 
-            val boxX = if (isRtl) {
-                contentStartX - checkboxSize
-            } else {
-                contentStartX
-            }
-            val boxY = baselineY - checkboxSize + 6f
+            // 1. Draw number on the left
+            val dotColor = rowDotColors[index % rowDotColors.size]
+            numberPaint.color = dotColor
+            canvas.drawText("${index + 1}", 85f, baselineY, numberPaint)
 
-            // Draw Checkbox
+            // 2. Draw Checkbox on far right
+            val boxX = width - 110f
+            val boxY = baselineY - checkboxSize + 6f
             val rect = RectF(boxX, boxY, boxX + checkboxSize, boxY + checkboxSize)
+
+            if (item.isChecked) {
+                val boxBgPaint = Paint().apply {
+                    color = Color.argb(160, 0xDC, 0xFC, 0xE7)
+                    style = Paint.Style.FILL
+                    isAntiAlias = true
+                }
+                canvas.drawRoundRect(rect, 8f, 8f, boxBgPaint)
+            }
             canvas.drawRoundRect(rect, 8f, 8f, checkStrokePaint)
 
             if (item.isChecked) {
                 // Draw checkmark inside
-                val p1x = rect.left + checkboxSize * 0.22f
+                val p1x = rect.left + checkboxSize * 0.20f
                 val p1y = rect.top + checkboxSize * 0.52f
-                val p2x = rect.left + checkboxSize * 0.45f
-                val p2y = rect.top + checkboxSize * 0.78f
+                val p2x = rect.left + checkboxSize * 0.42f
+                val p2y = rect.top + checkboxSize * 0.76f
                 val p3x = rect.left + checkboxSize * 0.82f
-                val p3y = rect.top + checkboxSize * 0.25f
+                val p3y = rect.top + checkboxSize * 0.22f
 
                 canvas.drawLine(p1x, p1y, p2x, p2y, checkFillPaint)
                 canvas.drawLine(p2x, p2y, p3x, p3y, checkFillPaint)
             }
 
-            // Draw text
-            val itemTextX = if (isRtl) {
-                boxX - 22f
-            } else {
-                boxX + checkboxSize + 22f
-            }
-
+            // 3. Draw text between red margin and checkbox
+            val itemTextX = 155f
             val itemPaint = Paint(textPaint).apply {
                 color = if (item.isChecked) mutedInkColor else inkColor
                 isStrikeThruText = item.isChecked
-                textAlign = if (isRtl) Paint.Align.RIGHT else Paint.Align.LEFT
+                textAlign = Paint.Align.LEFT
+            }
+            val maxTextWidth = boxX - itemTextX - 25f
+            val displayText = if (itemPaint.measureText(item.text) > maxTextWidth) {
+                var truncated = item.text
+                while (truncated.isNotEmpty() && itemPaint.measureText("$truncated...") > maxTextWidth) {
+                    truncated = truncated.dropLast(1)
+                }
+                "$truncated..."
+            } else {
+                item.text
             }
 
-            canvas.drawText(item.text, itemTextX, baselineY, itemPaint)
+            canvas.drawText(displayText, itemTextX, baselineY, itemPaint)
         }
 
         // Footer brand
