@@ -3,15 +3,13 @@ package com.cash.guide.feature.home
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +33,9 @@ import com.cash.guide.domain.export.PdfExportHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -67,6 +69,7 @@ import com.cash.guide.ui.notebook.JournalRecentHeader
 import com.cash.guide.ui.notebook.JournalRule
 import com.cash.guide.ui.notebook.JournalRuleSpacing
 import com.cash.guide.ui.notebook.resolveJournalFont
+import com.cash.guide.ui.notebook.JournalPaper
 import com.cash.guide.ui.notebook.JournalRuledDocument
 import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
@@ -114,6 +117,7 @@ fun HomeScreen(
     onOpenHistory: () -> Unit,
     onOpenMonthCalculations: (year: Int, month: Int) -> Unit = { _, _ -> },
     onOpenStyleShowcase: () -> Unit = {},
+    onOpenCashRegister: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -226,6 +230,69 @@ fun HomeScreen(
                     }
                 }
             )
+
+            // Line 5b: Caisse & Rendu de monnaie (Quick Access Card)
+            Spacer(modifier = Modifier.height(8.dp))
+            val cashCardTitle = stringResource(R.string.cash_register_home_card_title)
+            val cashCardDesc = stringResource(R.string.cash_register_home_card_desc)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(JournalPaper)
+                    .border(
+                        BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.75f)),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .clickable { onOpenCashRegister() }
+                    .padding(horizontal = 12.dp, vertical = 7.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(HighlighterYellow.copy(alpha = 0.35f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("🧮", fontSize = 18.sp)
+                        }
+                        Column {
+                            Text(
+                                text = cashCardTitle,
+                                fontFamily = resolveJournalFont(cashCardTitle, isRtl),
+                                fontSize = if (isRtl) 14.sp else 14.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalInk,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                            Text(
+                                text = cashCardDesc,
+                                fontFamily = resolveJournalFont(cashCardDesc, isRtl),
+                                fontSize = if (isRtl) 11.sp else 11.5.sp,
+                                color = JournalMutedInk,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        }
+                    }
+                    Text(
+                        text = if (isRtl) "←" else "→",
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HighlighterPink
+                    )
+                }
+            }
 
             // Line 6: 1 rule spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))

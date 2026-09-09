@@ -278,4 +278,19 @@
     <string name="theme_white_notebook_desc">Clean lined sheet with authentic Bic Blue pen ink</string>
     <string name="theme_dark_carnet_title">Dark Carnet</string>
     <string name="theme_dark_carnet_desc">Matte slate blackboard with gentle chalk white ink</string>
+
+    <!-- Money breakdown & Cash Register -->
+    <string name="editor_breakdown_button">Cash &amp; coins</string>
+    <string name="cash_register_title">Cash Register &amp; Change</string>
+    <string name="cash_register_home_card_title">Cash Register &amp; Change</string>
+    <string name="cash_register_home_card_desc">Calculate change in real banknotes and coins</string>
+    <string name="cash_register_purchase_total">Total purchase</string>
+    <string name="cash_register_amount_received">Amount received</string>
+    <string name="cash_register_change_due">Change to return</string>
+    <string name="cash_register_exact_amount">Exact amount (no change)</string>
+    <string name="cash_register_insufficient">Insufficient amount! Missing %s</string>
+    <string name="cash_register_next_client">Next customer</string>
+    <string name="cash_register_pieces_heading">Actual notes &amp; coins to return</string>
+    <string name="cash_register_quick_presets">Quick banknote received:</string>
+    <string name="cash_register_clear_input">Clear</string>
 </resources>

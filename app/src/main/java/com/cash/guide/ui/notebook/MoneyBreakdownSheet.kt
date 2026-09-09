@@ -59,7 +59,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
-private object BanknoteImageCache {
+internal object BanknoteImageCache {
     private val cache = ConcurrentHashMap<String, ImageBitmap>()
 
     fun decode(context: Context, path: String): ImageBitmap? {
@@ -78,7 +78,7 @@ private object BanknoteImageCache {
 }
 
 @Composable
-private fun rememberBanknoteImage(path: String?): ImageBitmap? {
+internal fun rememberBanknoteImage(path: String?): ImageBitmap? {
     val context = LocalContext.current
     if (path == null) return null
     val bitmapState = produceState<ImageBitmap?>(initialValue = null, key1 = path) {
@@ -90,7 +90,7 @@ private fun rememberBanknoteImage(path: String?): ImageBitmap? {
     return bitmapState.value
 }
 
-private fun getRialEquivalent(denominationCentimes: Long): String? = when (denominationCentimes) {
+internal fun getRialEquivalent(denominationCentimes: Long): String? = when (denominationCentimes) {
     20_000L -> "4 000 ريال"
     10_000L -> "2 000 ريال"
     5_000L -> "1 000 ريال"
@@ -353,7 +353,7 @@ fun MoneyBreakdownSheet(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun BreakdownDenominationBlock(piece: MoneyPiece) {
+internal fun BreakdownDenominationBlock(piece: MoneyPiece) {
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
     val isBanknote = piece.denomination.valueCentimes >= 2_000L

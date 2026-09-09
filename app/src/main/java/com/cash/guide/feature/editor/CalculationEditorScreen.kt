@@ -103,10 +103,12 @@ import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.ExportOptionsBottomSheet
 import com.cash.guide.ui.notebook.CreditDueDateDialog
 import com.cash.guide.ui.notebook.UnsavedChangesDialog
+import com.cash.guide.ui.notebook.MoneyBreakdownSheet
 import com.cash.guide.ui.notebook.resolveJournalFont
 import com.cash.guide.ui.notebook.isArabicScript
 import com.cash.guide.domain.reminder.CreditDueUrgency
 import com.cash.guide.domain.reminder.CreditStatusHelper
+import androidx.compose.runtime.saveable.rememberSaveable
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -131,6 +133,7 @@ fun CalculationEditorScreen(
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
     var showExportSheet by remember { mutableStateOf(false) }
+    var showBreakdownSheet by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(calculationId, initialGroupId, initialType, initialCurrency, initialTitle, templateId) {
         val currencyEnum = initialCurrency?.let { runCatching { MoneyUnit.valueOf(it) }.getOrNull() }
@@ -340,8 +343,8 @@ fun CalculationEditorScreen(
                     amount = primaryFormatted,
                     suffix = currencySuffix,
                     hasInvalidRows = state.hasInvalidRows,
-                    canBreakdown = false,
-                    onShowBreakdown = {}
+                    canBreakdown = state.totalCentimes > 0 && !state.hasInvalidRows,
+                    onShowBreakdown = { showBreakdownSheet = true }
                 )
 
                 Spacer(modifier = Modifier.height(JournalRuleSpacing * 2))
@@ -446,6 +449,14 @@ fun CalculationEditorScreen(
                 onExportExcel = { viewModel.exportAsExcel(context) },
                 onShareImage = { viewModel.shareAsImage(context, isRtl) },
                 onDismiss = { showExportSheet = false }
+            )
+        }
+
+        // Money Breakdown Sheet (L-Wra9 o S-Sarf)
+        if (showBreakdownSheet && state.totalCentimes > 0) {
+            MoneyBreakdownSheet(
+                totalCentimes = state.totalCentimes,
+                onDismiss = { showBreakdownSheet = false }
             )
         }
     }

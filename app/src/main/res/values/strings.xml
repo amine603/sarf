@@ -342,4 +342,19 @@
     <string name="theme_white_notebook_desc">Papier quadrillé et encre stylo Bic bleu authentique</string>
     <string name="theme_dark_carnet_title">Carnet Sombre</string>
     <string name="theme_dark_carnet_desc">Fond ardoise noir mat et encre craie douce reposante</string>
+
+    <!-- Money breakdown & Cash Register -->
+    <string name="editor_breakdown_button">Coupures &amp; pièces</string>
+    <string name="cash_register_title">Caisse &amp; Rendu</string>
+    <string name="cash_register_home_card_title">Caisse &amp; Rendu de monnaie</string>
+    <string name="cash_register_home_card_desc">Calculer la monnaie à rendre en billets et pièces réels</string>
+    <string name="cash_register_purchase_total">Total des achats</string>
+    <string name="cash_register_amount_received">Montant reçu du client</string>
+    <string name="cash_register_change_due">Monnaie à rendre</string>
+    <string name="cash_register_exact_amount">Compte exact (aucun rendu)</string>
+    <string name="cash_register_insufficient">Montant insuffisant ! Il manque %s</string>
+    <string name="cash_register_next_client">Client suivant</string>
+    <string name="cash_register_pieces_heading">Coupures réelles à rendre</string>
+    <string name="cash_register_quick_presets">Billet reçu :</string>
+    <string name="cash_register_clear_input">Effacer</string>
 </resources>

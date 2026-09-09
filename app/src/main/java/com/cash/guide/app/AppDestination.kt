@@ -6,6 +6,7 @@ sealed class AppDestination(val route: String) {
     data object History : AppDestination("history")
     data object Settings : AppDestination("settings")
     data object StyleShowcase : AppDestination("style_showcase")
+    data object CashRegister : AppDestination("cash_register")
     data object NewCalculation : AppDestination("calculation/new") {
         const val ROUTE_PATTERN = "calculation/new?groupId={groupId}&type={type}&currency={currency}&title={title}&templateId={templateId}"
         fun createRoute(

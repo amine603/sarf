@@ -342,4 +342,19 @@
     <string name="theme_white_notebook_desc">دفتر مدرسي مخطط مع حبر قلم بيك أزرق أصلي</string>
     <string name="theme_dark_carnet_title">دفتر ليلي</string>
     <string name="theme_dark_carnet_desc">خلفية سبورة داكنة مع مداد طباشير هادئ للعينين</string>
+
+    <!-- Money breakdown & Cash Register -->
+    <string name="editor_breakdown_button">تفاصيل الفئات والنقد</string>
+    <string name="cash_register_title">حساب الصرف والنقد</string>
+    <string name="cash_register_home_card_title">حساب الصرف ومتبقي النقود</string>
+    <string name="cash_register_home_card_desc">حساب متبقي النقود للزبون بالفئات الورقية والمعدنية</string>
+    <string name="cash_register_purchase_total">مجموع المشتريات</string>
+    <string name="cash_register_amount_received">المبلغ المستلم من الزبون</string>
+    <string name="cash_register_change_due">المبلغ المتبقي للزبون</string>
+    <string name="cash_register_exact_amount">المبلغ مضبوط تماماً (لا يوجد متبقي)</string>
+    <string name="cash_register_insufficient">المبلغ غير كافٍ ! ينقصه %s</string>
+    <string name="cash_register_next_client">زبون جديد</string>
+    <string name="cash_register_pieces_heading">الفئات المستحقة للإرجاع</string>
+    <string name="cash_register_quick_presets">الورقة النقدية المستلمة :</string>
+    <string name="cash_register_clear_input">مسح</string>
 </resources>

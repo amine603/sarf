@@ -2363,6 +2363,38 @@ fun JournalTotalResultBand(
                     cap = StrokeCap.Round
                 )
             }
+
+            if (canBreakdown) {
+                Spacer(modifier = Modifier.height(6.dp))
+                val breakdownBtnLabel = stringResource(R.string.editor_breakdown_button)
+                val isBreakdownArabic = isArabicScript(breakdownBtnLabel)
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(JournalPaper)
+                        .border(
+                            BorderStroke(0.9.dp, JournalRule.copy(alpha = 0.75f)),
+                            RoundedCornerShape(16.dp)
+                        )
+                        .clickable(role = Role.Button, onClick = onShowBreakdown)
+                        .padding(horizontal = 14.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "💵",
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = breakdownBtnLabel,
+                        fontFamily = resolveJournalFont(breakdownBtnLabel, isBreakdownArabic),
+                        fontSize = if (isBreakdownArabic) 13.sp else 13.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalWritingInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+            }
         }
     }
 }

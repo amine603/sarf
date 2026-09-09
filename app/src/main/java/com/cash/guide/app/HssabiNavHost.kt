@@ -15,6 +15,8 @@ import com.cash.guide.feature.home.HomeScreen
 import com.cash.guide.feature.home.HomeViewModel
 import com.cash.guide.feature.settings.SettingsScreen
 import com.cash.guide.feature.settings.SettingsViewModel
+import com.cash.guide.feature.cashregister.CashRegisterScreen
+import com.cash.guide.feature.cashregister.CashRegisterViewModel
 
 import com.cash.guide.feature.groups.GroupsScreen
 import com.cash.guide.feature.groups.GroupsViewModel
@@ -66,7 +68,8 @@ fun HssabiNavHost(
                 onOpenMonthCalculations = { year, month ->
                     navController.navigate("month_calculations/$year/$month")
                 },
-                onOpenStyleShowcase = { navController.navigate(AppDestination.StyleShowcase.route) }
+                onOpenStyleShowcase = { navController.navigate(AppDestination.StyleShowcase.route) },
+                onOpenCashRegister = { navController.navigate(AppDestination.CashRegister.route) }
             )
         }
 
@@ -123,6 +126,16 @@ fun HssabiNavHost(
         composable(AppDestination.Settings.route) {
             SettingsScreen(
                 viewModel = settingsViewModel
+            )
+        }
+
+        composable(AppDestination.CashRegister.route) { backStackEntry ->
+            val cashRegisterViewModel: CashRegisterViewModel = viewModel(
+                viewModelStoreOwner = backStackEntry
+            )
+            CashRegisterScreen(
+                viewModel = cashRegisterViewModel,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

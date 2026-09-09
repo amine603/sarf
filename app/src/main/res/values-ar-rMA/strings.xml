@@ -278,4 +278,19 @@
     <string name="theme_white_notebook_desc">ورقة بيضا مسطرة بحال الستيلو بيك زرق</string>
     <string name="theme_dark_carnet_title">كناش ليلي</string>
     <string name="theme_dark_carnet_desc">كناش كحل سبورة ومداد طباشير مريح للعينين بالليل</string>
+
+    <!-- Money breakdown & Cash Register -->
+    <string name="editor_breakdown_button">الصرف والفلوس</string>
+    <string name="cash_register_title">حساب الصرف والكاسة</string>
+    <string name="cash_register_home_card_title">حساب الصرف (الكاسة)</string>
+    <string name="cash_register_home_card_desc">حسب شحال ترجع للكليان بالصرف والوراق ديال بصح</string>
+    <string name="cash_register_purchase_total">مجموع الحساب</string>
+    <string name="cash_register_amount_received">شحال عطاك الكليان</string>
+    <string name="cash_register_change_due">الصرف لي غترجع ليه</string>
+    <string name="cash_register_exact_amount">الحساب هو هاداك (ما كاين صرف)</string>
+    <string name="cash_register_insufficient">ما كافيش ! باقا خاصاه %s</string>
+    <string name="cash_register_next_client">كليان جديد</string>
+    <string name="cash_register_pieces_heading">الفلوس لي غادي ترجع ليه</string>
+    <string name="cash_register_quick_presets">الورقة لي عطا :</string>
+    <string name="cash_register_clear_input">مسح</string>
 </resources>
