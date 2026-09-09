@@ -215,26 +215,21 @@ fun MoneyBreakdownSheet(
                                 .fillMaxWidth()
                                 .heightIn(max = 580.dp)
                                 .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 18.dp, vertical = 14.dp)
+                                .padding(horizontal = 16.dp)
+                                .padding(bottom = 14.dp)
                         ) {
-                            // Top Bar: Title Badge & Close Button
+                            // Row 1: Close button '✕' (exactly 1 rule = 29dp, NO title badge)
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(JournalRuleSpacing)
+                                    .padding(horizontal = 4.dp),
+                                horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val titleText = stringResource(R.string.breakdown_title)
-                                NotebookHighlightedBadge(
-                                    text = titleText,
-                                    highlighterColor = HighlighterPink.copy(alpha = 0.65f),
-                                    fontSize = 15.sp,
-                                    horizontalPadding = 10.dp,
-                                    verticalPadding = 3.dp
-                                )
-
                                 Box(
                                     modifier = Modifier
-                                        .size(32.dp)
+                                        .size(28.dp)
                                         .clip(CircleShape)
                                         .clickable(
                                             role = Role.Button,
@@ -252,15 +247,14 @@ fun MoneyBreakdownSheet(
                                 }
                             }
 
-                            Spacer(Modifier.height(8.dp))
-
-                            // Total Conversion - Directly on the paper lines (NO boxed card!)
+                            // Row 2: Total Conversion resting squarely on ruled line (Line 2 at y = 58dp)
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
+                                    .height(JournalRuleSpacing)
+                                    .journalBaselineOnRule(),
                                 horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.Bottom
                             ) {
                                 val dhSuffix = stringResource(R.string.currency_dirham)
                                 Text(
@@ -268,7 +262,8 @@ fun MoneyBreakdownSheet(
                                     fontFamily = PatrickHandFamily,
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = ColorOrange
+                                    color = ColorOrange,
+                                    style = TextStyle(platformStyle = NoFontPadding)
                                 )
 
                                 Text(
@@ -276,7 +271,8 @@ fun MoneyBreakdownSheet(
                                     fontFamily = PatrickHandFamily,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = JournalMutedInk
+                                    color = JournalMutedInk,
+                                    style = TextStyle(platformStyle = NoFontPadding)
                                 )
 
                                 val rialSuffix = stringResource(R.string.currency_rial)
@@ -285,16 +281,18 @@ fun MoneyBreakdownSheet(
                                     fontFamily = PatrickHandFamily,
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = ColorOrange
+                                    color = ColorOrange,
+                                    style = TextStyle(platformStyle = NoFontPadding)
                                 )
                             }
 
-                            // Section 1: Banknotes (sitting directly on the blue ruled lines)
+                            // Section 1: Banknotes (sitting directly on ruled lines)
                             if (banknotes.isNotEmpty()) {
-                                Spacer(Modifier.height(14.dp))
                                 val headingBanknotes = stringResource(R.string.breakdown_heading_banknotes)
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(JournalRuleSpacing),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
@@ -310,16 +308,17 @@ fun MoneyBreakdownSheet(
                                         color = JournalWritingInk,
                                         fontSize = if (isRtl) 13.5.sp else 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        style = TextStyle(platformStyle = NoFontPadding)
+                                        style = TextStyle(platformStyle = NoFontPadding),
+                                        modifier = Modifier.journalBaselineOnRule()
                                     )
                                 }
 
-                                Spacer(Modifier.height(10.dp))
-
                                 FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     banknotes.forEach { piece ->
                                         BanknoteDisplayItem(piece = piece)
@@ -327,12 +326,13 @@ fun MoneyBreakdownSheet(
                                 }
                             }
 
-                            // Section 2: Coins (sitting directly on the blue ruled lines)
+                            // Section 2: Coins (sitting directly on ruled lines)
                             if (coins.isNotEmpty()) {
-                                Spacer(Modifier.height(16.dp))
                                 val headingCoins = stringResource(R.string.breakdown_heading_coins)
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(JournalRuleSpacing),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
@@ -343,14 +343,15 @@ fun MoneyBreakdownSheet(
                                         color = JournalWritingInk,
                                         fontSize = if (isRtl) 13.sp else 13.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        style = TextStyle(platformStyle = NoFontPadding)
+                                        style = TextStyle(platformStyle = NoFontPadding),
+                                        modifier = Modifier.journalBaselineOnRule()
                                     )
                                 }
 
-                                Spacer(Modifier.height(10.dp))
-
                                 FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
                                     horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
@@ -362,19 +363,25 @@ fun MoneyBreakdownSheet(
 
                             // Remainder if any
                             if (remainderCentimes > 0) {
-                                Spacer(Modifier.height(14.dp))
                                 val remText = "${stringResource(R.string.breakdown_remainder)} (< 10 centimes): $remainderCentimes c"
-                                Text(
-                                    text = remText,
-                                    fontFamily = resolveJournalFont(remText, isRtl),
-                                    color = JournalMutedInk,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(JournalRuleSpacing),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = remText,
+                                        fontFamily = resolveJournalFont(remText, isRtl),
+                                        color = JournalMutedInk,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        style = TextStyle(platformStyle = NoFontPadding),
+                                        modifier = Modifier.journalBaselineOnRule()
+                                    )
+                                }
                             }
-
-                            Spacer(Modifier.height(8.dp))
                         }
                     }
                 }
@@ -385,7 +392,8 @@ fun MoneyBreakdownSheet(
 
 /**
  * Authentic Moroccan notebook cash tray ("صينية الفلوس")
- * Displaying banknotes and coins neatly arranged, without artificial shadows or redundant text.
+ * Displaying banknotes and coins neatly arranged directly on the blue ruled lines.
+ * ZERO heavy cards or solid backgrounds covering the ruled lines.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -402,15 +410,14 @@ fun JournalDenominationsBoard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(JournalPaper)
-            .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.60f)), RoundedCornerShape(12.dp))
-            .padding(14.dp)
+            .padding(vertical = 4.dp)
     ) {
         // Section: Banknotes (L-Wra9)
         if (banknotes.isNotEmpty()) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -426,11 +433,12 @@ fun JournalDenominationsBoard(
                     color = JournalWritingInk,
                     fontSize = if (isRtl) 13.5.sp else 14.sp,
                     fontWeight = FontWeight.Bold,
-                    style = TextStyle(platformStyle = NoFontPadding)
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(4.dp))
 
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -444,17 +452,15 @@ fun JournalDenominationsBoard(
         }
 
         if (banknotes.isNotEmpty() && coins.isNotEmpty()) {
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 10.dp),
-                color = JournalRule.copy(alpha = 0.35f),
-                thickness = 0.8.dp
-            )
+            Spacer(Modifier.height(8.dp))
         }
 
         // Section: Coins (L-Coins / D-Drahem)
         if (coins.isNotEmpty()) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -465,16 +471,17 @@ fun JournalDenominationsBoard(
                     color = JournalWritingInk,
                     fontSize = if (isRtl) 13.sp else 13.5.sp,
                     fontWeight = FontWeight.Bold,
-                    style = TextStyle(platformStyle = NoFontPadding)
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
 
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 coins.forEach { piece ->
                     CoinDisplayItem(piece = piece)
@@ -488,7 +495,8 @@ fun JournalDenominationsBoard(
  * Clean Banknote representation:
  * - Real BAM banknote transparent image
  * - NO shadow, NO artificial black halo underneath
- * - Proportional ~1.7:1 aspect ratio
+ * - Proportional ~1.79:1 aspect ratio
+ * - Height: 58dp (exactly 2 ruled lines of 29dp), bottom sitting directly on the blue line!
  * - Prominent, bold count badge (e.g. 2×) in top corner if count > 1
  * - No redundant denomination text
  */
@@ -502,8 +510,8 @@ fun BanknoteDisplayItem(
 
     Box(
         modifier = modifier
-            .width(120.dp)
-            .height(70.dp)
+            .width(104.dp)
+            .height(58.dp)
     ) {
         if (bitmap != null) {
             Image(
@@ -521,16 +529,16 @@ fun BanknoteDisplayItem(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 6.dp, y = (-5).dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .offset(x = 5.dp, y = (-4).dp)
+                    .clip(RoundedCornerShape(8.dp))
                     .background(HighlighterPink)
-                    .border(BorderStroke(1.5.dp, JournalPaper), RoundedCornerShape(10.dp))
-                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                    .border(BorderStroke(1.2.dp, JournalPaper), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 7.dp, vertical = 1.5.dp)
             ) {
                 Text(
                     text = "${count}×",
                     fontFamily = PatrickHandFamily,
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     style = TextStyle(platformStyle = NoFontPadding)
@@ -543,7 +551,7 @@ fun BanknoteDisplayItem(
 /**
  * Clean Coin representation:
  * - Real BAM coin transparent circular image
- * - Significantly enlarged diameters for clear legibility
+ * - Height: 58dp (2 ruled lines of 29dp), bottom-aligned so the coin rests squarely on the blue line!
  * - Prominent count badge (e.g. 2×) in top corner if count > 1
  * - No redundant denomination text
  */
@@ -555,19 +563,20 @@ fun CoinDisplayItem(
     val bitmap = rememberBanknoteImage(piece.denomination.assetPath)
     val count = piece.count
     val sizeDp = when (piece.denomination.valueCentimes) {
-        1_000L -> 68.dp // 10 DH (bimetallic, large)
-        500L -> 64.dp   // 5 DH (bimetallic)
-        200L -> 60.dp   // 2 DH
-        100L -> 56.dp   // 1 DH
-        50L -> 52.dp    // 50c
-        20L -> 48.dp    // 20c
-        10L -> 44.dp    // 10c
-        else -> 50.dp
+        1_000L -> 52.dp // 10 DH (bimetallic, large)
+        500L -> 48.dp   // 5 DH (bimetallic)
+        200L -> 45.dp   // 2 DH
+        100L -> 42.dp   // 1 DH
+        50L -> 38.dp    // 50c
+        20L -> 35.dp    // 20c
+        10L -> 32.dp    // 10c
+        else -> 38.dp
     }
 
     Box(
-        modifier = modifier.size(sizeDp + 8.dp),
-        contentAlignment = Alignment.Center
+        modifier = modifier
+            .size(width = sizeDp + 10.dp, height = 58.dp),
+        contentAlignment = Alignment.BottomCenter
     ) {
         if (bitmap != null) {
             Image(
@@ -585,7 +594,7 @@ fun CoinDisplayItem(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 6.dp, y = (-2).dp)
+                    .offset(x = 5.dp, y = (58.dp - sizeDp - 4.dp))
                     .clip(RoundedCornerShape(8.dp))
                     .background(HighlighterYellow)
                     .border(BorderStroke(1.dp, JournalPaper), RoundedCornerShape(8.dp))
@@ -594,7 +603,7 @@ fun CoinDisplayItem(
                 Text(
                     text = "${count}×",
                     fontFamily = PatrickHandFamily,
-                    fontSize = 13.5.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalWritingInk,
                     style = TextStyle(platformStyle = NoFontPadding)

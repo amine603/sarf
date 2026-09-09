@@ -296,19 +296,20 @@ private fun CashRegisterCalculatorContent(
     Column(
         modifier = modifier
             .padding(horizontal = 14.dp)
-            .padding(bottom = 8.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+            .padding(bottom = 8.dp)
     ) {
-        // TOP ~1/4: Authentic Ruled Ledger Calculation Display
+        // TOP: Ruled Ledger Calculation Display (anchored naturally above the keyboard, eliminating empty void)
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(JournalPaper)
-                .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.60f)), RoundedCornerShape(12.dp))
-                .padding(horizontal = 14.dp, vertical = 12.dp)
+                .weight(1f)
+                .fillMaxWidth(),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+            ) {
                 // Header of the display: sketch icon + label + clear button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -329,7 +330,7 @@ private fun CashRegisterCalculatorContent(
                         Text(
                             text = hintHeader,
                             fontFamily = resolveJournalFont(hintHeader, isRtl),
-                            fontSize = 12.5.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = JournalMutedInk,
                             style = TextStyle(platformStyle = NoFontPadding)
@@ -368,18 +369,18 @@ private fun CashRegisterCalculatorContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Expression line
+                // Expression line directly on paper rules
                 val expressionText = state.calcExpression.ifBlank {
                     stringResource(R.string.cash_register_calc_hint)
                 }
                 Text(
                     text = expressionText,
                     fontFamily = if (state.calcExpression.isBlank()) resolveJournalFont(expressionText, isRtl) else PatrickHandFamily,
-                    fontSize = if (state.calcExpression.isBlank()) 13.sp else 24.sp,
+                    fontSize = if (state.calcExpression.isBlank()) 15.sp else 28.sp,
                     fontWeight = if (state.calcExpression.isBlank()) FontWeight.Normal else FontWeight.Medium,
-                    color = if (state.calcExpression.isBlank()) JournalMutedInk.copy(alpha = 0.60f) else JournalWritingInk,
+                    color = if (state.calcExpression.isBlank()) JournalMutedInk.copy(alpha = 0.50f) else JournalWritingInk,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -387,7 +388,7 @@ private fun CashRegisterCalculatorContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 HorizontalDivider(
-                    color = JournalRule.copy(alpha = 0.35f),
+                    color = JournalRule.copy(alpha = 0.40f),
                     thickness = 0.8.dp
                 )
 
@@ -408,17 +409,17 @@ private fun CashRegisterCalculatorContent(
                             Text(
                                 text = "= $displayTotal",
                                 fontFamily = PatrickHandFamily,
-                                fontSize = 32.sp,
+                                fontSize = 38.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = ColorOrange
                             )
                             Text(
                                 text = currencySuffix,
                                 fontFamily = resolveJournalFont(currencySuffix, isRtl),
-                                fontSize = 17.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = JournalInk,
-                                modifier = Modifier.padding(bottom = 3.dp)
+                                modifier = Modifier.padding(bottom = 4.dp)
                             )
                         }
 
@@ -434,10 +435,10 @@ private fun CashRegisterCalculatorContent(
                             Text(
                                 text = "($secondaryValue)",
                                 fontFamily = resolveJournalFont(secondaryValue, isRtl),
-                                fontSize = 13.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = JournalMutedInk,
-                                modifier = Modifier.padding(bottom = 4.dp)
+                                modifier = Modifier.padding(bottom = 5.dp)
                             )
                         }
                     }
@@ -445,13 +446,13 @@ private fun CashRegisterCalculatorContent(
                     JournalDoubleUnderline(
                         modifier = Modifier.padding(top = 2.dp),
                         color = HighlighterPink,
-                        width = 160.dp
+                        width = 180.dp
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         // BOTTOM: Docked Keyboard + Journal Action button
         Column(
@@ -737,174 +738,41 @@ private fun CashRegisterChangeReturnContent(
             .padding(bottom = 20.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // CARNET RECEIPT NOTE: Total des achats + Montant reçu
-        Column(
+        // SECTION 1: Total des achats (sitting directly on notebook ruled paper)
+        val labelTotal = stringResource(R.string.cash_register_purchase_total)
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(JournalPaper)
-                .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.60f)), RoundedCornerShape(12.dp))
-                .padding(14.dp)
+                .height(JournalRuleSpacing),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // SECTION 1: Total des achats
-            val labelTotal = stringResource(R.string.cash_register_purchase_total)
             Row(
-                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    HisabiSketchIcon(
-                        symbol = HisabiSymbol.Page,
-                        contentDescription = null,
-                        tint = JournalInk,
-                        size = 16.dp
-                    )
-                    Text(
-                        text = labelTotal,
-                        fontFamily = resolveJournalFont(labelTotal, isRtl),
-                        fontSize = if (isRtl) 14.sp else 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = JournalInk,
-                        style = TextStyle(platformStyle = NoFontPadding)
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    if (state.purchaseText.isNotEmpty()) {
-                        Text(
-                            text = stringResource(R.string.cash_register_clear_input),
-                            fontFamily = resolveJournalFont(stringResource(R.string.cash_register_clear_input), isRtl),
-                            fontSize = 12.sp,
-                            color = ColorCoral,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .clickable { onPurchaseChange("") }
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-
-                    // Link back to calculator
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(HighlighterYellow.copy(alpha = 0.40f))
-                            .clickable(role = Role.Button, onClick = onBackToCalc)
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Calculator,
-                            contentDescription = null,
-                            tint = JournalWritingInk,
-                            size = 13.dp
-                        )
-                        Text(
-                            text = stringResource(R.string.cash_register_back_to_calc),
-                            fontFamily = resolveJournalFont(stringResource(R.string.cash_register_back_to_calc), isRtl),
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalWritingInk,
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(6.dp))
-
-            // Purchase input field
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(JournalDockBg)
-                    .border(BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.50f)), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                BasicTextField(
-                    value = state.purchaseText,
-                    onValueChange = onPurchaseChange,
-                    modifier = Modifier.weight(1f),
-                    textStyle = TextStyle(
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (state.isPurchaseValid) JournalWritingInk else ColorCoral,
-                        platformStyle = NoFontPadding
-                    ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    cursorBrush = SolidColor(JournalInk),
-                    decorationBox = { innerTextField ->
-                        if (state.purchaseText.isEmpty()) {
-                            Text(
-                                text = "0.00",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalMutedInk.copy(alpha = 0.45f),
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        }
-                        innerTextField()
-                    }
+                HisabiSketchIcon(
+                    symbol = HisabiSymbol.Page,
+                    contentDescription = null,
+                    tint = JournalInk,
+                    size = 16.dp
                 )
-
                 Text(
-                    text = currencySuffix,
-                    fontFamily = resolveJournalFont(currencySuffix, isRtl),
-                    fontSize = 15.sp,
+                    text = labelTotal,
+                    fontFamily = resolveJournalFont(labelTotal, isRtl),
+                    fontSize = if (isRtl) 14.sp else 14.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = JournalMutedInk
+                    color = JournalInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
 
-            // Notebook ruled divider between Total and Reçu
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 10.dp),
-                color = JournalRule.copy(alpha = 0.35f),
-                thickness = 0.8.dp
-            )
-
-            // SECTION 2: Montant reçu du client
-            val labelReceived = stringResource(R.string.cash_register_amount_received)
             Row(
-                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    HisabiSketchIcon(
-                        symbol = HisabiSymbol.Wallet,
-                        contentDescription = null,
-                        tint = JournalInk,
-                        size = 16.dp
-                    )
-                    Text(
-                        text = labelReceived,
-                        fontFamily = resolveJournalFont(labelReceived, isRtl),
-                        fontSize = if (isRtl) 14.sp else 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = JournalInk,
-                        style = TextStyle(platformStyle = NoFontPadding)
-                    )
-                }
-
-                if (state.receivedText.isNotEmpty()) {
+                if (state.purchaseText.isNotEmpty()) {
                     Text(
                         text = stringResource(R.string.cash_register_clear_input),
                         fontFamily = resolveJournalFont(stringResource(R.string.cash_register_clear_input), isRtl),
@@ -913,104 +781,220 @@ private fun CashRegisterChangeReturnContent(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .clickable { onReceivedChange("") }
+                            .clickable { onPurchaseChange("") }
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
-            }
 
-            Spacer(Modifier.height(6.dp))
-
-            // Received input field
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(JournalDockBg)
-                    .border(BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.50f)), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                BasicTextField(
-                    value = state.receivedText,
-                    onValueChange = onReceivedChange,
-                    modifier = Modifier.weight(1f),
-                    textStyle = TextStyle(
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 22.sp,
+                // Link back to calculator
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(HighlighterYellow.copy(alpha = 0.40f))
+                        .clickable(role = Role.Button, onClick = onBackToCalc)
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Calculator,
+                        contentDescription = null,
+                        tint = JournalWritingInk,
+                        size = 13.dp
+                    )
+                    Text(
+                        text = stringResource(R.string.cash_register_back_to_calc),
+                        fontFamily = resolveJournalFont(stringResource(R.string.cash_register_back_to_calc), isRtl),
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (state.isReceivedValid) JournalWritingInk else ColorCoral,
-                        platformStyle = NoFontPadding
-                    ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    cursorBrush = SolidColor(JournalInk),
-                    decorationBox = { innerTextField ->
-                        if (state.receivedText.isEmpty()) {
-                            Text(
-                                text = "0.00",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalMutedInk.copy(alpha = 0.45f),
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        }
-                        innerTextField()
-                    }
-                )
-
-                Text(
-                    text = currencySuffix,
-                    fontFamily = resolveJournalFont(currencySuffix, isRtl),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalMutedInk
-                )
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            // Preset Banknote Chips: [20 DH] [50 DH] [100 DH] [200 DH]
-            val presetNotes = listOf(20L, 50L, 100L, 200L)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                presetNotes.forEach { noteDh ->
-                    val chipText = if (state.currencyUnit == MoneyUnit.DIRHAM) {
-                        "$noteDh DH"
-                    } else {
-                        "${noteDh * 20} ريال"
-                    }
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(HighlighterYellow.copy(alpha = 0.32f))
-                            .border(
-                                BorderStroke(0.7.dp, JournalRule.copy(alpha = 0.55f)),
-                                RoundedCornerShape(6.dp)
-                            )
-                            .clickable { onPresetSelect(noteDh) }
-                            .padding(vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = chipText,
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 14.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalWritingInk,
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    }
+                        color = JournalWritingInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
                 }
             }
         }
 
-        // CHANGE DUE RESULT BAND (JOURNAL SIGNATURE STYLE)
+        // Purchase input row directly resting on ruled line
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            BasicTextField(
+                value = state.purchaseText,
+                onValueChange = onPurchaseChange,
+                modifier = Modifier.weight(1f),
+                textStyle = TextStyle(
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (state.isPurchaseValid) JournalWritingInk else ColorCoral,
+                    platformStyle = NoFontPadding
+                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                cursorBrush = SolidColor(JournalInk),
+                decorationBox = { innerTextField ->
+                    if (state.purchaseText.isEmpty()) {
+                        Text(
+                            text = "0.00",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalMutedInk.copy(alpha = 0.35f),
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+                    }
+                    innerTextField()
+                }
+            )
+
+            Text(
+                text = currencySuffix,
+                fontFamily = resolveJournalFont(currencySuffix, isRtl),
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = JournalMutedInk
+            )
+        }
+
+        // Notebook ruled divider
+        HorizontalDivider(
+            color = JournalRule.copy(alpha = 0.40f),
+            thickness = 0.8.dp
+        )
+
+        // SECTION 2: Montant reçu du client
+        val labelReceived = stringResource(R.string.cash_register_amount_received)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                HisabiSketchIcon(
+                    symbol = HisabiSymbol.Wallet,
+                    contentDescription = null,
+                    tint = JournalInk,
+                    size = 16.dp
+                )
+                Text(
+                    text = labelReceived,
+                    fontFamily = resolveJournalFont(labelReceived, isRtl),
+                    fontSize = if (isRtl) 14.sp else 14.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.journalBaselineOnRule()
+                )
+            }
+
+            if (state.receivedText.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.cash_register_clear_input),
+                    fontFamily = resolveJournalFont(stringResource(R.string.cash_register_clear_input), isRtl),
+                    fontSize = 12.sp,
+                    color = ColorCoral,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable { onReceivedChange("") }
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
+
+        // Received input row directly resting on ruled line
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            BasicTextField(
+                value = state.receivedText,
+                onValueChange = onReceivedChange,
+                modifier = Modifier.weight(1f),
+                textStyle = TextStyle(
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (state.isReceivedValid) JournalWritingInk else ColorCoral,
+                    platformStyle = NoFontPadding
+                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                cursorBrush = SolidColor(JournalInk),
+                decorationBox = { innerTextField ->
+                    if (state.receivedText.isEmpty()) {
+                        Text(
+                            text = "0.00",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalMutedInk.copy(alpha = 0.35f),
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+                    }
+                    innerTextField()
+                }
+            )
+
+            Text(
+                text = currencySuffix,
+                fontFamily = resolveJournalFont(currencySuffix, isRtl),
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = JournalMutedInk
+            )
+        }
+
+        // Preset Banknote Chips: [20 DH] [50 DH] [100 DH] [200 DH]
+        val presetNotes = listOf(20L, 50L, 100L, 200L)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            presetNotes.forEach { noteDh ->
+                val chipText = if (state.currencyUnit == MoneyUnit.DIRHAM) {
+                    "$noteDh DH"
+                } else {
+                    "${noteDh * 20} ريال"
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(HighlighterYellow.copy(alpha = 0.30f))
+                        .border(
+                            BorderStroke(0.7.dp, JournalRule.copy(alpha = 0.55f)),
+                            RoundedCornerShape(6.dp)
+                        )
+                        .clickable { onPresetSelect(noteDh) }
+                        .padding(vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = chipText,
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalWritingInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+            }
+        }
+
+        // CHANGE DUE RESULT BAND (sitting directly on ruled lines)
         if (state.changeCentimes > 0L) {
             val changeDh = MoneyMath.fromCentimes(state.changeCentimes, MoneyUnit.DIRHAM)
             val changeRial = MoneyMath.fromCentimes(state.changeCentimes, MoneyUnit.RIAL)
@@ -1020,13 +1004,7 @@ private fun CashRegisterChangeReturnContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(HighlighterYellow.copy(alpha = 0.35f))
-                    .border(
-                        BorderStroke(0.9.dp, HighlighterPink.copy(alpha = 0.65f)),
-                        RoundedCornerShape(12.dp)
-                    )
-                    .padding(horizontal = 16.dp, vertical = 11.dp),
+                    .padding(vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -1047,7 +1025,7 @@ private fun CashRegisterChangeReturnContent(
                     Text(
                         text = "= $changeFormatted",
                         fontFamily = PatrickHandFamily,
-                        fontSize = 30.sp,
+                        fontSize = 34.sp,
                         fontWeight = FontWeight.Bold,
                         color = ColorOrange
                     )
@@ -1084,64 +1062,56 @@ private fun CashRegisterChangeReturnContent(
             }
         } else if (state.isExactAmount) {
             val exactText = stringResource(R.string.cash_register_exact_amount)
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(ColorEmerald.copy(alpha = 0.12f))
-                    .border(BorderStroke(0.85.dp, ColorEmerald.copy(alpha = 0.45f)), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                contentAlignment = Alignment.Center
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    HisabiSketchIcon(
-                        symbol = HisabiSymbol.Check,
-                        contentDescription = null,
-                        tint = ColorEmerald,
-                        size = 17.dp
-                    )
-                    Text(
-                        text = exactText,
-                        fontFamily = resolveJournalFont(exactText, isRtl),
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ColorEmerald
-                    )
-                }
+                HisabiSketchIcon(
+                    symbol = HisabiSymbol.Check,
+                    contentDescription = null,
+                    tint = ColorEmerald,
+                    size = 17.dp
+                )
+                Text(
+                    text = exactText,
+                    fontFamily = resolveJournalFont(exactText, isRtl),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ColorEmerald,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.journalBaselineOnRule()
+                )
             }
         } else if (state.isInsufficient && state.shortageCentimes > 0L) {
             val shortageDh = MoneyMath.fromCentimes(state.shortageCentimes, state.currencyUnit)
             val shortageMsg = stringResource(R.string.cash_register_insufficient, "$shortageDh $currencySuffix")
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(ColorCoral.copy(alpha = 0.12f))
-                    .border(BorderStroke(0.85.dp, ColorCoral.copy(alpha = 0.5f)), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                contentAlignment = Alignment.Center
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    HisabiSketchIcon(
-                        symbol = HisabiSymbol.Exclamation,
-                        contentDescription = null,
-                        tint = ColorCoral,
-                        size = 17.dp
-                    )
-                    Text(
-                        text = shortageMsg,
-                        fontFamily = resolveJournalFont(shortageMsg, isRtl),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ColorCoral
-                    )
-                }
+                HisabiSketchIcon(
+                    symbol = HisabiSymbol.Exclamation,
+                    contentDescription = null,
+                    tint = ColorCoral,
+                    size = 17.dp
+                )
+                Text(
+                    text = shortageMsg,
+                    fontFamily = resolveJournalFont(shortageMsg, isRtl),
+                    fontSize = 14.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = ColorCoral,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.journalBaselineOnRule()
+                )
             }
         }
 
