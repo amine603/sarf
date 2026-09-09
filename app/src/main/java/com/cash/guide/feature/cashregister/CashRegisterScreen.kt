@@ -297,16 +297,15 @@ private fun CashRegisterCalculatorContent(
             .padding(horizontal = 14.dp)
             .padding(bottom = 8.dp)
     ) {
-        // TOP: Ruled Ledger Calculation Display (Encadred with Theme Ink Outline, 2 ruled lines above keypad)
+        // TOP: Ruled Ledger Calculation Display (Encadred with Theme Ink Outline, Fixed & Grand)
         Box(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.BottomCenter
+                .fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .clip(RoundedCornerShape(12.dp))
                     .border(BorderStroke(1.2.dp, JournalWritingInk), RoundedCornerShape(12.dp))
                     .padding(horizontal = 14.dp, vertical = 12.dp)
@@ -370,7 +369,7 @@ private fun CashRegisterCalculatorContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
                 // Expression line directly on paper rules
                 val expressionText = state.calcExpression.ifBlank {
@@ -379,10 +378,10 @@ private fun CashRegisterCalculatorContent(
                 Text(
                     text = expressionText,
                     fontFamily = if (state.calcExpression.isBlank()) resolveJournalFont(expressionText, isRtl) else PatrickHandFamily,
-                    fontSize = if (state.calcExpression.isBlank()) 15.sp else 28.sp,
+                    fontSize = if (state.calcExpression.isBlank()) 15.sp else 30.sp,
                     fontWeight = if (state.calcExpression.isBlank()) FontWeight.Normal else FontWeight.Medium,
                     color = if (state.calcExpression.isBlank()) JournalMutedInk.copy(alpha = 0.50f) else JournalWritingInk,
-                    maxLines = 2,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis
                 )
 
