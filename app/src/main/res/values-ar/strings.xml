@@ -336,8 +336,8 @@
     <string name="settings_theme_active_badge">✓ مفعّل</string>
     <string name="theme_classic_yellow_title">كناش أصفر</string>
     <string name="theme_classic_yellow_desc">ورق عاجي دافئ، تسطير رمادي-أزرق ومداد غرافيت</string>
-    <string name="theme_kraft_vintage_title">ورق كرافت</string>
-    <string name="theme_kraft_vintage_desc">طابع كرتوني تقليدي ومداد بني قهوة دافئ</string>
+    <string name="theme_emerald_registry_title">السجل الزمردي</string>
+    <string name="theme_emerald_registry_desc">ورق مريمي هادئ مع حبر قلم حبر زمردي داكن</string>
     <string name="theme_white_notebook_title">ورقة بيضاء</string>
     <string name="theme_white_notebook_desc">دفتر مدرسي مخطط مع حبر قلم بيك أزرق أصلي</string>
     <string name="theme_dark_carnet_title">دفتر ليلي</string>

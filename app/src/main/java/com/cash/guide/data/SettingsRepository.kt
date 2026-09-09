@@ -45,7 +45,11 @@ class SettingsRepository(private val context: Context) {
 
     val journalTheme: Flow<JournalThemeId> = context.dataStore.data.map { preferences ->
         val name = preferences[PreferencesKeys.JOURNAL_THEME]
-        JournalThemeId.entries.find { it.name == name } ?: JournalThemeId.CLASSIC_YELLOW
+        if (name == "KRAFT_VINTAGE") {
+            JournalThemeId.EMERALD_REGISTRY
+        } else {
+            JournalThemeId.entries.find { it.name == name } ?: JournalThemeId.CLASSIC_YELLOW
+        }
     }
 
     suspend fun setAppLanguage(languageCode: String) {

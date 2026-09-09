@@ -246,8 +246,8 @@
     <string name="settings_theme_active_badge">✓ Actif</string>
     <string name="theme_classic_yellow_title">Kounach Asfar</string>
     <string name="theme_classic_yellow_desc">Ivoire chaleureux, lignes gris-bleu et encre graphite</string>
-    <string name="theme_kraft_vintage_title">Papier Kraft</string>
-    <string name="theme_kraft_vintage_desc">Teinte carton artisanal et encre sépia café bistre</string>
+    <string name="theme_emerald_registry_title">Registre Émeraude</string>
+    <string name="theme_emerald_registry_desc">Papier sauge doux et encre stylo plume vert sapin</string>
     <string name="theme_white_notebook_title">Feuille Blanche</string>
     <string name="theme_white_notebook_desc">Papier quadrillé et encre stylo Bic bleu authentique</string>
     <string name="theme_dark_carnet_title">Carnet Sombre</string>

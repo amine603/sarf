@@ -1,4 +1,4 @@
-﻿package com.cash.guide.ui.notebook
+package com.cash.guide.ui.notebook
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
@@ -10,7 +10,7 @@ import com.cash.guide.R
 
 enum class JournalThemeId {
     CLASSIC_YELLOW,
-    KRAFT_VINTAGE,
+    EMERALD_REGISTRY,
     WHITE_NOTEBOOK,
     DARK_CARNET
 }
@@ -48,19 +48,19 @@ object JournalThemePacks {
         isDark = false
     )
 
-    val KraftVintage = JournalThemePalette(
-        id = JournalThemeId.KRAFT_VINTAGE,
-        nameResId = R.string.theme_kraft_vintage_title,
-        descResId = R.string.theme_kraft_vintage_desc,
-        paper = Color(0xFFEFE6D5),
-        dockBg = Color(0xFFE4D8C3),
-        ink = Color(0xFF2E2218),
-        writingInk = Color(0xFF3D2F23),
-        mutedInk = Color(0xFF7C6C5E),
-        rule = Color(0xFFBCAC9B),
+    val EmeraldRegistry = JournalThemePalette(
+        id = JournalThemeId.EMERALD_REGISTRY,
+        nameResId = R.string.theme_emerald_registry_title,
+        descResId = R.string.theme_emerald_registry_desc,
+        paper = Color(0xFFEBF3EA),
+        dockBg = Color(0xFFDFECE0),
+        ink = Color(0xFF0F382A),
+        writingInk = Color(0xFF1B4D3C),
+        mutedInk = Color(0xFF527766),
+        rule = Color(0xFFB2CBB6),
         accent = Color(0xFFD97706),
-        cardBg = Color(0xFFF6EFE3),
-        cardBorder = Color(0xFFD6C5B1),
+        cardBg = Color(0xFFF4FAF3),
+        cardBorder = Color(0xFFC5DBC8),
         isDark = false
     )
 
@@ -98,14 +98,14 @@ object JournalThemePacks {
 
     val allPacks: List<JournalThemePalette> = listOf(
         ClassicYellow,
-        KraftVintage,
+        EmeraldRegistry,
         WhiteNotebook,
         DarkCarnet
     )
 
     fun get(id: JournalThemeId): JournalThemePalette = when (id) {
         JournalThemeId.CLASSIC_YELLOW -> ClassicYellow
-        JournalThemeId.KRAFT_VINTAGE -> KraftVintage
+        JournalThemeId.EMERALD_REGISTRY -> EmeraldRegistry
         JournalThemeId.WHITE_NOTEBOOK -> WhiteNotebook
         JournalThemeId.DARK_CARNET -> DarkCarnet
     }

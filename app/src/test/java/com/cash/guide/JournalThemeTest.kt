@@ -25,17 +25,17 @@ class JournalThemeTest {
     @Test
     fun testDarkCarnetIsDarkTrueOthersFalse() {
         assertFalse(JournalThemePacks.ClassicYellow.isDark)
-        assertFalse(JournalThemePacks.KraftVintage.isDark)
+        assertFalse(JournalThemePacks.EmeraldRegistry.isDark)
         assertFalse(JournalThemePacks.WhiteNotebook.isDark)
         assertTrue(JournalThemePacks.DarkCarnet.isDark)
     }
 
     @Test
     fun testUpdatingCurrentPaletteDynamicallyChangesColors() {
-        // Switch to Kraft
-        JournalTheme.currentPalette = JournalThemePacks.KraftVintage
-        assertEquals(JournalThemePacks.KraftVintage.paper, JournalPaper)
-        assertEquals(JournalThemePacks.KraftVintage.ink, JournalInk)
+        // Switch to Emerald Registry
+        JournalTheme.currentPalette = JournalThemePacks.EmeraldRegistry
+        assertEquals(JournalThemePacks.EmeraldRegistry.paper, JournalPaper)
+        assertEquals(JournalThemePacks.EmeraldRegistry.ink, JournalInk)
 
         // Switch to Dark Carnet
         JournalTheme.currentPalette = JournalThemePacks.DarkCarnet

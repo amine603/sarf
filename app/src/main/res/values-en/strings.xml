@@ -272,8 +272,8 @@
     <string name="settings_theme_active_badge">✓ Active</string>
     <string name="theme_classic_yellow_title">Classic Yellow</string>
     <string name="theme_classic_yellow_desc">Warm ivory paper, cool blue ruling &amp; graphite ink</string>
-    <string name="theme_kraft_vintage_title">Kraft Paper</string>
-    <string name="theme_kraft_vintage_desc">Artisanal kraft ledger with warm sepia brown ink</string>
+    <string name="theme_emerald_registry_title">Emerald Ledger</string>
+    <string name="theme_emerald_registry_desc">Soft sage paper &amp; deep emerald fountain pen ink</string>
     <string name="theme_white_notebook_title">White Paper</string>
     <string name="theme_white_notebook_desc">Clean lined sheet with authentic Bic Blue pen ink</string>
     <string name="theme_dark_carnet_title">Dark Carnet</string>

@@ -272,8 +272,8 @@
     <string name="settings_theme_active_badge">✓ مفعّل</string>
     <string name="theme_classic_yellow_title">كناش أصفر</string>
     <string name="theme_classic_yellow_desc">ورقة صفرا تقليدية، خطوط خفيفة ومداد رصاص</string>
-    <string name="theme_kraft_vintage_title">ورق كرافت</string>
-    <string name="theme_kraft_vintage_desc">ورق أصيل ديال الكارطون ومداد قهوي دافي</string>
+    <string name="theme_emerald_registry_title">الدفتر الأخضر (Registre)</string>
+    <string name="theme_emerald_registry_desc">ورقة خضرة هادية مع مداد زمردي كحل بحال الريشة</string>
     <string name="theme_white_notebook_title">ورقة بيضا</string>
     <string name="theme_white_notebook_desc">ورقة بيضا مسطرة بحال الستيلو بيك زرق</string>
     <string name="theme_dark_carnet_title">كناش ليلي</string>

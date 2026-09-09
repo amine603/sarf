@@ -196,9 +196,9 @@ fun SettingsScreen(
                     )
 
                     ThemePackCard(
-                        palette = JournalThemePacks.KraftVintage,
-                        isSelected = state.selectedTheme == JournalThemeId.KRAFT_VINTAGE,
-                        onClick = { viewModel.selectTheme(JournalThemeId.KRAFT_VINTAGE) },
+                        palette = JournalThemePacks.EmeraldRegistry,
+                        isSelected = state.selectedTheme == JournalThemeId.EMERALD_REGISTRY,
+                        onClick = { viewModel.selectTheme(JournalThemeId.EMERALD_REGISTRY) },
                         modifier = Modifier.weight(1f)
                     )
                 }
