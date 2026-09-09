@@ -290,4 +290,44 @@
     <string name="pin_confirm_hint">Retapez le même code pour confirmer</string>
     <string name="pin_mismatch_error">Les codes ne correspondent pas</string>
     <string name="pin_set_success">Verrouillage activé avec succès !</string>
+
+    <!-- Credit Due Dates & Reminders -->
+    <string name="action_set_due_date">Date d’échéance &amp; Rappel</string>
+    <string name="due_date_dialog_title">Échéance &amp; Rappel</string>
+    <string name="due_date_dialog_subtitle">Fixer un délai de paiement pour ce crédit</string>
+    <string name="due_date_section_quick">Raccourcis de date :</string>
+    <string name="due_date_today">Aujourd’hui</string>
+    <string name="due_date_tomorrow">Demain</string>
+    <string name="due_date_in_3_days">Dans 3 jours</string>
+    <string name="due_date_in_1_week">Dans 1 semaine</string>
+    <string name="due_date_end_of_month">Fin du mois</string>
+    <string name="due_date_custom">Autre date…</string>
+    <string name="due_date_pick_date">Choisir une date</string>
+    <string name="due_date_select_date_hint">Appuyez pour ouvrir le calendrier</string>
+    <string name="due_date_reminder_label">Activer un rappel par notification</string>
+    <string name="due_date_time_label">Heure du rappel :</string>
+    <string name="due_date_time_morning">09:00 (Matin)</string>
+    <string name="due_date_time_afternoon">14:00 (Midi)</string>
+    <string name="due_date_time_evening">18:00 (Soir)</string>
+    <string name="due_date_clear">Supprimer l’échéance</string>
+    <string name="due_date_save">Enregistrer</string>
+    <string name="due_date_saved_toast">Échéance enregistrée avec succès</string>
+    <string name="due_date_cleared_toast">Échéance supprimée</string>
+    <string name="due_date_permission_rationale">L’application a besoin de l’autorisation pour vous envoyer des rappels d’échéance.</string>
+
+    <!-- Credit status badges -->
+    <string name="credit_stamp_overdue">⚠️ En retard (%d j)</string>
+    <string name="credit_stamp_overdue_today">⚠️ En retard (1 j)</string>
+    <string name="credit_stamp_today">🔔 Aujourd’hui</string>
+    <string name="credit_stamp_tomorrow">📅 Demain</string>
+    <string name="credit_stamp_upcoming">📅 Dans %1$d j (%2$s)</string>
+    <string name="credit_stamp_settled">✓ Payé</string>
+    <string name="credit_banner_due">Échéance : %s</string>
+
+    <!-- Notification channel and content -->
+    <string name="notification_channel_credit_reminders">Rappels de Crédit</string>
+    <string name="notification_channel_credit_reminders_desc">Notifications pour les échéances et suivis de crédits</string>
+    <string name="notification_credit_title">🔔 Échéance crédit : %s</string>
+    <string name="notification_credit_body">Montant : %s. Pensez au suivi de ce crédit.</string>
+    <string name="notification_action_mark_paid">Marquer comme payé</string>
 </resources>

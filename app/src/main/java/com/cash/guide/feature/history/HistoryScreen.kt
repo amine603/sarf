@@ -224,6 +224,8 @@ fun HistoryScreen(
                             currencySuffix = currencySuffix,
                             paymentStatus = calc.calculation.paymentStatus,
                             calcType = calc.calculation.calcType,
+                            dueDateEpochMs = calc.calculation.dueDateEpochMs,
+                            reminderEnabled = calc.calculation.reminderEnabled,
                             onClick = { onOpenCalculation(calc.calculation.id) },
                             onMoreClick = { viewModel.selectCalculationForAction(calc) }
                         )

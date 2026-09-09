@@ -60,7 +60,11 @@ data class EditorUiState(
     val canUndo: Boolean = false,
     val groupId: String? = null,
     val paymentStatus: String = "PAID",
-    val calcType: String = "PERSONNEL"
+    val calcType: String = "PERSONNEL",
+    val dueDateEpochMs: Long? = null,
+    val reminderEnabled: Boolean = false,
+    val reminderTimeEpochMs: Long? = null,
+    val showDueDateDialog: Boolean = false
 ) {
     val hasInvalidRows: Boolean
         get() = rows.any { it.amount.text.isNotBlank() && !MoneyMath.isValidExpression(it.amount.text) }

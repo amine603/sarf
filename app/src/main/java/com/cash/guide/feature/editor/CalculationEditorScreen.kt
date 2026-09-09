@@ -101,9 +101,15 @@ import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.ExportOptionsBottomSheet
+import com.cash.guide.ui.notebook.CreditDueDateDialog
 import com.cash.guide.ui.notebook.UnsavedChangesDialog
 import com.cash.guide.ui.notebook.resolveJournalFont
 import com.cash.guide.ui.notebook.isArabicScript
+import com.cash.guide.domain.reminder.CreditDueUrgency
+import com.cash.guide.domain.reminder.CreditStatusHelper
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 @Composable
@@ -190,6 +196,90 @@ fun CalculationEditorScreen(
                         fontSize = if (isRtl) 13.sp else 13.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = JournalActionDelete
+                    )
+                }
+            }
+
+            // Credit Due Date & Reminder Bar (when calcType == CREDIT)
+            if (state.calcType == "CREDIT") {
+                val dueInfo = remember(state.paymentStatus, state.calcType, state.dueDateEpochMs, state.reminderEnabled) {
+                    CreditStatusHelper.computeDueInfo(
+                        context = context,
+                        paymentStatus = state.paymentStatus,
+                        calcType = state.calcType,
+                        dueDateEpochMs = state.dueDateEpochMs,
+                        reminderEnabled = state.reminderEnabled
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(JournalRuleSpacing)
+                        .background(JournalPaper)
+                        .drawBehind {
+                            val strokeW = 0.6.dp.toPx()
+                            drawLine(
+                                color = JournalRule.copy(alpha = 0.50f),
+                                start = Offset(0f, size.height),
+                                end = Offset(size.width, size.height),
+                                strokeWidth = strokeW
+                            )
+                        }
+                        .clickable(role = Role.Button) {
+                            viewModel.setDueDateDialogVisible(true)
+                        }
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = if (state.reminderEnabled) "🔔" else "📅",
+                            fontSize = 13.sp
+                        )
+                        val currentDueDate = state.dueDateEpochMs
+                        val dateText = if (currentDueDate != null) {
+                            val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                            stringResource(R.string.credit_banner_due, sdf.format(Date(currentDueDate)))
+                        } else {
+                            stringResource(R.string.action_set_due_date)
+                        }
+                        Text(
+                            text = dateText,
+                            fontFamily = resolveJournalFont(dateText, isRtl),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (dueInfo != null) dueInfo.textColor else JournalMutedInk,
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+                        if (dueInfo != null && dueInfo.urgency != CreditDueUrgency.SETTLED) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(dueInfo.badgeColor)
+                                    .padding(horizontal = 5.dp, vertical = 1.dp)
+                            ) {
+                                Text(
+                                    text = dueInfo.displayText,
+                                    fontFamily = resolveJournalFont(dueInfo.displayText, isRtl),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = dueInfo.textColor,
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
+                            }
+                        }
+                    }
+
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Pencil,
+                        contentDescription = stringResource(R.string.action_set_due_date),
+                        tint = JournalMutedInk,
+                        size = 14.dp
                     )
                 }
             }
@@ -323,6 +413,24 @@ fun CalculationEditorScreen(
             )
         }
 
+        // Credit Due Date & Reminder Dialog
+        if (state.showDueDateDialog) {
+            CreditDueDateDialog(
+                initialDueDateEpochMs = state.dueDateEpochMs,
+                initialReminderEnabled = state.reminderEnabled,
+                initialReminderTimeEpochMs = state.reminderTimeEpochMs,
+                onSave = { dueDate, reminderEnabled, reminderTime ->
+                    viewModel.updateDueDate(dueDate, reminderEnabled, reminderTime, context)
+                    viewModel.setDueDateDialogVisible(false)
+                },
+                onClear = {
+                    viewModel.updateDueDate(null, false, null, context)
+                    viewModel.setDueDateDialogVisible(false)
+                },
+                onDismiss = { viewModel.setDueDateDialogVisible(false) }
+            )
+        }
+
         // Export Options Bottom Sheet
         if (showExportSheet) {
             ExportOptionsBottomSheet(
@@ -333,6 +441,7 @@ fun CalculationEditorScreen(
                         onOpenCalculation?.invoke(newId)
                     }
                 },
+                onSetDueDate = if (state.calcType == "CREDIT") { { viewModel.setDueDateDialogVisible(true) } } else null,
                 onExportPdf = { viewModel.exportAsPdf(context, isRtl) },
                 onExportExcel = { viewModel.exportAsExcel(context) },
                 onShareImage = { viewModel.shareAsImage(context, isRtl) },

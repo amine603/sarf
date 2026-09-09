@@ -87,6 +87,9 @@ class BackupManager(
             if (c.groupId != null) cEntity.put("groupId", c.groupId)
             cEntity.put("paymentStatus", c.paymentStatus)
             cEntity.put("calcType", c.calcType)
+            if (c.dueDateEpochMs != null) cEntity.put("dueDateEpochMs", c.dueDateEpochMs)
+            cEntity.put("reminderEnabled", c.reminderEnabled)
+            if (c.reminderTimeEpochMs != null) cEntity.put("reminderTimeEpochMs", c.reminderTimeEpochMs)
             calcObj.put("calculation", cEntity)
 
             val itemsArr = JSONArray()
@@ -154,7 +157,10 @@ class BackupManager(
                     editingCalculationId = if (cObj.has("editingCalculationId") && !cObj.isNull("editingCalculationId")) cObj.getString("editingCalculationId") else null,
                     groupId = if (cObj.has("groupId") && !cObj.isNull("groupId")) cObj.getString("groupId") else null,
                     paymentStatus = cObj.optString("paymentStatus", "PAID"),
-                    calcType = cObj.optString("calcType", if (cObj.optString("paymentStatus", "PAID") == "UNPAID") "CREDIT" else "PERSONNEL")
+                    calcType = cObj.optString("calcType", if (cObj.optString("paymentStatus", "PAID") == "UNPAID") "CREDIT" else "PERSONNEL"),
+                    dueDateEpochMs = if (cObj.has("dueDateEpochMs") && !cObj.isNull("dueDateEpochMs")) cObj.getLong("dueDateEpochMs") else null,
+                    reminderEnabled = cObj.optBoolean("reminderEnabled", false),
+                    reminderTimeEpochMs = if (cObj.has("reminderTimeEpochMs") && !cObj.isNull("reminderTimeEpochMs")) cObj.getLong("reminderTimeEpochMs") else null
                 )
 
                 val itemsList = mutableListOf<CalculationItemEntity>()

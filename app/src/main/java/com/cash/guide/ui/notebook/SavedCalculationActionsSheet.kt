@@ -59,6 +59,7 @@ fun SavedCalculationActionsSheet(
     onTogglePaymentStatus: (() -> Unit)? = null,
     calcType: String = "PERSONNEL",
     onToggleCalcType: (() -> Unit)? = null,
+    onSetDueDate: (() -> Unit)? = null,
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
     onSaveAsTemplate: (() -> Unit)? = null,
@@ -165,6 +166,19 @@ fun SavedCalculationActionsSheet(
                         onClick = {
                             onDismiss()
                             onTogglePaymentStatus()
+                        }
+                    )
+                }
+
+                // Row: Date d'échéance & Rappel (if CREDIT)
+                if (calcType == "CREDIT" && onSetDueDate != null) {
+                    ActionSheetRuledItem(
+                        label = stringResource(R.string.action_set_due_date),
+                        symbol = HisabiSymbol.Clock,
+                        badgeColor = Color(0xFFC2410C).copy(alpha = 0.22f),
+                        onClick = {
+                            onDismiss()
+                            onSetDueDate()
                         }
                     )
                 }

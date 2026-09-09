@@ -205,6 +205,8 @@ fun MonthCalculationsScreen(
                         isPinned = false,
                         paymentStatus = calc.calculation.paymentStatus,
                         calcType = calc.calculation.calcType,
+                        dueDateEpochMs = calc.calculation.dueDateEpochMs,
+                        reminderEnabled = calc.calculation.reminderEnabled,
                         onClick = { onOpenCalculation(calc.calculation.id) },
                         onMoreClick = {}
                     )

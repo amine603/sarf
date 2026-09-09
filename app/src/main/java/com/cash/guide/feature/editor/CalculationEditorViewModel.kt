@@ -18,6 +18,7 @@ import com.cash.guide.domain.CalculationImageShareHelper
 import com.cash.guide.domain.export.ExcelExportHelper
 import com.cash.guide.domain.export.FileExportManager
 import com.cash.guide.domain.export.PdfExportHelper
+import com.cash.guide.domain.reminder.CreditReminderScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.cash.guide.domain.GraphemeSegmenter
@@ -118,7 +119,10 @@ class CalculationEditorViewModel(
                             createdAtEpochMs = draft.calculation.createdAtEpochMs,
                             groupId = effectiveGroupId,
                             paymentStatus = draft.calculation.paymentStatus,
-                            calcType = draft.calculation.calcType
+                            calcType = draft.calculation.calcType,
+                            dueDateEpochMs = draft.calculation.dueDateEpochMs,
+                            reminderEnabled = draft.calculation.reminderEnabled,
+                            reminderTimeEpochMs = draft.calculation.reminderTimeEpochMs
                         )
                     }
                 } else {
@@ -207,7 +211,10 @@ class CalculationEditorViewModel(
                             createdAtEpochMs = originalCreatedAt ?: draft.calculation.createdAtEpochMs,
                             groupId = effectiveGroupId,
                             paymentStatus = draft.calculation.paymentStatus,
-                            calcType = draft.calculation.calcType
+                            calcType = draft.calculation.calcType,
+                            dueDateEpochMs = draft.calculation.dueDateEpochMs,
+                            reminderEnabled = draft.calculation.reminderEnabled,
+                            reminderTimeEpochMs = draft.calculation.reminderTimeEpochMs
                         )
                     }
                 } else if (saved != null) {
@@ -243,7 +250,10 @@ class CalculationEditorViewModel(
                             createdAtEpochMs = saved.calculation.createdAtEpochMs,
                             groupId = effectiveGroupId,
                             paymentStatus = saved.calculation.paymentStatus,
-                            calcType = saved.calculation.calcType
+                            calcType = saved.calculation.calcType,
+                            dueDateEpochMs = saved.calculation.dueDateEpochMs,
+                            reminderEnabled = saved.calculation.reminderEnabled,
+                            reminderTimeEpochMs = saved.calculation.reminderTimeEpochMs
                         )
                     }
                 }
@@ -921,7 +931,10 @@ class CalculationEditorViewModel(
                 editingCalculationId = null,
                 groupId = state.groupId,
                 paymentStatus = state.paymentStatus,
-                calcType = state.calcType
+                calcType = state.calcType,
+                dueDateEpochMs = state.dueDateEpochMs,
+                reminderEnabled = state.reminderEnabled,
+                reminderTimeEpochMs = state.reminderTimeEpochMs
             )
 
             calculationRepository.saveCalculation(calculationEntity, itemEntities)
@@ -1016,11 +1029,61 @@ class CalculationEditorViewModel(
                 editingCalculationId = editingSavedId,
                 groupId = state.groupId,
                 paymentStatus = state.paymentStatus,
-                calcType = state.calcType
+                calcType = state.calcType,
+                dueDateEpochMs = state.dueDateEpochMs,
+                reminderEnabled = state.reminderEnabled,
+                reminderTimeEpochMs = state.reminderTimeEpochMs
             )
 
             calculationRepository.saveDraft(draftEntity, itemEntities)
         }
+    }
+
+    fun setDueDateDialogVisible(visible: Boolean) {
+        _uiState.update { it.copy(showDueDateDialog = visible) }
+    }
+
+    fun updateDueDate(
+        dueDateEpochMs: Long?,
+        reminderEnabled: Boolean,
+        reminderTimeEpochMs: Long?,
+        context: Context? = null
+    ) {
+        _uiState.update {
+            it.copy(
+                dueDateEpochMs = dueDateEpochMs,
+                reminderEnabled = reminderEnabled,
+                reminderTimeEpochMs = reminderTimeEpochMs,
+                isDirty = true
+            )
+        }
+        val targetId = _uiState.value.editingSavedId ?: _uiState.value.calculationId
+        if (targetId != null) {
+            viewModelScope.launch {
+                calculationRepository.updateCreditDueDate(
+                    id = targetId,
+                    dueDateEpochMs = dueDateEpochMs,
+                    reminderEnabled = reminderEnabled,
+                    reminderTimeEpochMs = reminderTimeEpochMs
+                )
+                if (context != null) {
+                    if (reminderEnabled && reminderTimeEpochMs != null && reminderTimeEpochMs > System.currentTimeMillis()) {
+                        val totalCentimes = _uiState.value.totalCentimes
+                        val totalFormatted = String.format(java.util.Locale.US, "%.2f %s", totalCentimes / 100.0, _uiState.value.currency.name)
+                        CreditReminderScheduler.scheduleReminder(
+                            context = context,
+                            calculationId = targetId,
+                            title = _uiState.value.title.text.ifBlank { "Crédit" },
+                            amountFormatted = totalFormatted,
+                            reminderTimeEpochMs = reminderTimeEpochMs
+                        )
+                    } else {
+                        CreditReminderScheduler.cancelReminder(context, targetId)
+                    }
+                }
+            }
+        }
+        scheduleDraftSave()
     }
 
     fun shareAsImage(context: Context, isRtl: Boolean) {

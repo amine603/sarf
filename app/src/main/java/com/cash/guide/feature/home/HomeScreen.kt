@@ -71,6 +71,7 @@ import com.cash.guide.ui.notebook.JournalRuledDocument
 import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.SavedCalculationActionsSheet
+import com.cash.guide.ui.notebook.CreditDueDateDialog
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.journalBaselineOnRule
 import androidx.compose.foundation.Canvas
@@ -126,6 +127,7 @@ fun HomeScreen(
     var showMonthPicker by remember { mutableStateOf(false) }
     var showNewCalcSetupSheet by remember { mutableStateOf(false) }
     var calcToAssignToGroup by remember { mutableStateOf<com.cash.guide.data.db.CalculationWithItems?>(null) }
+    var creditDueDateCalc by remember { mutableStateOf<com.cash.guide.data.db.CalculationWithItems?>(null) }
     val currentMonthYear = remember(context) {
         val locale = context.resources.configuration.locales[0]
         SimpleDateFormat("MMMM yyyy", locale).format(Date()).replaceFirstChar {
@@ -565,6 +567,10 @@ fun HomeScreen(
                 onToggleCalcType = {
                     viewModel.toggleCalcType(actionCalc.calculation.id, actionCalc.calculation.calcType)
                 },
+                onSetDueDate = {
+                    creditDueDateCalc = actionCalc
+                    viewModel.selectCalculationForAction(null)
+                },
                 onEdit = {
                     onOpenCalculation(actionCalc.calculation.id)
                     viewModel.selectCalculationForAction(null)
@@ -678,6 +684,47 @@ fun HomeScreen(
                     calcToAssignToGroup = null
                     viewModel.loadRecent(context)
                 }
+            )
+        }
+
+        // Credit Due Date & Reminder Dialog
+        if (creditDueDateCalc != null) {
+            val targetCalc = creditDueDateCalc!!
+            CreditDueDateDialog(
+                initialDueDateEpochMs = targetCalc.calculation.dueDateEpochMs,
+                initialReminderEnabled = targetCalc.calculation.reminderEnabled,
+                initialReminderTimeEpochMs = targetCalc.calculation.reminderTimeEpochMs,
+                onSave = { dueDate, reminderEnabled, reminderTime ->
+                    viewModel.updateCreditDueDate(
+                        context = context,
+                        calculation = targetCalc,
+                        dueDateEpochMs = dueDate,
+                        reminderEnabled = reminderEnabled,
+                        reminderTimeEpochMs = reminderTime
+                    )
+                    android.widget.Toast.makeText(
+                        context,
+                        context.getString(R.string.due_date_saved_toast),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    creditDueDateCalc = null
+                },
+                onClear = {
+                    viewModel.updateCreditDueDate(
+                        context = context,
+                        calculation = targetCalc,
+                        dueDateEpochMs = null,
+                        reminderEnabled = false,
+                        reminderTimeEpochMs = null
+                    )
+                    android.widget.Toast.makeText(
+                        context,
+                        context.getString(R.string.due_date_cleared_toast),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    creditDueDateCalc = null
+                },
+                onDismiss = { creditDueDateCalc = null }
             )
         }
 

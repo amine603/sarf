@@ -102,6 +102,20 @@ class CalculationEditorViewModelTest {
             }
         }
 
+        override suspend fun updateCreditDueDate(id: String, dueDateEpochMs: Long?, reminderEnabled: Boolean, reminderTimeEpochMs: Long?, now: Long) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(
+                    dueDateEpochMs = dueDateEpochMs,
+                    reminderEnabled = reminderEnabled,
+                    reminderTimeEpochMs = reminderTimeEpochMs,
+                    updatedAtEpochMs = now
+                )
+            }
+        }
+
+        override suspend fun getPendingCreditReminders(fromTime: Long): List<CalculationWithItems> = emptyList()
+
         override suspend fun getAllSaved(): List<CalculationWithItems> = emptyList()
         override suspend fun deleteAllCalculations() {
             calculations.clear()

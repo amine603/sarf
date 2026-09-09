@@ -50,6 +50,7 @@ fun ExportOptionsBottomSheet(
     title: String,
     onSaveAsTemplate: (() -> Unit)? = null,
     onDuplicate: (() -> Unit)? = null,
+    onSetDueDate: (() -> Unit)? = null,
     onExportPdf: () -> Unit,
     onExportExcel: () -> Unit,
     onShareImage: (() -> Unit)? = null,
@@ -149,6 +150,19 @@ fun ExportOptionsBottomSheet(
                         onClick = {
                             onDismiss()
                             onDuplicate()
+                        }
+                    )
+                }
+
+                // Row: Date d'échéance & Rappel
+                if (onSetDueDate != null) {
+                    ExportSheetRuledItem(
+                        label = stringResource(R.string.action_set_due_date),
+                        symbol = HisabiSymbol.Clock,
+                        badgeColor = Color(0xFFC2410C).copy(alpha = 0.22f),
+                        onClick = {
+                            onDismiss()
+                            onSetDueDate()
                         }
                     )
                 }

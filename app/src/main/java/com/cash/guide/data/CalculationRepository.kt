@@ -53,7 +53,11 @@ class CalculationRepository(
             updatedAtEpochMs = now,
             editingCalculationId = null,
             groupId = calculation.groupId ?: existing?.calculation?.groupId,
-            paymentStatus = calculation.paymentStatus
+            paymentStatus = calculation.paymentStatus,
+            calcType = calculation.calcType,
+            dueDateEpochMs = calculation.dueDateEpochMs ?: existing?.calculation?.dueDateEpochMs,
+            reminderEnabled = calculation.reminderEnabled,
+            reminderTimeEpochMs = calculation.reminderTimeEpochMs ?: existing?.calculation?.reminderTimeEpochMs
         )
         val remappedItems = items.mapIndexed { index, item ->
             val existingItem = existing?.items?.firstOrNull { it.id == item.id }
@@ -103,6 +107,19 @@ class CalculationRepository(
         val now = System.currentTimeMillis()
         dao.updateCalcType(id, calcType, now)
     }
+
+    suspend fun updateCreditDueDate(
+        id: String,
+        dueDateEpochMs: Long?,
+        reminderEnabled: Boolean,
+        reminderTimeEpochMs: Long?
+    ) {
+        val now = System.currentTimeMillis()
+        dao.updateCreditDueDate(id, dueDateEpochMs, reminderEnabled, reminderTimeEpochMs, now)
+    }
+
+    suspend fun getPendingCreditReminders(fromTime: Long = System.currentTimeMillis()): List<CalculationWithItems> =
+        dao.getPendingCreditReminders(fromTime)
 
     suspend fun getRecoverableDraft(editingCalculationId: String?): CalculationWithItems? {
         return if (editingCalculationId != null) {

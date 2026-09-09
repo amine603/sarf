@@ -115,6 +115,8 @@ class BackupManagerTest {
         override suspend fun deleteDrafts(draftId: String, targetId: String?) {}
         override suspend fun updatePaymentStatus(id: String, paymentStatus: String, now: Long) {}
         override suspend fun updateCalcType(id: String, calcType: String, now: Long) {}
+        override suspend fun updateCreditDueDate(id: String, dueDateEpochMs: Long?, reminderEnabled: Boolean, reminderTimeEpochMs: Long?, now: Long) {}
+        override suspend fun getPendingCreditReminders(fromTime: Long): List<CalculationWithItems> = emptyList()
         override suspend fun getAllSaved(): List<CalculationWithItems> = emptyList()
         override suspend fun deleteAllCalculations() {}
     }

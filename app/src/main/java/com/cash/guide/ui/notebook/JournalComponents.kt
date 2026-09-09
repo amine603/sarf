@@ -1,6 +1,7 @@
 package com.cash.guide.ui.notebook
 
 import androidx.activity.compose.BackHandler
+import com.cash.guide.domain.reminder.CreditStatusHelper
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -1827,8 +1828,11 @@ fun NotebookCalculationRow(
     dotColorOverride: Color? = null,
     paymentStatus: String = "PAID",
     calcType: String = "PERSONNEL",
+    dueDateEpochMs: Long? = null,
+    reminderEnabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
     val isLatinSuffix = currencySuffix.contains(Regex("[a-zA-Z]"))
@@ -1847,13 +1851,24 @@ fun NotebookCalculationRow(
     val dotColor = dotColorOverride ?: defaultDotColor
 
     val hasSubtitle = subtitle.isNotBlank()
+    val dueInfo = remember(paymentStatus, calcType, dueDateEpochMs, reminderEnabled) {
+        CreditStatusHelper.computeDueInfo(
+            context = context,
+            paymentStatus = paymentStatus,
+            calcType = calcType,
+            dueDateEpochMs = dueDateEpochMs,
+            reminderEnabled = reminderEnabled
+        )
+    }
+    val showSecondLine = hasSubtitle || dueInfo != null
+
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(if (hasSubtitle) JournalRuleSpacing * 2 else JournalRuleSpacing)
+            .height(if (showSecondLine) JournalRuleSpacing * 2 else JournalRuleSpacing)
             .clickable(
                 role = Role.Button,
                 onClickLabel = title,
@@ -1979,33 +1994,67 @@ fun NotebookCalculationRow(
             }
         }
 
-        // Line 2: Subtitle metadata on Rule 2 (if present)
-        if (hasSubtitle) {
+        // Line 2: Credit status badge + Subtitle metadata on Rule 2 (if present)
+        if (showSecondLine) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(JournalRuleSpacing)
                     .padding(start = 29.5.dp, end = 14.dp),
                 verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = subtitle,
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isRtl) 13.5.sp else 14.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = JournalMutedInk,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start,
-                    style = TextStyle(
-                        platformStyle = NoFontPadding,
-                        textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .journalBaselineOnRule()
-                )
+                if (dueInfo != null) {
+                    Box(
+                        modifier = Modifier
+                            .offset(y = (-3).dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(dueInfo.badgeColor)
+                            .border(0.8.dp, dueInfo.textColor.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 1.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text(
+                                text = dueInfo.displayText,
+                                fontFamily = resolveJournalFont(dueInfo.displayText, isRtl),
+                                fontSize = if (isRtl) 11.sp else 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = dueInfo.textColor,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                            if (dueInfo.hasReminder) {
+                                Text(
+                                    text = "🔔",
+                                    fontSize = 9.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (hasSubtitle) {
+                    Text(
+                        text = subtitle,
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = if (isRtl) 13.5.sp else 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = JournalMutedInk,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        style = TextStyle(
+                            platformStyle = NoFontPadding,
+                            textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .journalBaselineOnRule()
+                    )
+                }
             }
         }
     }
@@ -2078,6 +2127,8 @@ fun NotebookDateGroupBlock(
                     dotColorOverride = timelineStyle.dotColor,
                     paymentStatus = calc.calculation.paymentStatus,
                     calcType = calc.calculation.calcType,
+                    dueDateEpochMs = calc.calculation.dueDateEpochMs,
+                    reminderEnabled = calc.calculation.reminderEnabled,
                     onClick = { onOpenCalculation(calc.calculation.id) },
                     onMoreClick = { onMoreClick(calc) }
                 )

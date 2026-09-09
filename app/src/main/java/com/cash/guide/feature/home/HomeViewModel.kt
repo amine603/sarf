@@ -8,6 +8,7 @@ import com.cash.guide.data.SettingsRepository
 import com.cash.guide.data.CalculationRepository
 import com.cash.guide.data.db.CalculationWithItems
 import com.cash.guide.domain.DateGroupHelper
+import com.cash.guide.domain.reminder.CreditReminderScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -81,6 +82,9 @@ class HomeViewModel(
         val nextStatus = if (currentStatus == "PAID") "UNPAID" else "PAID"
         viewModelScope.launch {
             repository.updatePaymentStatus(calculationId, nextStatus)
+            if (nextStatus == "PAID") {
+                lastContext?.let { CreditReminderScheduler.cancelReminder(it, calculationId) }
+            }
         }
     }
 
@@ -90,6 +94,39 @@ class HomeViewModel(
         viewModelScope.launch {
             repository.updateCalcType(calculationId, nextType)
             repository.updatePaymentStatus(calculationId, nextStatus)
+            if (nextType == "PERSONNEL") {
+                lastContext?.let { CreditReminderScheduler.cancelReminder(it, calculationId) }
+            }
+        }
+    }
+
+    fun updateCreditDueDate(
+        context: Context,
+        calculation: CalculationWithItems,
+        dueDateEpochMs: Long?,
+        reminderEnabled: Boolean,
+        reminderTimeEpochMs: Long?
+    ) {
+        viewModelScope.launch {
+            repository.updateCreditDueDate(
+                id = calculation.calculation.id,
+                dueDateEpochMs = dueDateEpochMs,
+                reminderEnabled = reminderEnabled,
+                reminderTimeEpochMs = reminderTimeEpochMs
+            )
+            if (reminderEnabled && reminderTimeEpochMs != null && reminderTimeEpochMs > System.currentTimeMillis()) {
+                val totalCentimes = calculation.totalCentimes
+                val totalFormatted = String.format(java.util.Locale.US, "%.2f %s", totalCentimes / 100.0, calculation.calculation.currency)
+                CreditReminderScheduler.scheduleReminder(
+                    context = context,
+                    calculationId = calculation.calculation.id,
+                    title = calculation.calculation.title,
+                    amountFormatted = totalFormatted,
+                    reminderTimeEpochMs = reminderTimeEpochMs
+                )
+            } else {
+                CreditReminderScheduler.cancelReminder(context, calculation.calculation.id)
+            }
         }
     }
 
@@ -187,6 +224,7 @@ class HomeViewModel(
         val toDelete = _uiState.value.calculationToDelete ?: return
         viewModelScope.launch {
             repository.deleteCalculation(toDelete.calculation.id)
+            lastContext?.let { CreditReminderScheduler.cancelReminder(it, toDelete.calculation.id) }
             _uiState.update { it.copy(calculationToDelete = null) }
         }
     }

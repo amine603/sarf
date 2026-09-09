@@ -118,6 +118,31 @@ class CalculationRepositoryTest {
             }
         }
 
+        override suspend fun updateCreditDueDate(
+            id: String,
+            dueDateEpochMs: Long?,
+            reminderEnabled: Boolean,
+            reminderTimeEpochMs: Long?,
+            now: Long
+        ) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(
+                    dueDateEpochMs = dueDateEpochMs,
+                    reminderEnabled = reminderEnabled,
+                    reminderTimeEpochMs = reminderTimeEpochMs,
+                    updatedAtEpochMs = now
+                )
+            }
+        }
+
+        override suspend fun getPendingCreditReminders(fromTime: Long): List<CalculationWithItems> {
+            return calculations.values
+                .filter { it.status == "SAVED" && it.calcType == "CREDIT" && it.paymentStatus == "UNPAID" && it.reminderEnabled && (it.reminderTimeEpochMs ?: 0L) > fromTime }
+                .sortedBy { it.reminderTimeEpochMs }
+                .map { CalculationWithItems(it, items[it.id] ?: emptyList()) }
+        }
+
         override suspend fun getAllSaved(): List<CalculationWithItems> {
             return calculations.values
                 .filter { it.status == "SAVED" }
@@ -402,4 +427,68 @@ class CalculationRepositoryTest {
         repository.updateCalcType("c1", "CREDIT")
         assertEquals("CREDIT", repository.getCalculation("c1")?.calculation?.calcType)
     }
+
+    @Test
+    fun updateCreditDueDate_updatesSuccessfully() = runBlocking {
+        val calc = CalculationEntity(id = "c1", title = "Crédit Hanout", currency = "DIRHAM", createdAtEpochMs = 10, updatedAtEpochMs = 10, status = "SAVED", calcType = "CREDIT")
+        repository.saveCalculation(calc, emptyList())
+
+        val dueTime = 1750000000000L
+        val reminderTime = 1749996400000L
+        repository.updateCreditDueDate("c1", dueTime, true, reminderTime)
+
+        val updated = repository.getCalculation("c1")?.calculation
+        assertEquals(dueTime, updated?.dueDateEpochMs)
+        assertTrue(updated?.reminderEnabled == true)
+        assertEquals(reminderTime, updated?.reminderTimeEpochMs)
+    }
+
+    @Test
+    fun getPendingCreditReminders_returnsOnlyActiveUnpaidReminders() = runBlocking {
+        val now = 1000L
+        val activeReminder = CalculationEntity(
+            id = "c1",
+            title = "Crédit épicier",
+            currency = "DIRHAM",
+            createdAtEpochMs = 10,
+            updatedAtEpochMs = 10,
+            status = "SAVED",
+            calcType = "CREDIT",
+            paymentStatus = "UNPAID",
+            reminderEnabled = true,
+            reminderTimeEpochMs = 2000L
+        )
+        val paidReminder = CalculationEntity(
+            id = "c2",
+            title = "Crédit payé",
+            currency = "DIRHAM",
+            createdAtEpochMs = 10,
+            updatedAtEpochMs = 10,
+            status = "SAVED",
+            calcType = "CREDIT",
+            paymentStatus = "PAID",
+            reminderEnabled = true,
+            reminderTimeEpochMs = 2000L
+        )
+        val disabledReminder = CalculationEntity(
+            id = "c3",
+            title = "Crédit sans rappel",
+            currency = "DIRHAM",
+            createdAtEpochMs = 10,
+            updatedAtEpochMs = 10,
+            status = "SAVED",
+            calcType = "CREDIT",
+            paymentStatus = "UNPAID",
+            reminderEnabled = false,
+            reminderTimeEpochMs = 2000L
+        )
+        repository.saveCalculation(activeReminder, emptyList())
+        repository.saveCalculation(paidReminder, emptyList())
+        repository.saveCalculation(disabledReminder, emptyList())
+
+        val pending = repository.getPendingCreditReminders(now)
+        assertEquals(1, pending.size)
+        assertEquals("c1", pending.first().calculation.id)
+    }
 }
+

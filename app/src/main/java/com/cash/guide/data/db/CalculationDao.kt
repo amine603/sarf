@@ -89,6 +89,19 @@ interface CalculationDao {
     @Query("UPDATE calculations SET calcType = :calcType, updatedAtEpochMs = :now WHERE id = :id")
     suspend fun updateCalcType(id: String, calcType: String, now: Long = System.currentTimeMillis())
 
+    @Query("UPDATE calculations SET dueDateEpochMs = :dueDateEpochMs, reminderEnabled = :reminderEnabled, reminderTimeEpochMs = :reminderTimeEpochMs, updatedAtEpochMs = :now WHERE id = :id")
+    suspend fun updateCreditDueDate(
+        id: String,
+        dueDateEpochMs: Long?,
+        reminderEnabled: Boolean,
+        reminderTimeEpochMs: Long?,
+        now: Long = System.currentTimeMillis()
+    )
+
+    @Transaction
+    @Query("SELECT * FROM calculations WHERE status = 'SAVED' AND calcType = 'CREDIT' AND paymentStatus = 'UNPAID' AND reminderEnabled = 1 AND reminderTimeEpochMs > :fromTime ORDER BY reminderTimeEpochMs ASC")
+    suspend fun getPendingCreditReminders(fromTime: Long = System.currentTimeMillis()): List<CalculationWithItems>
+
     @Transaction
     suspend fun upsertCalculationWithItems(
         calculation: CalculationEntity,

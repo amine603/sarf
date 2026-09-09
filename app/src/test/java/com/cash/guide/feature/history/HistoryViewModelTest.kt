@@ -81,6 +81,18 @@ class HistoryViewModelTest {
                 calculations[id] = existing.copy(calcType = calcType, updatedAtEpochMs = now)
             }
         }
+        override suspend fun updateCreditDueDate(id: String, dueDateEpochMs: Long?, reminderEnabled: Boolean, reminderTimeEpochMs: Long?, now: Long) {
+            val existing = calculations[id]
+            if (existing != null) {
+                calculations[id] = existing.copy(
+                    dueDateEpochMs = dueDateEpochMs,
+                    reminderEnabled = reminderEnabled,
+                    reminderTimeEpochMs = reminderTimeEpochMs,
+                    updatedAtEpochMs = now
+                )
+            }
+        }
+        override suspend fun getPendingCreditReminders(fromTime: Long): List<CalculationWithItems> = emptyList()
         override suspend fun getAllSaved(): List<CalculationWithItems> {
             return calculations.values
                 .filter { it.status == "SAVED" }

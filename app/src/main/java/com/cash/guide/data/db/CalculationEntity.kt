@@ -12,7 +12,8 @@ import androidx.room.PrimaryKey
         Index("editingCalculationId"),
         Index("groupId"),
         Index("paymentStatus"),
-        Index("calcType")
+        Index("calcType"),
+        Index("dueDateEpochMs")
     ]
 )
 data class CalculationEntity(
@@ -26,5 +27,8 @@ data class CalculationEntity(
     val editingCalculationId: String? = null,
     val groupId: String? = null,
     val paymentStatus: String = "PAID", // "PAID" or "UNPAID"
-    val calcType: String = "PERSONNEL" // "PERSONNEL" or "CREDIT"
+    val calcType: String = "PERSONNEL", // "PERSONNEL" or "CREDIT"
+    val dueDateEpochMs: Long? = null,
+    val reminderEnabled: Boolean = false,
+    val reminderTimeEpochMs: Long? = null
 )

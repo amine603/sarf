@@ -13,7 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CalculationItemEntity::class,
         CalculationGroupEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class HssabiDatabase : RoomDatabase() {
@@ -60,6 +60,15 @@ abstract class HssabiDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `calculations` ADD COLUMN `dueDateEpochMs` INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE `calculations` ADD COLUMN `reminderEnabled` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `calculations` ADD COLUMN `reminderTimeEpochMs` INTEGER DEFAULT NULL")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_calculations_dueDateEpochMs` ON `calculations` (`dueDateEpochMs`)")
+            }
+        }
+
         fun getInstance(context: Context): HssabiDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -67,7 +76,7 @@ abstract class HssabiDatabase : RoomDatabase() {
                     HssabiDatabase::class.java,
                     "hssabi.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
                     .also { INSTANCE = it }
             }

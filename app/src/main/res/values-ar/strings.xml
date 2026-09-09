@@ -290,4 +290,44 @@
     <string name="pin_confirm_hint">أعد كتابة نفس الرمز للتأكيد</string>
     <string name="pin_mismatch_error">الرمزان غير متطابقين</string>
     <string name="pin_set_success">تم تفعيل القفل بنجاح!</string>
+
+    <!-- Credit Due Dates & Reminders -->
+    <string name="action_set_due_date">أجل الأداء والتنبيه</string>
+    <string name="due_date_dialog_title">أجل الأداء والتنبيه</string>
+    <string name="due_date_dialog_subtitle">حدد موعد استخلاص هذا الكريدي</string>
+    <string name="due_date_section_quick">مواعيد سريعة :</string>
+    <string name="due_date_today">اليوم</string>
+    <string name="due_date_tomorrow">غداً</string>
+    <string name="due_date_in_3_days">بعد 3 أيام</string>
+    <string name="due_date_in_1_week">بعد أسبوع</string>
+    <string name="due_date_end_of_month">نهاية الشهر</string>
+    <string name="due_date_custom">تاريخ آخر…</string>
+    <string name="due_date_pick_date">اختيار تاريخ</string>
+    <string name="due_date_select_date_hint">اضغط لفتح التقويم</string>
+    <string name="due_date_reminder_label">تفعيل إشعار التنبيه</string>
+    <string name="due_date_time_label">وقت التنبيه :</string>
+    <string name="due_date_time_morning">09:00 (صباحاً)</string>
+    <string name="due_date_time_afternoon">14:00 (ظهراً)</string>
+    <string name="due_date_time_evening">18:00 (مساءً)</string>
+    <string name="due_date_clear">حذف أجل الأداء</string>
+    <string name="due_date_save">حفظ</string>
+    <string name="due_date_saved_toast">تم حفظ الأجل بنجاح</string>
+    <string name="due_date_cleared_toast">تم حذف الأجل</string>
+    <string name="due_date_permission_rationale">التطبيق بحاجة إلى إذن الإشعارات لتذكيرك بمواعيد الكريدي.</string>
+
+    <!-- Credit status badges -->
+    <string name="credit_stamp_overdue">⚠️ متأخر (%d ي)</string>
+    <string name="credit_stamp_overdue_today">⚠️ متأخر (يوم 1)</string>
+    <string name="credit_stamp_today">🔔 اليوم</string>
+    <string name="credit_stamp_tomorrow">📅 غداً</string>
+    <string name="credit_stamp_upcoming">📅 بعد %1$d ي (%2$s)</string>
+    <string name="credit_stamp_settled">✓ خلاص</string>
+    <string name="credit_banner_due">الأجل : %s</string>
+
+    <!-- Notification channel and content -->
+    <string name="notification_channel_credit_reminders">تنبيهات الكريدي</string>
+    <string name="notification_channel_credit_reminders_desc">إشعارات لمتابعة ديون ومستحقات الكريدي</string>
+    <string name="notification_credit_title">🔔 أجل كريدي : %s</string>
+    <string name="notification_credit_body">المبلغ : %s. لا تنس متابعة هذا الحساب.</string>
+    <string name="notification_action_mark_paid">تعليم كخالص ✓</string>
 </resources>
