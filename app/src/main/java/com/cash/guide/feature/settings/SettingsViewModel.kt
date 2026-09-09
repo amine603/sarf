@@ -15,6 +15,7 @@ import com.cash.guide.domain.MoneyUnit
 import com.cash.guide.domain.export.ExcelExportHelper
 import com.cash.guide.domain.export.FileExportManager
 import com.cash.guide.domain.export.PdfExportHelper
+import com.cash.guide.ui.notebook.JournalThemeId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import com.cash.guide.data.SecurityRepository
@@ -40,12 +41,14 @@ class SettingsViewModel(
         viewModelScope.launch {
             combine(
                 settingsRepository.appLanguage,
-                settingsRepository.defaultCurrency
-            ) { lang, currency ->
+                settingsRepository.defaultCurrency,
+                settingsRepository.journalTheme
+            ) { lang, currency, theme ->
                 _uiState.update {
                     it.copy(
                         currentLanguage = lang,
                         defaultCurrency = currency,
+                        selectedTheme = theme,
                         isLoading = false
                     )
                 }
@@ -97,6 +100,12 @@ class SettingsViewModel(
     fun selectDefaultCurrency(unit: MoneyUnit) {
         viewModelScope.launch {
             settingsRepository.setDefaultCurrency(unit)
+        }
+    }
+
+    fun selectTheme(themeId: JournalThemeId) {
+        viewModelScope.launch {
+            settingsRepository.setJournalTheme(themeId)
         }
     }
 

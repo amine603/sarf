@@ -26,13 +26,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
 
-// --- Color Palette: French Bullet-Journal ---
-val JournalPaper = Color(0xFFFBF6E8)       // Warm cream paper
-val JournalDockBg = Color(0xFFF6F0DF)      // Warm cream dock
-val JournalInk = Color(0xFF242421)         // Graphite black ink
-val JournalWritingInk = Color(0xFF383834)  // Slightly softer writing ink
-val JournalMutedInk = Color(0xFF7A7972)    // Muted pencil ink
-val JournalRule = Color(0xFFB8C7CC)        // Cool gray-blue ruling lines
+// --- Color Palette: French Bullet-Journal (Dynamic Pack Linked) ---
+val JournalPaper: Color get() = JournalTheme.currentPalette.paper
+val JournalDockBg: Color get() = JournalTheme.currentPalette.dockBg
+val JournalInk: Color get() = JournalTheme.currentPalette.ink
+val JournalWritingInk: Color get() = JournalTheme.currentPalette.writingInk
+val JournalMutedInk: Color get() = JournalTheme.currentPalette.mutedInk
+val JournalRule: Color get() = JournalTheme.currentPalette.rule
 
 // Pastel Marker Highlighters
 val HighlighterPink = Color(0xFFF3A7B9)    // Category, '=' button, '+' dab, double underline
@@ -61,12 +61,12 @@ val JournalRuleSpacing = 29.dp
 val NoFontPadding = PlatformTextStyle(includeFontPadding = false)
 
 // --- Migrated Notebook & Theme Design System ---
-val Paper = Color(0xFFFAF8F1)
-val PaperWarm = Color(0xFFF5F0E7)
-val Ink = Color(0xFF3B3C39)
-val WritingInk = Color(0xFF62635E)
-val MutedInk = Color(0xFF74736D)
-val Rule = Color(0xFFBFD2D8)
+val Paper: Color get() = JournalPaper
+val PaperWarm: Color get() = JournalDockBg
+val Ink: Color get() = JournalInk
+val WritingInk: Color get() = JournalWritingInk
+val MutedInk: Color get() = JournalMutedInk
+val Rule: Color get() = JournalRule
 
 val ColorCoral = Color(0xFFF05B48)
 val ColorOrange = Color(0xFFE38D2C)
@@ -273,21 +273,23 @@ fun journalSecondaryTotalStyle() = TextStyle(
     platformStyle = NoFontPadding
 )
 
-val JournalKeyDigitStyle = TextStyle(
-    fontFamily = JournalHandFamily,
-    fontSize = 22.sp,
-    fontWeight = FontWeight.Normal,
-    color = JournalInk,
-    platformStyle = NoFontPadding
-)
+val JournalKeyDigitStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = JournalHandFamily,
+        fontSize = 22.sp,
+        fontWeight = FontWeight.Normal,
+        color = JournalInk,
+        platformStyle = NoFontPadding
+    )
 
-val JournalKeyOperatorStyle = TextStyle(
-    fontFamily = JournalHandFamily,
-    fontSize = 22.sp,
-    fontWeight = FontWeight.Normal,
-    color = JournalInk,
-    platformStyle = NoFontPadding
-)
+val JournalKeyOperatorStyle: TextStyle
+    get() = TextStyle(
+        fontFamily = JournalHandFamily,
+        fontSize = 22.sp,
+        fontWeight = FontWeight.Normal,
+        color = JournalInk,
+        platformStyle = NoFontPadding
+    )
 
 // --- Deterministic Organic Highlighter Modifiers ---
 /**

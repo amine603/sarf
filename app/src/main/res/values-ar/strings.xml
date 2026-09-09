@@ -330,4 +330,16 @@
     <string name="notification_credit_title">🔔 أجل كريدي : %s</string>
     <string name="notification_credit_body">المبلغ : %s. لا تنس متابعة هذا الحساب.</string>
     <string name="notification_action_mark_paid">تعليم كخالص ✓</string>
+
+    <!-- Notebook Theme Packs -->
+    <string name="settings_section_theme">مظهر وطابع الدفتر</string>
+    <string name="settings_theme_active_badge">✓ مفعّل</string>
+    <string name="theme_classic_yellow_title">كناش أصفر</string>
+    <string name="theme_classic_yellow_desc">ورق عاجي دافئ، تسطير رمادي-أزرق ومداد غرافيت</string>
+    <string name="theme_kraft_vintage_title">ورق كرافت</string>
+    <string name="theme_kraft_vintage_desc">طابع كرتوني تقليدي ومداد بني قهوة دافئ</string>
+    <string name="theme_white_notebook_title">ورقة بيضاء</string>
+    <string name="theme_white_notebook_desc">دفتر مدرسي مخطط مع حبر قلم بيك أزرق أصلي</string>
+    <string name="theme_dark_carnet_title">دفتر ليلي</string>
+    <string name="theme_dark_carnet_desc">خلفية سبورة داكنة مع مداد طباشير هادئ للعينين</string>
 </resources>

@@ -266,4 +266,16 @@
     <string name="pin_confirm_hint">عاود كتب نفس الكود باش تأكد</string>
     <string name="pin_mismatch_error">الكودات ما كيتشابهوش</string>
     <string name="pin_set_success">تفعل القفل بنجاح!</string>
+
+    <!-- Notebook Theme Packs -->
+    <string name="settings_section_theme">ستيل وطابع الكناش</string>
+    <string name="settings_theme_active_badge">✓ مفعّل</string>
+    <string name="theme_classic_yellow_title">كناش أصفر</string>
+    <string name="theme_classic_yellow_desc">ورقة صفرا تقليدية، خطوط خفيفة ومداد رصاص</string>
+    <string name="theme_kraft_vintage_title">ورق كرافت</string>
+    <string name="theme_kraft_vintage_desc">ورق أصيل ديال الكارطون ومداد قهوي دافي</string>
+    <string name="theme_white_notebook_title">ورقة بيضا</string>
+    <string name="theme_white_notebook_desc">ورقة بيضا مسطرة بحال الستيلو بيك زرق</string>
+    <string name="theme_dark_carnet_title">كناش ليلي</string>
+    <string name="theme_dark_carnet_desc">كناش كحل سبورة ومداد طباشير مريح للعينين بالليل</string>
 </resources>

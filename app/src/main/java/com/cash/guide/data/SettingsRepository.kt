@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.cash.guide.domain.MoneyUnit
+import com.cash.guide.ui.notebook.JournalThemeId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -20,6 +21,7 @@ class SettingsRepository(private val context: Context) {
         val DEFAULT_CURRENCY = stringPreferencesKey("default_currency")
         val PINNED_CALCULATION_IDS = stringSetPreferencesKey("pinned_calculation_ids")
         val USER_NAME = stringPreferencesKey("user_name")
+        val JOURNAL_THEME = stringPreferencesKey("journal_theme")
     }
 
     val userName: Flow<String> = context.dataStore.data.map { preferences ->
@@ -41,6 +43,11 @@ class SettingsRepository(private val context: Context) {
         preferences[PreferencesKeys.PINNED_CALCULATION_IDS] ?: emptySet()
     }
 
+    val journalTheme: Flow<JournalThemeId> = context.dataStore.data.map { preferences ->
+        val name = preferences[PreferencesKeys.JOURNAL_THEME]
+        JournalThemeId.entries.find { it.name == name } ?: JournalThemeId.CLASSIC_YELLOW
+    }
+
     suspend fun setAppLanguage(languageCode: String) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.APP_LANGUAGE] = languageCode
@@ -50,6 +57,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDefaultCurrency(unit: MoneyUnit) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.DEFAULT_CURRENCY] = unit.name
+        }
+    }
+
+    suspend fun setJournalTheme(themeId: JournalThemeId) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.JOURNAL_THEME] = themeId.name
         }
     }
 

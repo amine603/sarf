@@ -26,6 +26,10 @@ import com.cash.guide.feature.groups.GroupsViewModel
 import com.cash.guide.feature.settings.SettingsViewModel
 import com.cash.guide.ui.notebook.JournalLockScreen
 import com.cash.guide.ui.notebook.JournalPaper
+import com.cash.guide.ui.notebook.JournalTheme
+import com.cash.guide.ui.notebook.JournalThemeId
+import com.cash.guide.ui.notebook.JournalThemePacks
+import com.cash.guide.ui.notebook.LocalJournalTheme
 import com.cash.guide.ui.notebook.NotebookBottomNavigation
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -105,6 +109,11 @@ fun HssabiApp() {
     }
 
     val appLanguage by settingsRepository.appLanguage.collectAsState(initial = "fr")
+    val currentThemeId by settingsRepository.journalTheme.collectAsState(initial = JournalThemeId.CLASSIC_YELLOW)
+    val currentPalette = remember(currentThemeId) { JournalThemePacks.get(currentThemeId) }
+    androidx.compose.runtime.LaunchedEffect(currentPalette) {
+        JournalTheme.currentPalette = currentPalette
+    }
     val configuration = LocalConfiguration.current
 
     val isArabicLanguage = appLanguage == "ar" || appLanguage == "dar" || appLanguage.startsWith("ar")
@@ -171,7 +180,8 @@ fun HssabiApp() {
         LocalContext provides localizedContext,
         LocalConfiguration provides localizedConfig,
         LocalLayoutDirection provides layoutDirection,
-        LocalActivityResultRegistryOwner provides effectiveRegistryOwner
+        LocalActivityResultRegistryOwner provides effectiveRegistryOwner,
+        LocalJournalTheme provides currentPalette
     ) {
         Scaffold(
             bottomBar = {

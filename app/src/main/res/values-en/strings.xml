@@ -266,4 +266,16 @@
     <string name="pin_confirm_hint">Re-enter the same code to confirm</string>
     <string name="pin_mismatch_error">PIN codes do not match</string>
     <string name="pin_set_success">Lock successfully enabled!</string>
+
+    <!-- Notebook Theme Packs -->
+    <string name="settings_section_theme">Notebook Style &amp; Theme</string>
+    <string name="settings_theme_active_badge">✓ Active</string>
+    <string name="theme_classic_yellow_title">Classic Yellow</string>
+    <string name="theme_classic_yellow_desc">Warm ivory paper, cool blue ruling &amp; graphite ink</string>
+    <string name="theme_kraft_vintage_title">Kraft Paper</string>
+    <string name="theme_kraft_vintage_desc">Artisanal kraft ledger with warm sepia brown ink</string>
+    <string name="theme_white_notebook_title">White Paper</string>
+    <string name="theme_white_notebook_desc">Clean lined sheet with authentic Bic Blue pen ink</string>
+    <string name="theme_dark_carnet_title">Dark Carnet</string>
+    <string name="theme_dark_carnet_desc">Matte slate blackboard with gentle chalk white ink</string>
 </resources>

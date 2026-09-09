@@ -330,4 +330,16 @@
     <string name="notification_credit_title">🔔 Échéance crédit : %s</string>
     <string name="notification_credit_body">Montant : %s. Pensez au suivi de ce crédit.</string>
     <string name="notification_action_mark_paid">Marquer comme payé</string>
+
+    <!-- Notebook Theme Packs -->
+    <string name="settings_section_theme">Style &amp; Thème du carnet</string>
+    <string name="settings_theme_active_badge">✓ Actif</string>
+    <string name="theme_classic_yellow_title">Kounach Asfar</string>
+    <string name="theme_classic_yellow_desc">Ivoire chaleureux, lignes gris-bleu et encre graphite</string>
+    <string name="theme_kraft_vintage_title">Papier Kraft</string>
+    <string name="theme_kraft_vintage_desc">Teinte carton artisanal et encre sépia café bistre</string>
+    <string name="theme_white_notebook_title">Feuille Blanche</string>
+    <string name="theme_white_notebook_desc">Papier quadrillé et encre stylo Bic bleu authentique</string>
+    <string name="theme_dark_carnet_title">Carnet Sombre</string>
+    <string name="theme_dark_carnet_desc">Fond ardoise noir mat et encre craie douce reposante</string>
 </resources>

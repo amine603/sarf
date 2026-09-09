@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.border
@@ -25,6 +27,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.text.style.TextOverflow
+import com.cash.guide.ui.notebook.JournalThemeId
+import com.cash.guide.ui.notebook.JournalThemePacks
+import com.cash.guide.ui.notebook.JournalThemePalette
 import com.cash.guide.ui.notebook.ExportOptionsBottomSheet
 import com.cash.guide.ui.notebook.SetupPinDialog
 import androidx.compose.ui.Alignment
@@ -161,7 +169,65 @@ fun SettingsScreen(
             // Line 2: 1 empty notebook line spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Line 3: Section 1 Header - Préférences (soft yellow band)
+            // Section: Thème & Style du carnet (soft pink band)
+            NotebookSectionBand(
+                title = stringResource(R.string.settings_section_theme),
+                highlightColor = HighlighterPink,
+                isCentered = false
+            )
+
+            // Theme Cards Grid (2 rows of 2 cards)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Row 1: Classic Yellow & Kraft Vintage
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    ThemePackCard(
+                        palette = JournalThemePacks.ClassicYellow,
+                        isSelected = state.selectedTheme == JournalThemeId.CLASSIC_YELLOW,
+                        onClick = { viewModel.selectTheme(JournalThemeId.CLASSIC_YELLOW) },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    ThemePackCard(
+                        palette = JournalThemePacks.KraftVintage,
+                        isSelected = state.selectedTheme == JournalThemeId.KRAFT_VINTAGE,
+                        onClick = { viewModel.selectTheme(JournalThemeId.KRAFT_VINTAGE) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Row 2: White Notebook & Dark Carnet
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    ThemePackCard(
+                        palette = JournalThemePacks.WhiteNotebook,
+                        isSelected = state.selectedTheme == JournalThemeId.WHITE_NOTEBOOK,
+                        onClick = { viewModel.selectTheme(JournalThemeId.WHITE_NOTEBOOK) },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    ThemePackCard(
+                        palette = JournalThemePacks.DarkCarnet,
+                        isSelected = state.selectedTheme == JournalThemeId.DARK_CARNET,
+                        onClick = { viewModel.selectTheme(JournalThemeId.DARK_CARNET) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // 1 empty notebook line spacer
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Section: Préférences (soft yellow band)
             NotebookSectionBand(
                 title = stringResource(R.string.settings_section_preferences),
                 highlightColor = HighlighterYellow,
@@ -933,6 +999,153 @@ private fun JournalActionRow(
                 style = TextStyle(platformStyle = NoFontPadding),
                 modifier = Modifier.journalBaselineOnRule()
             )
+        }
+    }
+}
+
+@Composable
+private fun ThemePackCard(
+    palette: JournalThemePalette,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val haptic = LocalHapticFeedback.current
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+
+    Surface(
+        modifier = modifier
+            .height(108.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(role = Role.RadioButton, onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            }),
+        shape = RoundedCornerShape(12.dp),
+        color = palette.paper,
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) palette.accent else palette.cardBorder
+        ),
+        shadowElevation = if (isSelected) 2.dp else 0.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .drawBehind {
+                    // Miniature notebook ruling lines
+                    val lineSpacing = 24.dp.toPx()
+                    var y = lineSpacing
+                    while (y < size.height) {
+                        drawLine(
+                            color = palette.rule.copy(alpha = 0.45f),
+                            start = Offset(0f, y),
+                            end = Offset(size.width, y),
+                            strokeWidth = 0.75.dp.toPx()
+                        )
+                        y += lineSpacing
+                    }
+                }
+                .padding(horizontal = 10.dp, vertical = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Top row: Title + Selection badge
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(palette.nameResId),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = if (isRtl) 13.5.sp else 14.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = palette.ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+
+                    if (isSelected) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(palette.accent.copy(alpha = 0.22f))
+                                .border(0.8.dp, palette.accent, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 5.dp, vertical = 1.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_theme_active_badge),
+                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (palette.isDark) palette.accent else palette.ink
+                            )
+                        }
+                    } else {
+                        // Subtle hollow circle for unselected state
+                        Canvas(modifier = Modifier.size(13.dp)) {
+                            drawCircle(
+                                color = palette.mutedInk.copy(alpha = 0.45f),
+                                style = Stroke(width = 1.2.dp.toPx())
+                            )
+                        }
+                    }
+                }
+
+                // Middle: Miniature writing sample with accent highlighter stroke
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(palette.accent.copy(alpha = 0.25f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = if (isRtl) "١٥٠ د.م ✓" else "150.00 DH ✓",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = palette.ink
+                        )
+                    }
+                }
+
+                // Bottom: 3 miniature color dots (paper, ink, rule) + description
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // Swatch dots
+                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Canvas(modifier = Modifier.size(6.5.dp)) {
+                            drawCircle(color = palette.ink)
+                        }
+                        Canvas(modifier = Modifier.size(6.5.dp)) {
+                            drawCircle(color = palette.rule)
+                        }
+                        Canvas(modifier = Modifier.size(6.5.dp)) {
+                            drawCircle(color = palette.accent)
+                        }
+                    }
+
+                    Text(
+                        text = stringResource(palette.descResId),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = 10.sp,
+                        color = palette.mutedInk,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 }
