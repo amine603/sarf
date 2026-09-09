@@ -78,7 +78,6 @@ import com.cash.guide.ui.notebook.JournalDockBg
 import com.cash.guide.ui.notebook.JournalDoubleUnderline
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalKeyDigitStyle
-import com.cash.guide.ui.notebook.JournalKeyboardDockSurface
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalPaper
 import com.cash.guide.ui.notebook.JournalRule
@@ -298,7 +297,7 @@ private fun CashRegisterCalculatorContent(
             .padding(horizontal = 14.dp)
             .padding(bottom = 8.dp)
     ) {
-        // TOP: Ruled Ledger Calculation Display (anchored naturally above the keyboard, eliminating empty void)
+        // TOP: Ruled Ledger Calculation Display (lifted up to leave 1-2 ruled lines between pink double underline and keypad)
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -308,7 +307,7 @@ private fun CashRegisterCalculatorContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp)
+                    .padding(bottom = JournalRuleSpacing + 6.dp)
             ) {
                 // Header of the display: sketch icon + label + clear button
                 Row(
@@ -459,12 +458,12 @@ private fun CashRegisterCalculatorContent(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Authentic In-App Keyboard Dock with soft pencil grid dividers
-            JournalKeyboardDockSurface(
+            // Authentic In-App Keyboard with transparent paper background and theme ink outline (Bic blue / ink)
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.55f)), RoundedCornerShape(12.dp))
+                    .border(BorderStroke(1.2.dp, JournalWritingInk), RoundedCornerShape(12.dp))
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                     Column(
