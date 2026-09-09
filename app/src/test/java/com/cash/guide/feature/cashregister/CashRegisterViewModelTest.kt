@@ -114,4 +114,49 @@ class CashRegisterViewModelTest {
         assertEquals(MoneyUnit.RIAL, rialState.currencyUnit)
         assertEquals("200", rialState.purchaseText)
     }
+
+    @Test
+    fun calculatorKeys_evaluateInRealTime_andStepTransitionsWork() {
+        // Initial state is CALCULATOR
+        assertEquals(CashRegisterStep.CALCULATOR, viewModel.uiState.value.step)
+
+        // Type 15 + 20 + 8
+        viewModel.applyCalculatorKey("1")
+        viewModel.applyCalculatorKey("5")
+        viewModel.applyCalculatorKey("+")
+        viewModel.applyCalculatorKey("2")
+        viewModel.applyCalculatorKey("0")
+        viewModel.applyCalculatorKey("+")
+        viewModel.applyCalculatorKey("8")
+
+        val calcState = viewModel.uiState.value
+        assertEquals("15+20+8", calcState.calcExpression)
+        assertEquals("43", calcState.purchaseText)
+        assertEquals(4300L, calcState.purchaseCentimes)
+
+        // Go to Change Return
+        viewModel.goToChangeReturn()
+        val changeStepState = viewModel.uiState.value
+        assertEquals(CashRegisterStep.CHANGE_RETURN, changeStepState.step)
+        assertEquals("43", changeStepState.purchaseText)
+
+        // Select preset 50 DH received
+        viewModel.selectPresetReceived(50L)
+        val receivedState = viewModel.uiState.value
+        assertEquals(700L, receivedState.changeCentimes) // 50 - 43 = 7 DH
+        // 7 DH = 1x 5 DH, 1x 2 DH
+        assertEquals(2, receivedState.pieces.size)
+
+        // Return back to calculator
+        viewModel.goToCalculator()
+        assertEquals(CashRegisterStep.CALCULATOR, viewModel.uiState.value.step)
+
+        // Client suivant / clear resets everything and returns to CALCULATOR
+        viewModel.clear()
+        val clearedState = viewModel.uiState.value
+        assertEquals(CashRegisterStep.CALCULATOR, clearedState.step)
+        assertEquals("", clearedState.calcExpression)
+        assertEquals("", clearedState.purchaseText)
+        assertEquals("", clearedState.receivedText)
+    }
 }

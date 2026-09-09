@@ -293,4 +293,11 @@
     <string name="cash_register_pieces_heading">Actual notes &amp; coins to return</string>
     <string name="cash_register_quick_presets">Quick banknote received:</string>
     <string name="cash_register_clear_input">Clear</string>
+    <string name="cash_register_go_to_change">Calculate change →</string>
+    <string name="cash_register_back_to_calc">Edit total</string>
+    <string name="cash_register_calc_title">Purchase Calculator</string>
+    <string name="cash_register_calc_hint">Enter total or add up items</string>
+    <string name="cash_register_home_card_badge">Quick POS</string>
+    <string name="cash_register_heading_banknotes">Banknotes to return</string>
+    <string name="cash_register_heading_coins">Coins to return</string>
 </resources>

@@ -9,7 +9,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+enum class CashRegisterStep {
+    CALCULATOR,
+    CHANGE_RETURN
+}
+
 data class CashRegisterUiState(
+    val step: CashRegisterStep = CashRegisterStep.CALCULATOR,
+    val calcExpression: String = "",
+    val calcResult: String = "",
+    val calcHasError: Boolean = false,
     val purchaseText: String = "",
     val receivedText: String = "",
     val currencyUnit: MoneyUnit = MoneyUnit.DIRHAM,
@@ -29,9 +38,118 @@ class CashRegisterViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(CashRegisterUiState())
     val uiState: StateFlow<CashRegisterUiState> = _uiState.asStateFlow()
 
+    fun applyCalculatorKey(key: String) {
+        _uiState.update { current ->
+            var expr = current.calcExpression
+            var hasErr = false
+
+            when (key) {
+                "C" -> {
+                    expr = ""
+                }
+                "⌫" -> {
+                    if (expr.isNotEmpty()) {
+                        expr = expr.dropLast(1)
+                    }
+                }
+                "=" -> {
+                    if (expr.isNotBlank()) {
+                        val evaluated = MoneyMath.evaluate(expr)
+                        if (evaluated != null && evaluated.signum() >= 0) {
+                            expr = evaluated.stripTrailingZeros().toPlainString()
+                        } else {
+                            hasErr = true
+                        }
+                    }
+                }
+                "+", "−", "-", "×", "*", "÷", "/" -> {
+                    val op = when (key) {
+                        "-", "−" -> "−"
+                        "*", "×" -> "×"
+                        "/", "÷" -> "÷"
+                        else -> "+"
+                    }
+                    if (expr.isEmpty()) {
+                        // Only allow minus if negative isn't blocked, but we disallow empty start ops except maybe zero
+                    } else {
+                        val lastChar = expr.last()
+                        if (lastChar == '+' || lastChar == '−' || lastChar == '-' || lastChar == '×' || lastChar == '*' || lastChar == '÷' || lastChar == '/') {
+                            expr = expr.dropLast(1) + op
+                        } else {
+                            expr += op
+                        }
+                    }
+                }
+                "." -> {
+                    // Check if current number segment already has a dot
+                    val lastSegment = expr.split(Regex("[+\\−\\-×*÷/]")).lastOrNull() ?: ""
+                    if (!lastSegment.contains('.')) {
+                        expr = if (lastSegment.isEmpty()) expr + "0." else expr + "."
+                    }
+                }
+                else -> {
+                    // Digits 0-9
+                    expr += key
+                }
+            }
+
+            // Real-time evaluation
+            val previewVal = if (expr.isNotBlank()) MoneyMath.evaluate(expr) else null
+            val resultStr = if (previewVal != null && previewVal.signum() >= 0) {
+                previewVal.stripTrailingZeros().toPlainString()
+            } else ""
+
+            val effectivePurchase = resultStr.ifBlank {
+                if (expr.isNotBlank() && MoneyMath.isValidExpression(expr)) expr else ""
+            }
+
+            computeState(
+                step = current.step,
+                calcExpression = expr,
+                calcResult = resultStr,
+                calcHasError = hasErr,
+                purchaseText = effectivePurchase,
+                receivedText = current.receivedText,
+                currencyUnit = current.currencyUnit
+            )
+        }
+    }
+
+    fun goToChangeReturn() {
+        _uiState.update { current ->
+            // If current expression has something not yet evaluated
+            var purchase = current.purchaseText
+            if (purchase.isBlank() && current.calcExpression.isNotBlank()) {
+                val eval = MoneyMath.evaluate(current.calcExpression)
+                if (eval != null && eval.signum() >= 0) {
+                    purchase = eval.stripTrailingZeros().toPlainString()
+                }
+            }
+            computeState(
+                step = CashRegisterStep.CHANGE_RETURN,
+                calcExpression = current.calcExpression,
+                calcResult = current.calcResult,
+                calcHasError = false,
+                purchaseText = purchase,
+                receivedText = current.receivedText,
+                currencyUnit = current.currencyUnit
+            )
+        }
+    }
+
+    fun goToCalculator() {
+        _uiState.update { current ->
+            current.copy(step = CashRegisterStep.CALCULATOR)
+        }
+    }
+
     fun setPurchaseText(text: String) {
         _uiState.update { current ->
             computeState(
+                step = current.step,
+                calcExpression = text,
+                calcResult = "",
+                calcHasError = false,
                 purchaseText = text,
                 receivedText = current.receivedText,
                 currencyUnit = current.currencyUnit
@@ -42,6 +160,10 @@ class CashRegisterViewModel : ViewModel() {
     fun setReceivedText(text: String) {
         _uiState.update { current ->
             computeState(
+                step = current.step,
+                calcExpression = current.calcExpression,
+                calcResult = current.calcResult,
+                calcHasError = current.calcHasError,
                 purchaseText = current.purchaseText,
                 receivedText = text,
                 currencyUnit = current.currencyUnit
@@ -54,7 +176,6 @@ class CashRegisterViewModel : ViewModel() {
         val amountText = if (currentUnit == MoneyUnit.DIRHAM) {
             dh.toString()
         } else {
-            // Convert dh to rial (1 DH = 20 RIAL)
             (dh * 20).toString()
         }
         setReceivedText(amountText)
@@ -65,7 +186,12 @@ class CashRegisterViewModel : ViewModel() {
             val nextUnit = if (current.currencyUnit == MoneyUnit.DIRHAM) MoneyUnit.RIAL else MoneyUnit.DIRHAM
             val convertedPurchase = MoneyMath.convertExpression(current.purchaseText, current.currencyUnit, nextUnit)
             val convertedReceived = MoneyMath.convertExpression(current.receivedText, current.currencyUnit, nextUnit)
+            val convertedCalc = MoneyMath.convertExpression(current.calcExpression, current.currencyUnit, nextUnit)
             computeState(
+                step = current.step,
+                calcExpression = convertedCalc,
+                calcResult = "",
+                calcHasError = false,
                 purchaseText = convertedPurchase,
                 receivedText = convertedReceived,
                 currencyUnit = nextUnit
@@ -75,11 +201,15 @@ class CashRegisterViewModel : ViewModel() {
 
     fun clear() {
         _uiState.update { current ->
-            CashRegisterUiState(currencyUnit = current.currencyUnit)
+            CashRegisterUiState(currencyUnit = current.currencyUnit, step = CashRegisterStep.CALCULATOR)
         }
     }
 
     private fun computeState(
+        step: CashRegisterStep,
+        calcExpression: String,
+        calcResult: String,
+        calcHasError: Boolean,
         purchaseText: String,
         receivedText: String,
         currencyUnit: MoneyUnit
@@ -139,6 +269,10 @@ class CashRegisterViewModel : ViewModel() {
         }
 
         return CashRegisterUiState(
+            step = step,
+            calcExpression = calcExpression,
+            calcResult = calcResult,
+            calcHasError = calcHasError,
             purchaseText = purchaseText,
             receivedText = receivedText,
             currencyUnit = currencyUnit,

@@ -357,4 +357,11 @@
     <string name="cash_register_pieces_heading">Coupures réelles à rendre</string>
     <string name="cash_register_quick_presets">Billet reçu :</string>
     <string name="cash_register_clear_input">Effacer</string>
+    <string name="cash_register_go_to_change">Calculer la monnaie →</string>
+    <string name="cash_register_back_to_calc">Modifier le total</string>
+    <string name="cash_register_calc_title">Calculatrice des achats</string>
+    <string name="cash_register_calc_hint">Tapez le montant ou additionnez vos articles</string>
+    <string name="cash_register_home_card_badge">Caisse express</string>
+    <string name="cash_register_heading_banknotes">Billets à rendre</string>
+    <string name="cash_register_heading_coins">Pièces à rendre</string>
 </resources>

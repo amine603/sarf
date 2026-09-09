@@ -89,6 +89,7 @@ import com.cash.guide.ui.notebook.HighlighterYellow
 import com.cash.guide.ui.notebook.HighlighterBlue
 import com.cash.guide.ui.notebook.NotebookDateGroupBlock
 import com.cash.guide.ui.notebook.NotebookPrimaryActionButton
+import com.cash.guide.ui.notebook.NotebookCashRegisterActionButton
 import com.cash.guide.ui.notebook.NotebookSearchField
 import com.cash.guide.ui.notebook.NotebookSectionBand
 import androidx.compose.runtime.mutableStateOf
@@ -231,70 +232,13 @@ fun HomeScreen(
                 }
             )
 
-            // Line 5b: Caisse & Rendu de monnaie (Quick Access Card)
-            Spacer(modifier = Modifier.height(8.dp))
-            val cashCardTitle = stringResource(R.string.cash_register_home_card_title)
-            val cashCardDesc = stringResource(R.string.cash_register_home_card_desc)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(JournalPaper)
-                    .border(
-                        BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.75f)),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .clickable { onOpenCashRegister() }
-                    .padding(horizontal = 12.dp, vertical = 7.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(HighlighterYellow.copy(alpha = 0.35f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("🧮", fontSize = 18.sp)
-                        }
-                        Column {
-                            Text(
-                                text = cashCardTitle,
-                                fontFamily = resolveJournalFont(cashCardTitle, isRtl),
-                                fontSize = if (isRtl) 14.sp else 14.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalInk,
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                            Text(
-                                text = cashCardDesc,
-                                fontFamily = resolveJournalFont(cashCardDesc, isRtl),
-                                fontSize = if (isRtl) 11.sp else 11.5.sp,
-                                color = JournalMutedInk,
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        }
-                    }
-                    Text(
-                        text = if (isRtl) "←" else "→",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = HighlighterPink
-                    )
-                }
-            }
+            // Line 6: Caisse & Rendu de monnaie (Quick Access Action)
+            Spacer(modifier = Modifier.height(6.dp))
+            NotebookCashRegisterActionButton(
+                onClick = onOpenCashRegister
+            )
 
-            // Line 6: 1 rule spacer
+            // Line 7: 1 rule spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
             // Notebook Filter Tabs Row (29dp)

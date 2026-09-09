@@ -1811,6 +1811,89 @@ fun NotebookPrimaryActionButton(
 }
 
 /**
+ * Notebook quick-access action button for Caisse & Rendu de monnaie (29dp).
+ * Respects the 1-rule spacing grid with clean paper background, ink borders and handwritten text.
+ */
+@Composable
+fun NotebookCashRegisterActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: String = stringResource(R.string.cash_register_home_card_title)
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing)
+                .clip(RoundedCornerShape(8.dp))
+                .background(JournalPaper)
+                .border(
+                    BorderStroke(0.9.dp, JournalRule.copy(alpha = 0.85f)),
+                    RoundedCornerShape(8.dp)
+                )
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = title,
+                    onClick = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        onClick()
+                    }
+                )
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "🧮",
+                        fontSize = 15.sp,
+                        modifier = Modifier.offset(y = (-0.5).dp)
+                    )
+                    Text(
+                        text = title,
+                        fontFamily = resolveJournalFont(title, isRtl),
+                        fontSize = if (isArabicScript(title) || isRtl) 14.sp else 14.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = JournalWritingInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.offset(y = if (isRtl) 0.5.dp else 0.dp)
+                    )
+                }
+
+                Text(
+                    text = if (isRtl) "←" else "→",
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalMutedInk.copy(alpha = 0.75f),
+                    style = TextStyle(platformStyle = NoFontPadding)
+                )
+            }
+        }
+    }
+}
+
+/**
  * Standard 2-rule notebook calculation row (58dp).
  * Line 1 (29dp): Bullet dot, Title, Amount, Currency, 3-dots menu icon.
  * Line 2 (29dp): Time · count metadata or search snippet.
