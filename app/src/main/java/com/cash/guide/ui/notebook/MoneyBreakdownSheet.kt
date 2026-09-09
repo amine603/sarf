@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,6 +28,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -38,8 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -150,7 +152,7 @@ fun MoneyBreakdownSheet(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.74f)
+            .fillMaxHeight(0.78f)
     ) {
         CompositionLocalProvider(
             LocalContext provides context,
@@ -279,45 +281,17 @@ fun MoneyBreakdownSheet(
                     }
 
                     item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(6.dp)
-                                    .height(14.dp)
-                                    .background(HighlighterYellow.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
-                            )
-                            val distText = stringResource(R.string.breakdown_distribution)
-                            Text(
-                                text = distText,
-                                fontFamily = resolveJournalFont(distText, isRtl),
-                                color = JournalWritingInk,
-                                fontSize = if (isRtl) 14.sp else 14.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(0.6.dp)
-                                    .background(JournalRule.copy(alpha = 0.6f))
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                    }
-
-                    pieces.forEach { piece ->
-                        item(key = piece.denomination.label) {
-                            BreakdownDenominationBlock(piece = piece)
-                        }
+                        JournalDenominationsBoard(
+                            pieces = pieces,
+                            isRtl = isRtl,
+                            headingBanknotes = stringResource(R.string.breakdown_heading_banknotes),
+                            headingCoins = stringResource(R.string.breakdown_heading_coins)
+                        )
                     }
 
                     if (remainderCentimes > 0) {
                         item {
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(10.dp))
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -351,149 +325,224 @@ fun MoneyBreakdownSheet(
     }
 }
 
+/**
+ * Authentic Moroccan notebook cash tray ("صينية الفلوس")
+ * Displaying banknotes and coins neatly arranged, without artificial shadows or redundant text.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun BreakdownDenominationBlock(piece: MoneyPiece) {
-    val layoutDirection = LocalLayoutDirection.current
-    val isRtl = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl
-    val isBanknote = piece.denomination.valueCentimes >= 2_000L
-    val bitmap = rememberBanknoteImage(piece.denomination.assetPath)
-    val rialText = getRialEquivalent(piece.denomination.valueCentimes)
-
-    val pieceTotalCentimes = piece.denomination.valueCentimes * piece.count
-    val pieceTotalDh = MoneyMath.fromCentimes(pieceTotalCentimes, MoneyUnit.DIRHAM)
+fun JournalDenominationsBoard(
+    pieces: List<MoneyPiece>,
+    isRtl: Boolean,
+    modifier: Modifier = Modifier,
+    headingBanknotes: String = stringResource(R.string.cash_register_heading_banknotes),
+    headingCoins: String = stringResource(R.string.cash_register_heading_coins)
+) {
+    val banknotes = remember(pieces) { pieces.filter { it.denomination.valueCentimes >= 2_000L } }
+    val coins = remember(pieces) { pieces.filter { it.denomination.valueCentimes < 2_000L } }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .background(JournalPaper.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
-            .border(BorderStroke(0.55.dp, JournalRule.copy(alpha = 0.45f)), RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(JournalPaper)
+            .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.60f)), RoundedCornerShape(12.dp))
+            .padding(14.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        // Section: Banknotes (L-Wra9)
+        if (banknotes.isNotEmpty()) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(
-                            if (isBanknote) HighlighterPink.copy(alpha = 0.25f) else HighlighterYellow.copy(alpha = 0.35f)
-                        )
-                        .padding(horizontal = 7.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "${piece.count} ×",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 15.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isBanknote) ColorCoral else ColorOrange,
-                        style = TextStyle(platformStyle = NoFontPadding)
-                    )
-                }
-
+                HisabiSketchIcon(
+                    symbol = HisabiSymbol.Wallet,
+                    contentDescription = null,
+                    tint = JournalWritingInk,
+                    size = 16.dp
+                )
                 Text(
-                    text = piece.denomination.label,
-                    fontFamily = resolveJournalFont(piece.denomination.label, isRtl),
-                    color = JournalInk,
-                    fontSize = if (isArabicScript(piece.denomination.label) || isRtl) 14.sp else 14.5.sp,
+                    text = headingBanknotes,
+                    fontFamily = resolveJournalFont(headingBanknotes, isRtl),
+                    color = JournalWritingInk,
+                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                     fontWeight = FontWeight.Bold,
                     style = TextStyle(platformStyle = NoFontPadding)
                 )
-
-                if (rialText != null) {
-                    Text(
-                        text = "($rialText)",
-                        fontFamily = resolveJournalFont(rialText, isRtl),
-                        color = JournalMutedInk,
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        style = TextStyle(platformStyle = NoFontPadding)
-                    )
-                }
             }
 
-            val dhSuffix = stringResource(R.string.currency_dirham)
-            val isDhLatin = dhSuffix.contains(Regex("[a-zA-Z]"))
-            Text(
-                text = "$pieceTotalDh $dhSuffix",
-                fontFamily = if (isDhLatin) PatrickHandFamily else TajawalFamily,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = JournalWritingInk,
-                style = TextStyle(platformStyle = NoFontPadding)
+            Spacer(Modifier.height(10.dp))
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                banknotes.forEach { piece ->
+                    BanknoteDisplayItem(piece = piece)
+                }
+            }
+        }
+
+        if (banknotes.isNotEmpty() && coins.isNotEmpty()) {
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 10.dp),
+                color = JournalRule.copy(alpha = 0.35f),
+                thickness = 0.8.dp
             )
         }
 
-        Spacer(Modifier.height(8.dp))
-
-        val displayCount = piece.count.toInt().coerceAtMost(30)
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            repeat(displayCount) {
-                if (bitmap != null) {
-                    if (isBanknote) {
-                        Image(
-                            bitmap = bitmap,
-                            contentDescription = "${piece.denomination.label} #${it + 1}",
-                            contentScale = ContentScale.FillBounds,
-                            modifier = Modifier
-                                .width(110.dp)
-                                .height(66.dp)
-                                .shadow(1.5.dp, RoundedCornerShape(4.dp))
-                                .clip(RoundedCornerShape(4.dp))
-                                .border(
-                                    BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.65f)),
-                                    RoundedCornerShape(4.dp)
-                                )
-                        )
-                    } else {
-                        Image(
-                            bitmap = bitmap,
-                            contentDescription = "${piece.denomination.label} #${it + 1}",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .size(54.dp)
-                                .shadow(1.5.dp, CircleShape)
-                                .clip(CircleShape)
-                                .border(
-                                    BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.65f)),
-                                    CircleShape
-                                )
-                        )
-                    }
-                }
+        // Section: Coins (L-Coins / D-Drahem)
+        if (coins.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text("🪙", fontSize = 13.sp)
+                Text(
+                    text = headingCoins,
+                    fontFamily = resolveJournalFont(headingCoins, isRtl),
+                    color = JournalWritingInk,
+                    fontSize = if (isRtl) 13.sp else 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    style = TextStyle(platformStyle = NoFontPadding)
+                )
             }
 
-            if (piece.count > 30) {
-                Box(
-                    modifier = Modifier
-                        .height(if (isBanknote) 60.dp else 52.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(JournalDockBg)
-                        .border(BorderStroke(0.5.dp, JournalRule.copy(alpha = 0.5f)), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val moreText = "+ ${piece.count - 30} " + if (isRtl) "أخرى" else "autres"
-                    Text(
-                        text = moreText,
-                        fontFamily = resolveJournalFont(moreText, isRtl),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = JournalMutedInk
-                    )
+            Spacer(Modifier.height(8.dp))
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                coins.forEach { piece ->
+                    CoinDisplayItem(piece = piece)
                 }
             }
         }
     }
 }
+
+/**
+ * Clean Banknote representation:
+ * - Real BAM banknote transparent image
+ * - NO shadow, NO artificial black halo underneath
+ * - Proportional ~1.7:1 aspect ratio
+ * - Prominent, bold count badge (e.g. 2×) in top corner if count > 1
+ * - No redundant denomination text
+ */
+@Composable
+fun BanknoteDisplayItem(
+    piece: MoneyPiece,
+    modifier: Modifier = Modifier
+) {
+    val bitmap = rememberBanknoteImage(piece.denomination.assetPath)
+    val count = piece.count
+
+    Box(
+        modifier = modifier
+            .width(120.dp)
+            .height(70.dp)
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = null,
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(3.dp))
+            )
+        }
+
+        // Prominent Count Badge (e.g. "2×")
+        if (count > 1) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 6.dp, y = (-5).dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(HighlighterPink)
+                    .border(BorderStroke(1.5.dp, JournalPaper), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    text = "${count}×",
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    style = TextStyle(platformStyle = NoFontPadding)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Clean Coin representation:
+ * - Real BAM coin transparent circular image
+ * - Significantly enlarged diameters for clear legibility
+ * - Prominent count badge (e.g. 2×) in top corner if count > 1
+ * - No redundant denomination text
+ */
+@Composable
+fun CoinDisplayItem(
+    piece: MoneyPiece,
+    modifier: Modifier = Modifier
+) {
+    val bitmap = rememberBanknoteImage(piece.denomination.assetPath)
+    val count = piece.count
+    val sizeDp = when (piece.denomination.valueCentimes) {
+        1_000L -> 68.dp // 10 DH (bimetallic, large)
+        500L -> 64.dp   // 5 DH (bimetallic)
+        200L -> 60.dp   // 2 DH
+        100L -> 56.dp   // 1 DH
+        50L -> 52.dp    // 50c
+        20L -> 48.dp    // 20c
+        10L -> 44.dp    // 10c
+        else -> 50.dp
+    }
+
+    Box(
+        modifier = modifier.size(sizeDp + 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .size(sizeDp)
+                    .clip(CircleShape)
+            )
+        }
+
+        // Prominent Count Badge (e.g. "2×")
+        if (count > 1) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 6.dp, y = (-2).dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(HighlighterYellow)
+                    .border(BorderStroke(1.dp, JournalPaper), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 6.dp, vertical = 1.dp)
+            ) {
+                Text(
+                    text = "${count}×",
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalWritingInk,
+                    style = TextStyle(platformStyle = NoFontPadding)
+                )
+            }
+        }
+    }
+}
+

@@ -138,6 +138,8 @@
     <string name="breakdown_title">صرف الفلوس</string>
     <string name="breakdown_subtitle">تفكيك المجموع لأوراق وقطع نقدية</string>
     <string name="breakdown_distribution">الأوراق والقطع النقدية</string>
+    <string name="breakdown_heading_banknotes">الأوراق النقدية</string>
+    <string name="breakdown_heading_coins">القطع النقدية</string>
     <string name="breakdown_remainder">الصرف اللي شاط</string>
     <string name="editor_breakdown_money">صرف الفلوس</string>
 

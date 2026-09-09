@@ -138,6 +138,8 @@
     <string name="breakdown_title">Détail des espèces</string>
     <string name="breakdown_subtitle">Décomposition du montant en billets et pièces</string>
     <string name="breakdown_distribution">Billets et pièces de monnaie</string>
+    <string name="breakdown_heading_banknotes">Billets</string>
+    <string name="breakdown_heading_coins">Pièces</string>
     <string name="breakdown_remainder">Reste</string>
     <string name="editor_breakdown_money">Détail des espèces</string>
 

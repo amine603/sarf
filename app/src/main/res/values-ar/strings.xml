@@ -138,6 +138,8 @@
     <string name="breakdown_title">تفاصيل الفئات النقدية</string>
     <string name="breakdown_subtitle">توزيع المبلغ على الأوراق والقطع النقدية</string>
     <string name="breakdown_distribution">الأوراق والقطع النقدية</string>
+    <string name="breakdown_heading_banknotes">الأوراق النقدية</string>
+    <string name="breakdown_heading_coins">القطع النقدية</string>
     <string name="breakdown_remainder">المتبقي</string>
     <string name="editor_breakdown_money">تفاصيل الفئات النقدية</string>
 

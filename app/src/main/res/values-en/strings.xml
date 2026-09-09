@@ -138,6 +138,8 @@
     <string name="breakdown_title">Cash breakdown</string>
     <string name="breakdown_subtitle">Breakdown of the total into banknotes and coins</string>
     <string name="breakdown_distribution">Banknotes and coins</string>
+    <string name="breakdown_heading_banknotes">Banknotes</string>
+    <string name="breakdown_heading_coins">Coins</string>
     <string name="breakdown_remainder">Remainder</string>
     <string name="editor_breakdown_money">Cash breakdown</string>
 
