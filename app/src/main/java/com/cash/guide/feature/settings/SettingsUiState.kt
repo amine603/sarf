@@ -8,5 +8,10 @@ data class SettingsUiState(
     val defaultCurrency: MoneyUnit = MoneyUnit.DIRHAM,
     val isLoading: Boolean = true,
     val isProcessingBackup: Boolean = false,
-    val restoreCandidate: BackupPayload? = null
+    val restoreCandidate: BackupPayload? = null,
+    val isLockEnabled: Boolean = false,
+    val useBiometrics: Boolean = true,
+    val hasPinSet: Boolean = false,
+    val lockTimeoutSeconds: Int = 0,
+    val isBiometricAvailable: Boolean = false
 )

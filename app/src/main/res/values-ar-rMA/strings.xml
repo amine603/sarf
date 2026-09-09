@@ -240,4 +240,30 @@
     <string name="template_items_count">%d عناصر</string>
     <string name="action_duplicate_editor">دوبليكي هذا الحساب</string>
     <string name="editor_options_title">خيارات الحساب</string>
+
+    <!-- Security & PIN Lock -->
+    <string name="settings_section_security">الأمان وحماية الحسابات</string>
+    <string name="settings_security_lock_title">قفل الدفتر</string>
+    <string name="settings_security_lock_desc">حمي الحسابات بالبصمة ولا كود PIN</string>
+    <string name="settings_security_pin_change">تبديل كود PIN</string>
+    <string name="settings_security_pin_change_desc">بدل الكود السري ديال 4 أرقام</string>
+    <string name="settings_security_biometrics_title">فتح بالبصمة</string>
+    <string name="settings_security_biometrics_desc">استعمل البصمة ديال التلفون</string>
+    <string name="settings_security_timeout_title">وقت القفل التلقائي</string>
+    <string name="settings_security_timeout_desc">قفل التطبيق من بعد ما تخرج منه</string>
+    <string name="settings_security_timeout_immediately">ديك الساعة</string>
+    <string name="settings_security_timeout_1min">1 دقيقة</string>
+    <string name="settings_security_timeout_5min">5 دقائق</string>
+    <string name="settings_security_badge_active">مفعّل</string>
+    <string name="settings_security_badge_inactive">طافي</string>
+    <string name="lock_screen_badge">دفتر خاص • حسابات محمية</string>
+    <string name="lock_screen_subtitle_bio">حط صبعك على البصمة ولا دخل كود PIN</string>
+    <string name="lock_screen_subtitle_pin">دخل كود PIN ديال 4 أرقام</string>
+    <string name="lock_screen_pin_error">كود PIN غلط، عاود جرب</string>
+    <string name="pin_setup_title">دير كود PIN جديد</string>
+    <string name="pin_confirm_title">عاود كود PIN للتأكيد</string>
+    <string name="pin_setup_hint">اختار كود سري من 4 أرقام باش تحمي دفترك</string>
+    <string name="pin_confirm_hint">عاود كتب نفس الكود باش تأكد</string>
+    <string name="pin_mismatch_error">الكودات ما كيتشابهوش</string>
+    <string name="pin_set_success">تفعل القفل بنجاح!</string>
 </resources>

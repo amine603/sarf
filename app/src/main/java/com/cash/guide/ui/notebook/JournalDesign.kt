@@ -43,6 +43,8 @@ val HighlighterBlue = Color(0xFFA8CFE3)    // '÷' dab
 // Row Action Colors (Handwritten × and ✓)
 val JournalActionDelete = Color(0xFFD66860)   // Restrained muted coral for delete '×'
 val JournalActionConfirm = Color(0xFF3E8A52)  // Restrained muted green for confirm '✓'
+val JournalCreditRed = Color(0xFFD66860)      // Coral red for credit amounts and warnings
+val JournalErrorRed = Color(0xFFD66860)       // Muted coral for error text and badges
 
 // Action Icon Geometry (Unclipped, anchored directly on top of notebook paper rule like text)
 val JournalActionIconSize = 12.dp

@@ -17,6 +17,8 @@ import com.cash.guide.domain.export.FileExportManager
 import com.cash.guide.domain.export.PdfExportHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.cash.guide.data.SecurityRepository
+import com.cash.guide.domain.BiometricHelper
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -27,7 +29,8 @@ import kotlinx.coroutines.withContext
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val backupManager: BackupManager,
-    private val calculationRepository: CalculationRepository? = null
+    private val calculationRepository: CalculationRepository? = null,
+    private val securityRepository: SecurityRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -39,13 +42,33 @@ class SettingsViewModel(
                 settingsRepository.appLanguage,
                 settingsRepository.defaultCurrency
             ) { lang, currency ->
-                _uiState.value.copy(
-                    currentLanguage = lang,
-                    defaultCurrency = currency,
-                    isLoading = false
-                )
-            }.collect { newState ->
-                _uiState.value = newState
+                _uiState.update {
+                    it.copy(
+                        currentLanguage = lang,
+                        defaultCurrency = currency,
+                        isLoading = false
+                    )
+                }
+            }.collect {}
+        }
+
+        securityRepository?.let { secRepo ->
+            viewModelScope.launch {
+                combine(
+                    secRepo.isLockEnabled,
+                    secRepo.useBiometrics,
+                    secRepo.hasPinSet,
+                    secRepo.lockTimeoutSeconds
+                ) { isLock, useBio, hasPin, timeout ->
+                    _uiState.update {
+                        it.copy(
+                            isLockEnabled = isLock,
+                            useBiometrics = useBio,
+                            hasPinSet = hasPin,
+                            lockTimeoutSeconds = timeout
+                        )
+                    }
+                }.collect {}
             }
         }
     }
@@ -248,6 +271,42 @@ class SettingsViewModel(
                 }
             }
         }
+    }
+
+    fun setLockEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            securityRepository?.setLockEnabled(enabled)
+        }
+    }
+
+    fun setUseBiometrics(use: Boolean) {
+        viewModelScope.launch {
+            securityRepository?.setUseBiometrics(use)
+        }
+    }
+
+    fun setLockTimeoutSeconds(seconds: Int) {
+        viewModelScope.launch {
+            securityRepository?.setLockTimeoutSeconds(seconds)
+        }
+    }
+
+    fun savePin(pin: String) {
+        viewModelScope.launch {
+            securityRepository?.setPin(pin)
+            securityRepository?.setLockEnabled(true)
+        }
+    }
+
+    fun disableLock() {
+        viewModelScope.launch {
+            securityRepository?.setLockEnabled(false)
+        }
+    }
+
+    fun checkBiometricAvailability(context: Context) {
+        val available = BiometricHelper.isBiometricAvailable(context)
+        _uiState.update { it.copy(isBiometricAvailable = available) }
     }
 }
 

@@ -45,7 +45,9 @@ enum class HisabiSymbol {
     Folder,
     Share,
     Undo,
-    Table
+    Table,
+    Lock,
+    Fingerprint
 }
 
 @Composable
@@ -440,6 +442,53 @@ fun HisabiSketchIcon(
                 drawLine(tint, point(3.5f, 14.5f), point(20.5f, 14.5f), u(1.1f))
                 drawLine(tint, point(9.5f, 4.5f), point(9.5f, 19.5f), u(1.1f))
                 drawLine(tint, point(15.5f, 4.5f), point(15.5f, 19.5f), u(1.1f))
+            }
+            HisabiSymbol.Lock -> {
+                // Shackle (Arch)
+                val shackle = Path().apply {
+                    moveTo(u(7.5f), u(10.5f))
+                    lineTo(u(7.5f), u(6.5f))
+                    cubicTo(u(7.5f), u(3.5f), u(16.5f), u(3.5f), u(16.5f), u(6.5f))
+                    lineTo(u(16.5f), u(10.5f))
+                }
+                drawPath(shackle, tint, style = Stroke(width = u(1.6f), cap = StrokeCap.Round))
+                // Lock Body
+                drawRoundRect(
+                    tint,
+                    topLeft = point(4.5f, 10.5f),
+                    size = Size(u(15f), u(10.5f)),
+                    cornerRadius = CornerRadius(u(2.5f)),
+                    style = pen
+                )
+                // Keyhole
+                drawCircle(tint, u(1.4f), point(12f, 14.5f), style = Stroke(width = u(1.2f)))
+                drawLine(tint, point(12f, 15.5f), point(12f, 18f), u(1.3f), StrokeCap.Round)
+            }
+            HisabiSymbol.Fingerprint -> {
+                // Hand-drawn fingerprint ridges (concentric sketch arches)
+                val r1 = Path().apply {
+                    moveTo(u(12f), u(18.5f))
+                    lineTo(u(12f), u(14f))
+                    cubicTo(u(12f), u(12.5f), u(13.5f), u(12.5f), u(13.5f), u(14.5f))
+                    lineTo(u(13.5f), u(18f))
+                }
+                drawPath(r1, tint, style = pen)
+
+                val r2 = Path().apply {
+                    moveTo(u(9.5f), u(18f))
+                    lineTo(u(9.5f), u(12.5f))
+                    cubicTo(u(9.5f), u(8.5f), u(16f), u(8.5f), u(16f), u(13f))
+                    lineTo(u(16f), u(18.5f))
+                }
+                drawPath(r2, tint, style = pen)
+
+                val r3 = Path().apply {
+                    moveTo(u(7f), u(16.5f))
+                    lineTo(u(7f), u(11.5f))
+                    cubicTo(u(7f), u(5.5f), u(18.5f), u(5.5f), u(18.5f), u(11f))
+                    lineTo(u(18.5f), u(16.5f))
+                }
+                drawPath(r3, tint, style = pen)
             }
         }
     }

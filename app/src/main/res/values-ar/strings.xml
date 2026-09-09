@@ -264,4 +264,30 @@
     <string name="template_items_count">%d عناصر</string>
     <string name="action_duplicate_editor">نسخ هذا الحساب</string>
     <string name="editor_options_title">خيارات الحساب</string>
+
+    <!-- Security & PIN Lock -->
+    <string name="settings_section_security">الأمان والخصوصية</string>
+    <string name="settings_security_lock_title">قفل الدفتر</string>
+    <string name="settings_security_lock_desc">حماية الدخول بالبصمة أو الرمز السري</string>
+    <string name="settings_security_pin_change">تغيير الرمز السري</string>
+    <string name="settings_security_pin_change_desc">تغيير رمزك السري المكون من 4 أرقام</string>
+    <string name="settings_security_biometrics_title">فتح القفل بالبصمة</string>
+    <string name="settings_security_biometrics_desc">استخدام بصمة الإصبع الخاصة بهاتفك</string>
+    <string name="settings_security_timeout_title">مدة القفل التلقائي</string>
+    <string name="settings_security_timeout_desc">القفل التلقائي بعد مغادرة التطبيق</string>
+    <string name="settings_security_timeout_immediately">فوراً</string>
+    <string name="settings_security_timeout_1min">دقيقة</string>
+    <string name="settings_security_timeout_5min">5 دقائق</string>
+    <string name="settings_security_badge_active">مفعّل</string>
+    <string name="settings_security_badge_inactive">معطّل</string>
+    <string name="lock_screen_badge">دفتر خاص • حسابات محمية</string>
+    <string name="lock_screen_subtitle_bio">امسح بصمتك أو اكتب الرمز السري</string>
+    <string name="lock_screen_subtitle_pin">اكتب رمزك السري المكون من 4 أرقام</string>
+    <string name="lock_screen_pin_error">الرمز السري غير صحيح</string>
+    <string name="pin_setup_title">تعيين الرمز السري</string>
+    <string name="pin_confirm_title">تأكيد الرمز السري</string>
+    <string name="pin_setup_hint">اختر رمزاً سرياً من 4 أرقام لحماية دفترك</string>
+    <string name="pin_confirm_hint">أعد كتابة نفس الرمز للتأكيد</string>
+    <string name="pin_mismatch_error">الرمزان غير متطابقين</string>
+    <string name="pin_set_success">تم تفعيل القفل بنجاح!</string>
 </resources>

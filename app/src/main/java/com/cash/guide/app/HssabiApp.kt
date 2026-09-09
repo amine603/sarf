@@ -14,6 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.cash.guide.data.CalculationRepository
+import com.cash.guide.data.SecurityRepository
 import com.cash.guide.data.SettingsRepository
 import com.cash.guide.data.TemplateRepository
 import com.cash.guide.data.backup.BackupManager
@@ -23,8 +24,11 @@ import com.cash.guide.feature.history.HistoryViewModel
 import com.cash.guide.feature.home.HomeViewModel
 import com.cash.guide.feature.groups.GroupsViewModel
 import com.cash.guide.feature.settings.SettingsViewModel
+import com.cash.guide.ui.notebook.JournalLockScreen
 import com.cash.guide.ui.notebook.JournalPaper
 import com.cash.guide.ui.notebook.NotebookBottomNavigation
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.result.ActivityResultRegistry
@@ -59,6 +63,37 @@ fun HssabiApp() {
         CalculationRepository(database.calculationDao(), database.calculationGroupDao())
     }
     val settingsRepository = remember { SettingsRepository(context) }
+    val securityRepository = remember { SecurityRepository(context) }
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+
+    val isAppLocked by securityRepository.isAppLocked.collectAsState()
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        if (securityRepository.isLockEnabled.first()) {
+            securityRepository.lock()
+        }
+    }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_STOP -> {
+                    securityRepository.onAppBackgrounded()
+                }
+                androidx.lifecycle.Lifecycle.Event.ON_START -> {
+                    coroutineScope.launch {
+                        securityRepository.onAppForegrounded()
+                    }
+                }
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -109,7 +144,7 @@ fun HssabiApp() {
     val groupsViewModel = viewModel { GroupsViewModel(calculationRepository) }
     val historyViewModel = viewModel { HistoryViewModel(calculationRepository) }
     val backupManager = remember { BackupManager(database) }
-    val settingsViewModel = viewModel { SettingsViewModel(settingsRepository, backupManager, calculationRepository) }
+    val settingsViewModel = viewModel { SettingsViewModel(settingsRepository, backupManager, calculationRepository, securityRepository) }
 
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -184,6 +219,13 @@ fun HssabiApp() {
                     }
                 )
             }
+        }
+
+        if (isAppLocked) {
+            JournalLockScreen(
+                securityRepository = securityRepository,
+                onUnlock = { securityRepository.unlock() }
+            )
         }
     }
 }

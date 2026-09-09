@@ -240,4 +240,30 @@
     <string name="template_items_count">%d items</string>
     <string name="action_duplicate_editor">Duplicate this calculation</string>
     <string name="editor_options_title">Calculation Options</string>
+
+    <!-- Security & PIN Lock -->
+    <string name="settings_section_security">Security &amp; Privacy</string>
+    <string name="settings_security_lock_title">Lock Notebook</string>
+    <string name="settings_security_lock_desc">Protect access with fingerprint or PIN code</string>
+    <string name="settings_security_pin_change">Change PIN code</string>
+    <string name="settings_security_pin_change_desc">Change your 4-digit secret code</string>
+    <string name="settings_security_biometrics_title">Fingerprint Unlock</string>
+    <string name="settings_security_biometrics_desc">Use device biometric fingerprint sensor</string>
+    <string name="settings_security_timeout_title">Auto-Lock Timeout</string>
+    <string name="settings_security_timeout_desc">Lock automatically after leaving the app</string>
+    <string name="settings_security_timeout_immediately">Immediately</string>
+    <string name="settings_security_timeout_1min">1 min</string>
+    <string name="settings_security_timeout_5min">5 min</string>
+    <string name="settings_security_badge_active">Enabled</string>
+    <string name="settings_security_badge_inactive">Disabled</string>
+    <string name="lock_screen_badge">Private Journal • Protected</string>
+    <string name="lock_screen_subtitle_bio">Scan fingerprint or enter PIN code</string>
+    <string name="lock_screen_subtitle_pin">Enter your 4-digit secret code</string>
+    <string name="lock_screen_pin_error">Incorrect PIN code</string>
+    <string name="pin_setup_title">Set PIN code</string>
+    <string name="pin_confirm_title">Confirm PIN code</string>
+    <string name="pin_setup_hint">Choose a 4-digit secret code to protect your journal</string>
+    <string name="pin_confirm_hint">Re-enter the same code to confirm</string>
+    <string name="pin_mismatch_error">PIN codes do not match</string>
+    <string name="pin_set_success">Lock successfully enabled!</string>
 </resources>

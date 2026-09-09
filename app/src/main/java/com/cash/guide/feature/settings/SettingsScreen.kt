@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.border
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -25,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.cash.guide.ui.notebook.ExportOptionsBottomSheet
+import com.cash.guide.ui.notebook.SetupPinDialog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,6 +81,11 @@ fun SettingsScreen(
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
     var showExportOptions by remember { mutableStateOf(false) }
+    var showSetupPinDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.checkBiometricAvailability(context)
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -302,6 +309,240 @@ fun SettingsScreen(
                         style = TextStyle(platformStyle = NoFontPadding),
                         modifier = Modifier.journalBaselineOnRule()
                     )
+                }
+            }
+
+            // 1 empty notebook line spacer
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Section Header - Sécurité & Confidentialité (soft pink band)
+            NotebookSectionBand(
+                title = stringResource(R.string.settings_section_security),
+                highlightColor = HighlighterPink,
+                isCentered = false
+            )
+
+            // Setting: Verrouiller le carnet (58dp = 2 rules)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing * 2)
+            ) {
+                // Line 1 (29dp): Label & bullet on Start, Segmented control on End
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(JournalRuleSpacing)
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Canvas(
+                            modifier = Modifier
+                                .size(7.5.dp)
+                                .offset(y = (-2.5).dp)
+                        ) {
+                            drawCircle(color = Color(0xFFE27B97)) // Soft Rose Pink
+                        }
+
+                        Text(
+                            text = stringResource(R.string.settings_security_lock_title),
+                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                            fontSize = if (isRtl) 14.5.sp else 15.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = JournalInk,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.journalBaselineOnRule()
+                        )
+                    }
+
+                    NotebookSegmentedControl(
+                        options = listOf(
+                            false to stringResource(R.string.settings_security_badge_inactive),
+                            true to stringResource(R.string.settings_security_badge_active)
+                        ),
+                        selectedOption = state.isLockEnabled,
+                        onSelectOption = { enable ->
+                            if (enable) {
+                                if (state.hasPinSet) {
+                                    viewModel.setLockEnabled(true)
+                                } else {
+                                    showSetupPinDialog = true
+                                }
+                            } else {
+                                viewModel.setLockEnabled(false)
+                            }
+                        }
+                    )
+                }
+
+                // Line 2 (29dp): Description sitting on rule 2
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(JournalRuleSpacing)
+                        .padding(horizontal = 29.5.dp),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_security_lock_desc),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = if (isRtl) 11.5.sp else 12.sp,
+                        fontWeight = FontWeight.Light,
+                        color = JournalMutedInk.copy(alpha = 0.75f),
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
+                    )
+                }
+            }
+
+            if (state.isLockEnabled) {
+                // Setting: Modifier le code PIN
+                JournalActionRow(
+                    title = stringResource(R.string.settings_security_pin_change),
+                    description = stringResource(R.string.settings_security_pin_change_desc),
+                    bulletColor = Color(0xFFE27B97),
+                    badgeText = "PIN",
+                    onClick = { showSetupPinDialog = true }
+                )
+
+                // Setting: Déverrouillage par empreinte (if supported)
+                if (state.isBiometricAvailable) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(JournalRuleSpacing * 2)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(JournalRuleSpacing)
+                                .padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.Bottom,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Canvas(
+                                    modifier = Modifier
+                                        .size(7.5.dp)
+                                        .offset(y = (-2.5).dp)
+                                ) {
+                                    drawCircle(color = Color(0xFF5B9EC9))
+                                }
+
+                                Text(
+                                    text = stringResource(R.string.settings_security_biometrics_title),
+                                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                    fontSize = if (isRtl) 14.5.sp else 15.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = JournalInk,
+                                    style = TextStyle(platformStyle = NoFontPadding),
+                                    modifier = Modifier.journalBaselineOnRule()
+                                )
+                            }
+
+                            NotebookSegmentedControl(
+                                options = listOf(
+                                    false to stringResource(R.string.settings_security_badge_inactive),
+                                    true to stringResource(R.string.settings_security_badge_active)
+                                ),
+                                selectedOption = state.useBiometrics,
+                                onSelectOption = { viewModel.setUseBiometrics(it) }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(JournalRuleSpacing)
+                                .padding(horizontal = 29.5.dp),
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_security_biometrics_desc),
+                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                fontSize = if (isRtl) 11.5.sp else 12.sp,
+                                fontWeight = FontWeight.Light,
+                                color = JournalMutedInk.copy(alpha = 0.75f),
+                                style = TextStyle(platformStyle = NoFontPadding),
+                                modifier = Modifier.journalBaselineOnRule()
+                            )
+                        }
+                    }
+                }
+
+                // Setting: Délai de verrouillage (58dp = 2 rules)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(JournalRuleSpacing * 2)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(JournalRuleSpacing)
+                            .padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Canvas(
+                                modifier = Modifier
+                                    .size(7.5.dp)
+                                    .offset(y = (-2.5).dp)
+                            ) {
+                                drawCircle(color = Color(0xFFE5A93C))
+                            }
+
+                            Text(
+                                text = stringResource(R.string.settings_security_timeout_title),
+                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                fontSize = if (isRtl) 14.5.sp else 15.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = JournalInk,
+                                style = TextStyle(platformStyle = NoFontPadding),
+                                modifier = Modifier.journalBaselineOnRule()
+                            )
+                        }
+
+                        NotebookSegmentedControl(
+                            options = listOf(
+                                0 to stringResource(R.string.settings_security_timeout_immediately),
+                                60 to stringResource(R.string.settings_security_timeout_1min),
+                                300 to stringResource(R.string.settings_security_timeout_5min)
+                            ),
+                            selectedOption = state.lockTimeoutSeconds,
+                            onSelectOption = { viewModel.setLockTimeoutSeconds(it) }
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(JournalRuleSpacing)
+                            .padding(horizontal = 29.5.dp),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Text(
+                            text = stringResource(R.string.settings_security_timeout_desc),
+                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                            fontSize = if (isRtl) 11.5.sp else 12.sp,
+                            fontWeight = FontWeight.Light,
+                            color = JournalMutedInk.copy(alpha = 0.75f),
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.journalBaselineOnRule()
+                        )
+                    }
                 }
             }
 
@@ -564,6 +805,20 @@ fun SettingsScreen(
                     }
                 },
                 onDismiss = { showExportOptions = false }
+            )
+        }
+
+        // Setup PIN Dialog
+        if (showSetupPinDialog) {
+            SetupPinDialog(
+                onPinConfirmed = { newPin ->
+                    viewModel.savePin(newPin)
+                    showSetupPinDialog = false
+                    Toast.makeText(context, R.string.pin_set_success, Toast.LENGTH_SHORT).show()
+                },
+                onDismiss = {
+                    showSetupPinDialog = false
+                }
             )
         }
     }

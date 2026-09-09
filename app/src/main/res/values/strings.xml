@@ -264,4 +264,30 @@
     <string name="template_items_count">%d articles</string>
     <string name="action_duplicate_editor">Dupliquer ce calcul</string>
     <string name="editor_options_title">Options du calcul</string>
+
+    <!-- Security & PIN Lock -->
+    <string name="settings_section_security">Sécurité &amp; Confidentialité</string>
+    <string name="settings_security_lock_title">Verrouiller le carnet</string>
+    <string name="settings_security_lock_desc">Protéger l’accès avec empreinte ou code PIN</string>
+    <string name="settings_security_pin_change">Modifier le code PIN</string>
+    <string name="settings_security_pin_change_desc">Changer votre code secret à 4 chiffres</string>
+    <string name="settings_security_biometrics_title">Déverrouillage par empreinte</string>
+    <string name="settings_security_biometrics_desc">Utiliser le capteur biométrique de l’appareil</string>
+    <string name="settings_security_timeout_title">Délai de verrouillage</string>
+    <string name="settings_security_timeout_desc">Verrouiller automatiquement après inactivité</string>
+    <string name="settings_security_timeout_immediately">Immédiat</string>
+    <string name="settings_security_timeout_1min">1 min</string>
+    <string name="settings_security_timeout_5min">5 min</string>
+    <string name="settings_security_badge_active">Activé</string>
+    <string name="settings_security_badge_inactive">Désactivé</string>
+    <string name="lock_screen_badge">Dossier Privé • حسابات محمية</string>
+    <string name="lock_screen_subtitle_bio">Scannez votre empreinte ou tapez le code PIN</string>
+    <string name="lock_screen_subtitle_pin">Tapez votre code secret à 4 chiffres</string>
+    <string name="lock_screen_pin_error">Code PIN incorrect</string>
+    <string name="pin_setup_title">Définir le code PIN</string>
+    <string name="pin_confirm_title">Confirmer le code PIN</string>
+    <string name="pin_setup_hint">Choisissez un code secret à 4 chiffres pour protéger votre carnet</string>
+    <string name="pin_confirm_hint">Retapez le même code pour confirmer</string>
+    <string name="pin_mismatch_error">Les codes ne correspondent pas</string>
+    <string name="pin_set_success">Verrouillage activé avec succès !</string>
 </resources>
