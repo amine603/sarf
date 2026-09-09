@@ -1,17 +1,24 @@
 package com.cash.guide
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.view.WindowCompat
 import com.cash.guide.app.HssabiApp
 import com.cash.guide.ui.theme.HisabiTheme
 
 class MainActivity : FragmentActivity() {
+
+    private val deepLinkUriState = mutableStateOf<Uri?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        deepLinkUriState.value = intent?.data
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(
@@ -28,8 +35,18 @@ class MainActivity : FragmentActivity() {
         }
         setContent {
             HisabiTheme {
-                HssabiApp()
+                HssabiApp(
+                    deepLinkUri = deepLinkUriState.value,
+                    onDeepLinkConsumed = { deepLinkUriState.value = null }
+                )
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        deepLinkUriState.value = intent.data
+    }
 }
+

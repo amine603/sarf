@@ -11,15 +11,19 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     entities = [
         CalculationEntity::class,
         CalculationItemEntity::class,
-        CalculationGroupEntity::class
+        CalculationGroupEntity::class,
+        ChecklistEntity::class,
+        ChecklistItemEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class HssabiDatabase : RoomDatabase() {
 
     abstract fun calculationDao(): CalculationDao
     abstract fun calculationGroupDao(): CalculationGroupDao
+    abstract fun checklistDao(): ChecklistDao
+
 
     companion object {
         @Volatile
@@ -69,6 +73,40 @@ abstract class HssabiDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `checklists` (
+                        `id` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `createdAtEpochMs` INTEGER NOT NULL,
+                        `updatedAtEpochMs` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_checklists_updatedAtEpochMs` ON `checklists` (`updatedAtEpochMs`)")
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `checklist_items` (
+                        `id` TEXT NOT NULL,
+                        `checklistId` TEXT NOT NULL,
+                        `text` TEXT NOT NULL,
+                        `isChecked` INTEGER NOT NULL DEFAULT 0,
+                        `position` INTEGER NOT NULL,
+                        `createdAtEpochMs` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`),
+                        FOREIGN KEY(`checklistId`) REFERENCES `checklists`(`id`) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_checklist_items_checklistId` ON `checklist_items` (`checklistId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_checklist_items_checklistId_position` ON `checklist_items` (`checklistId`, `position`)")
+            }
+        }
+
         fun getInstance(context: Context): HssabiDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -76,10 +114,11 @@ abstract class HssabiDatabase : RoomDatabase() {
                     HssabiDatabase::class.java,
                     "hssabi.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .build()
                     .also { INSTANCE = it }
             }
         }
     }
 }
+

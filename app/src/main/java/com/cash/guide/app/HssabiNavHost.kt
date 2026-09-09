@@ -25,7 +25,10 @@ import com.cash.guide.feature.groups.GroupDetailViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.rememberCoroutineScope
 import com.cash.guide.data.CalculationRepository
+import com.cash.guide.data.ChecklistRepository
 import com.cash.guide.data.SettingsRepository
+import com.cash.guide.feature.checklist.ChecklistScreen
+import com.cash.guide.feature.checklist.ChecklistViewModel
 import com.cash.guide.feature.history.MonthCalculationsScreen
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -38,6 +41,7 @@ fun HssabiNavHost(
     historyViewModel: HistoryViewModel,
     settingsViewModel: SettingsViewModel,
     calculationRepository: CalculationRepository,
+    checklistRepository: ChecklistRepository,
     settingsRepository: SettingsRepository,
     editorViewModelFactory: () -> CalculationEditorViewModel,
     modifier: Modifier = Modifier
@@ -69,7 +73,8 @@ fun HssabiNavHost(
                     navController.navigate("month_calculations/$year/$month")
                 },
                 onOpenStyleShowcase = { navController.navigate(AppDestination.StyleShowcase.route) },
-                onOpenCashRegister = { navController.navigate(AppDestination.CashRegister.route) }
+                onOpenCashRegister = { navController.navigate(AppDestination.CashRegister.route) },
+                onOpenChecklist = { navController.navigate(AppDestination.Checklist.route) }
             )
         }
 
@@ -135,6 +140,39 @@ fun HssabiNavHost(
             )
             CashRegisterScreen(
                 viewModel = cashRegisterViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(AppDestination.Checklist.route) { backStackEntry ->
+            val checklistViewModel: ChecklistViewModel = viewModel(
+                viewModelStoreOwner = backStackEntry
+            ) {
+                ChecklistViewModel(checklistRepository)
+            }
+            ChecklistScreen(
+                viewModel = checklistViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = AppDestination.Checklist.ROUTE_PATTERN,
+            arguments = listOf(navArgument("checklistId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })
+        ) { backStackEntry ->
+            val checklistId = backStackEntry.arguments?.getString("checklistId")
+            val checklistViewModel: ChecklistViewModel = viewModel(
+                viewModelStoreOwner = backStackEntry,
+                key = "checklist_${checklistId ?: "default"}"
+            ) {
+                ChecklistViewModel(checklistRepository, checklistId)
+            }
+            ChecklistScreen(
+                viewModel = checklistViewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

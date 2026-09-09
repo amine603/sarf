@@ -14,11 +14,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.cash.guide.data.CalculationRepository
+import com.cash.guide.data.ChecklistRepository
 import com.cash.guide.data.SecurityRepository
 import com.cash.guide.data.SettingsRepository
 import com.cash.guide.data.TemplateRepository
 import com.cash.guide.data.backup.BackupManager
 import com.cash.guide.data.db.HssabiDatabase
+import com.cash.guide.domain.ChecklistLinkHelper
+import android.net.Uri
+import android.widget.Toast
 import com.cash.guide.feature.editor.CalculationEditorViewModel
 import com.cash.guide.feature.history.HistoryViewModel
 import com.cash.guide.feature.home.HomeViewModel
@@ -60,11 +64,17 @@ class LocalizedContextWrapper(
 }
 
 @Composable
-fun HssabiApp() {
+fun HssabiApp(
+    deepLinkUri: Uri? = null,
+    onDeepLinkConsumed: () -> Unit = {}
+) {
     val context = LocalContext.current
     val database = remember { HssabiDatabase.getInstance(context) }
     val calculationRepository = remember {
         CalculationRepository(database.calculationDao(), database.calculationGroupDao())
+    }
+    val checklistRepository = remember {
+        ChecklistRepository(database.checklistDao())
     }
     val settingsRepository = remember { SettingsRepository(context) }
     val securityRepository = remember { SecurityRepository(context) }
@@ -159,6 +169,19 @@ fun HssabiApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    androidx.compose.runtime.LaunchedEffect(deepLinkUri) {
+        val uri = deepLinkUri ?: return@LaunchedEffect
+        val parsed = ChecklistLinkHelper.parseDeepLink(uri)
+        if (parsed != null) {
+            coroutineScope.launch {
+                val newId = checklistRepository.importChecklist(parsed.title, parsed.items)
+                navController.navigate(AppDestination.Checklist.createRoute(newId))
+                Toast.makeText(context, "Checklist importée : ${parsed.title}", Toast.LENGTH_SHORT).show()
+                onDeepLinkConsumed()
+            }
+        }
+    }
+
     val isTopLevel = currentRoute in listOf(
         AppDestination.Home.route,
         AppDestination.Groups.route,
@@ -219,6 +242,7 @@ fun HssabiApp() {
                     historyViewModel = historyViewModel,
                     settingsViewModel = settingsViewModel,
                     calculationRepository = calculationRepository,
+                    checklistRepository = checklistRepository,
                     settingsRepository = settingsRepository,
                     editorViewModelFactory = {
                         CalculationEditorViewModel(
