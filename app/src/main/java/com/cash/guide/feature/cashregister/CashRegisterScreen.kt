@@ -2,6 +2,7 @@ package com.cash.guide.feature.cashregister
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,11 +29,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -43,7 +44,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -64,12 +68,17 @@ import com.cash.guide.domain.MoneyPiece
 import com.cash.guide.domain.MoneyUnit
 import com.cash.guide.ui.notebook.ColorCoral
 import com.cash.guide.ui.notebook.ColorOrange
+import com.cash.guide.ui.notebook.HighlighterBlue
+import com.cash.guide.ui.notebook.HighlighterGreen
 import com.cash.guide.ui.notebook.HighlighterPink
 import com.cash.guide.ui.notebook.HighlighterYellow
 import com.cash.guide.ui.notebook.HisabiSketchIcon
 import com.cash.guide.ui.notebook.HisabiSymbol
 import com.cash.guide.ui.notebook.JournalDockBg
+import com.cash.guide.ui.notebook.JournalDoubleUnderline
 import com.cash.guide.ui.notebook.JournalInk
+import com.cash.guide.ui.notebook.JournalKeyDigitStyle
+import com.cash.guide.ui.notebook.JournalKeyboardDockSurface
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalPaper
 import com.cash.guide.ui.notebook.JournalRule
@@ -79,6 +88,7 @@ import com.cash.guide.ui.notebook.JournalWritingInk
 import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.journalBaselineOnRule
+import com.cash.guide.ui.notebook.journalOperatorDab
 import com.cash.guide.ui.notebook.rememberBanknoteImage
 import com.cash.guide.ui.notebook.resolveJournalFont
 
@@ -268,7 +278,7 @@ fun CashRegisterScreen(
 }
 
 // -----------------------------------------------------------------------------
-// STEP 1: CALCULATOR VIEW
+// STEP 1: CALCULATOR VIEW (AUTHENTIC JOURNAL KEYPAD & LEDGER DISPLAY)
 // -----------------------------------------------------------------------------
 
 @Composable
@@ -285,20 +295,20 @@ private fun CashRegisterCalculatorContent(
     Column(
         modifier = modifier
             .padding(horizontal = 14.dp)
-            .padding(bottom = 12.dp),
+            .padding(bottom = 8.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // TOP 1/4: Authentic Ruled Ledger Calculation Display
+        // TOP ~1/4: Authentic Ruled Ledger Calculation Display
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(JournalPaper)
-                .border(BorderStroke(1.dp, JournalRule.copy(alpha = 0.85f)), RoundedCornerShape(12.dp))
+                .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.60f)), RoundedCornerShape(12.dp))
                 .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                // Header of the display: icon + label + clear button
+                // Header of the display: sketch icon + label + clear button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -308,7 +318,12 @@ private fun CashRegisterCalculatorContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text("🧮", fontSize = 13.sp)
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Calculator,
+                            contentDescription = null,
+                            tint = JournalInk,
+                            size = 17.dp
+                        )
                         val hintHeader = stringResource(R.string.cash_register_calc_title)
                         Text(
                             text = hintHeader,
@@ -321,12 +336,7 @@ private fun CashRegisterCalculatorContent(
                     }
 
                     if (state.calcExpression.isNotBlank()) {
-                        Text(
-                            text = stringResource(R.string.cash_register_clear_input),
-                            fontFamily = resolveJournalFont(stringResource(R.string.cash_register_clear_input), isRtl),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ColorCoral,
+                        Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(ColorCoral.copy(alpha = 0.12f))
@@ -334,8 +344,26 @@ private fun CashRegisterCalculatorContent(
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     onKeyClick("C")
                                 }
-                                .padding(horizontal = 8.dp, vertical = 2.5.dp)
-                        )
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            HisabiSketchIcon(
+                                symbol = HisabiSymbol.Close,
+                                contentDescription = null,
+                                tint = ColorCoral,
+                                size = 11.dp
+                            )
+                            val clearText = stringResource(R.string.cash_register_clear_input)
+                            Text(
+                                text = clearText,
+                                fontFamily = resolveJournalFont(clearText, isRtl),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ColorCoral,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        }
                     }
                 }
 
@@ -364,187 +392,228 @@ private fun CashRegisterCalculatorContent(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Evaluated total line
+                // Evaluated total line with JournalDoubleUnderline
                 val displayTotal = state.purchaseText.ifBlank { "0" }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = "= $displayTotal",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ColorOrange
-                        )
-                        Text(
-                            text = currencySuffix,
-                            fontFamily = resolveJournalFont(currencySuffix, isRtl),
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk,
-                            modifier = Modifier.padding(bottom = 3.dp)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "= $displayTotal",
+                                fontFamily = PatrickHandFamily,
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ColorOrange
+                            )
+                            Text(
+                                text = currencySuffix,
+                                fontFamily = resolveJournalFont(currencySuffix, isRtl),
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalInk,
+                                modifier = Modifier.padding(bottom = 3.dp)
+                            )
+                        }
+
+                        // Secondary currency representation
+                        if (state.purchaseCentimes > 0L) {
+                            val secondaryValue = if (state.currencyUnit == MoneyUnit.DIRHAM) {
+                                val rials = MoneyMath.fromCentimes(state.purchaseCentimes, MoneyUnit.RIAL)
+                                "$rials ${stringResource(R.string.currency_rial)}"
+                            } else {
+                                val dh = MoneyMath.fromCentimes(state.purchaseCentimes, MoneyUnit.DIRHAM)
+                                "$dh ${stringResource(R.string.currency_dirham)}"
+                            }
+                            Text(
+                                text = "($secondaryValue)",
+                                fontFamily = resolveJournalFont(secondaryValue, isRtl),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = JournalMutedInk,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                        }
                     }
 
-                    // Secondary currency representation
-                    if (state.purchaseCentimes > 0L) {
-                        val secondaryValue = if (state.currencyUnit == MoneyUnit.DIRHAM) {
-                            val rials = MoneyMath.fromCentimes(state.purchaseCentimes, MoneyUnit.RIAL)
-                            "$rials ${stringResource(R.string.currency_rial)}"
-                        } else {
-                            val dh = MoneyMath.fromCentimes(state.purchaseCentimes, MoneyUnit.DIRHAM)
-                            "$dh ${stringResource(R.string.currency_dirham)}"
-                        }
-                        Text(
-                            text = "($secondaryValue)",
-                            fontFamily = resolveJournalFont(secondaryValue, isRtl),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = JournalMutedInk,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
+                    JournalDoubleUnderline(
+                        modifier = Modifier.padding(top = 2.dp),
+                        color = HighlighterPink,
+                        width = 160.dp
+                    )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // BOTTOM: Keypad + Action button docked together
+        // BOTTOM: Docked Keyboard + Journal Action button
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Row 1: C, ÷, ×, ⌫
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Authentic In-App Keyboard Dock with soft pencil grid dividers
+            JournalKeyboardDockSurface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.55f)), RoundedCornerShape(12.dp))
             ) {
-                CalcKeyCell(
-                    text = "C",
-                    backgroundColor = ColorCoral.copy(alpha = 0.14f),
-                    textColor = ColorCoral,
-                    borderColor = ColorCoral.copy(alpha = 0.35f),
-                    onClick = { onKeyClick("C") }
-                )
-                CalcKeyCell(
-                    text = "÷",
-                    backgroundColor = JournalDockBg,
-                    textColor = JournalWritingInk,
-                    onClick = { onKeyClick("÷") }
-                )
-                CalcKeyCell(
-                    text = "×",
-                    backgroundColor = JournalDockBg,
-                    textColor = JournalWritingInk,
-                    onClick = { onKeyClick("×") }
-                )
-                CalcKeyCell(
-                    text = "⌫",
-                    backgroundColor = JournalDockBg,
-                    textColor = JournalMutedInk,
-                    onClick = { onKeyClick("⌫") }
-                )
-            }
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .drawBehind {
+                                val strokeW = 0.65.dp.toPx()
+                                val gridLineColor = JournalRule.copy(alpha = 0.45f)
 
-            // Row 2: 7, 8, 9, −
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CalcKeyCell(text = "7", onClick = { onKeyClick("7") })
-                CalcKeyCell(text = "8", onClick = { onKeyClick("8") })
-                CalcKeyCell(text = "9", onClick = { onKeyClick("9") })
-                CalcKeyCell(
-                    text = "−",
-                    backgroundColor = JournalDockBg,
-                    textColor = JournalWritingInk,
-                    onClick = { onKeyClick("−") }
-                )
-            }
+                                // 4 internal horizontal grid dividers between the 5 rows
+                                val rowH = size.height / 5f
+                                for (i in 1..4) {
+                                    val y = rowH * i
+                                    drawLine(
+                                        color = gridLineColor,
+                                        start = Offset(0f, y),
+                                        end = Offset(size.width, y),
+                                        strokeWidth = strokeW
+                                    )
+                                }
 
-            // Row 3: 4, 5, 6, +
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CalcKeyCell(text = "4", onClick = { onKeyClick("4") })
-                CalcKeyCell(text = "5", onClick = { onKeyClick("5") })
-                CalcKeyCell(text = "6", onClick = { onKeyClick("6") })
-                CalcKeyCell(
-                    text = "+",
-                    backgroundColor = JournalDockBg,
-                    textColor = JournalWritingInk,
-                    onClick = { onKeyClick("+") }
-                )
-            }
+                                // 3 vertical dividers for rows 1 to 4
+                                val colW = size.width / 4f
+                                for (i in 1..3) {
+                                    val x = colW * i
+                                    drawLine(
+                                        color = gridLineColor,
+                                        start = Offset(x, 0f),
+                                        end = Offset(x, rowH * 4),
+                                        strokeWidth = strokeW
+                                    )
+                                }
 
-            // Row 4: 1, 2, 3, .
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CalcKeyCell(text = "1", onClick = { onKeyClick("1") })
-                CalcKeyCell(text = "2", onClick = { onKeyClick("2") })
-                CalcKeyCell(text = "3", onClick = { onKeyClick("3") })
-                CalcKeyCell(
-                    text = ".",
-                    backgroundColor = JournalDockBg,
-                    textColor = JournalWritingInk,
-                    onClick = { onKeyClick(".") }
-                )
-            }
+                                // Row 5: 0 (span 2), 00 (span 1), = (span 1)
+                                // Divider between 0 and 00 (x = 2 * colW)
+                                drawLine(
+                                    color = gridLineColor,
+                                    start = Offset(colW * 2, rowH * 4),
+                                    end = Offset(colW * 2, size.height),
+                                    strokeWidth = strokeW
+                                )
+                                // Divider between 00 and = (x = 3 * colW)
+                                drawLine(
+                                    color = gridLineColor,
+                                    start = Offset(colW * 3, rowH * 4),
+                                    end = Offset(colW * 3, size.height),
+                                    strokeWidth = strokeW
+                                )
+                            }
+                    ) {
+                        // Row 1: C, ÷, ×, ⌫
+                        Row(modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                            JournalCalcKeyCell(
+                                text = "C",
+                                operatorDabColor = ColorCoral.copy(alpha = 0.60f),
+                                onClick = { onKeyClick("C") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            JournalCalcKeyCell(
+                                text = "÷",
+                                operatorDabColor = HighlighterBlue.copy(alpha = 0.70f),
+                                onClick = { onKeyClick("÷") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            JournalCalcKeyCell(
+                                text = "×",
+                                operatorDabColor = HighlighterGreen.copy(alpha = 0.70f),
+                                onClick = { onKeyClick("×") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            JournalCalcBackspaceKeyCell(
+                                onClick = { onKeyClick("⌫") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
 
-            // Row 5: 0 (weight 2f), 00 (weight 1f), = (weight 1f)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CalcKeyCell(
-                    text = "0",
-                    weight = 2f,
-                    onClick = { onKeyClick("0") }
-                )
-                CalcKeyCell(
-                    text = "00",
-                    weight = 1f,
-                    onClick = {
-                        onKeyClick("0")
-                        onKeyClick("0")
+                        // Row 2: 7, 8, 9, −
+                        Row(modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                            JournalCalcKeyCell(text = "7", onClick = { onKeyClick("7") }, modifier = Modifier.weight(1f))
+                            JournalCalcKeyCell(text = "8", onClick = { onKeyClick("8") }, modifier = Modifier.weight(1f))
+                            JournalCalcKeyCell(text = "9", onClick = { onKeyClick("9") }, modifier = Modifier.weight(1f))
+                            JournalCalcKeyCell(
+                                text = "−",
+                                operatorDabColor = HighlighterYellow.copy(alpha = 0.70f),
+                                onClick = { onKeyClick("−") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        // Row 3: 4, 5, 6, +
+                        Row(modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                            JournalCalcKeyCell(text = "4", onClick = { onKeyClick("4") }, modifier = Modifier.weight(1f))
+                            JournalCalcKeyCell(text = "5", onClick = { onKeyClick("5") }, modifier = Modifier.weight(1f))
+                            JournalCalcKeyCell(text = "6", onClick = { onKeyClick("6") }, modifier = Modifier.weight(1f))
+                            JournalCalcKeyCell(
+                                text = "+",
+                                operatorDabColor = HighlighterPink.copy(alpha = 0.70f),
+                                onClick = { onKeyClick("+") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        // Row 4: 1, 2, 3, .
+                        Row(modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                            JournalCalcKeyCell(text = "1", onClick = { onKeyClick("1") }, modifier = Modifier.weight(1f))
+                            JournalCalcKeyCell(text = "2", onClick = { onKeyClick("2") }, modifier = Modifier.weight(1f))
+                            JournalCalcKeyCell(text = "3", onClick = { onKeyClick("3") }, modifier = Modifier.weight(1f))
+                            JournalCalcKeyCell(text = ".", onClick = { onKeyClick(".") }, modifier = Modifier.weight(1f))
+                        }
+
+                        // Row 5: 0 (weight 2f), 00 (weight 1f), = (weight 1f)
+                        Row(modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                            JournalCalcKeyCell(text = "0", onClick = { onKeyClick("0") }, modifier = Modifier.weight(2f))
+                            JournalCalcKeyCell(
+                                text = "00",
+                                onClick = {
+                                    onKeyClick("0")
+                                    onKeyClick("0")
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                            JournalCalcKeyCell(
+                                text = "=",
+                                operatorDabColor = HighlighterPink.copy(alpha = 0.85f),
+                                onClick = { onKeyClick("=") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
-                )
-                CalcKeyCell(
-                    text = "=",
-                    weight = 1f,
-                    backgroundColor = HighlighterPink.copy(alpha = 0.55f),
-                    textColor = JournalInk,
-                    borderColor = HighlighterPink,
-                    onClick = { onKeyClick("=") }
-                )
+                }
             }
 
             Spacer(modifier = Modifier.height(2.dp))
 
-            // Primary button to advance to Change Return
-            Button(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onNext()
-                },
+            // Primary Journal button to advance to Change Return
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = HighlighterPink.copy(alpha = 0.90f),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(10.dp)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(HighlighterPink.copy(alpha = 0.55f))
+                    .border(
+                        BorderStroke(0.85.dp, HighlighterPink.copy(alpha = 0.85f)),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clickable(role = Role.Button) {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onNext()
+                    },
+                contentAlignment = Alignment.Center
             ) {
                 val buttonText = stringResource(R.string.cash_register_go_to_change)
                 Row(
@@ -556,6 +625,7 @@ private fun CashRegisterCalculatorContent(
                         fontFamily = resolveJournalFont(buttonText, isRtl),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
+                        color = JournalInk,
                         style = TextStyle(platformStyle = NoFontPadding)
                     )
                 }
@@ -565,38 +635,79 @@ private fun CashRegisterCalculatorContent(
 }
 
 @Composable
-private fun RowScope.CalcKeyCell(
+private fun JournalCalcKeyCell(
     text: String,
-    weight: Float = 1f,
-    backgroundColor: Color = JournalPaper,
-    textColor: Color = JournalInk,
-    borderColor: Color = JournalRule.copy(alpha = 0.70f),
+    modifier: Modifier = Modifier,
+    operatorDabColor: Color? = null,
+    onClick: () -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    val dabModifier = if (operatorDabColor != null) {
+        Modifier.journalOperatorDab(operatorDabColor, alpha = 0.75f, widthDp = 36.dp, heightDp = 22.dp)
+    } else {
+        Modifier
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(role = Role.Button) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            }
+            .then(dabModifier),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            style = JournalKeyDigitStyle.copy(
+                fontSize = if (text == "00") 20.sp else 23.sp,
+                fontWeight = if (operatorDabColor != null) FontWeight.Bold else FontWeight.Normal
+            )
+        )
+    }
+}
+
+@Composable
+private fun JournalCalcBackspaceKeyCell(
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
 
     Box(
-        modifier = Modifier
-            .weight(weight)
-            .height(50.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(backgroundColor)
-            .border(BorderStroke(0.85.dp, borderColor), RoundedCornerShape(10.dp))
+        modifier = modifier
+            .fillMaxHeight()
             .clickable(role = Role.Button) {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             },
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = text,
-            fontFamily = PatrickHandFamily,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = textColor,
-            textAlign = TextAlign.Center,
-            style = TextStyle(platformStyle = NoFontPadding)
-        )
+        Canvas(modifier = Modifier.size(24.dp, 17.dp)) {
+            val strokeW = 1.2.dp.toPx()
+            val ink = JournalInk.copy(alpha = 0.9f)
+            val w = size.width
+            val h = size.height
+
+            // Pointed tag shape
+            val p = Path().apply {
+                moveTo(w * 0.32f, 0f)
+                lineTo(w, 0f)
+                lineTo(w, h)
+                lineTo(w * 0.32f, h)
+                lineTo(0f, h / 2f)
+                close()
+            }
+            drawPath(p, color = ink, style = Stroke(width = strokeW))
+
+            // Inner cross '×'
+            val cx = w * 0.64f
+            val cy = h / 2f
+            val d = 3.5.dp.toPx()
+            drawLine(ink, Offset(cx - d, cy - d), Offset(cx + d, cy + d), strokeW, StrokeCap.Round)
+            drawLine(ink, Offset(cx + d, cy - d), Offset(cx - d, cy + d), strokeW, StrokeCap.Round)
+        }
     }
 }
 
@@ -625,15 +736,16 @@ private fun CashRegisterChangeReturnContent(
             .padding(bottom = 20.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // CARD 1: Total des achats (Directly editable input field + Calculator shortcut)
+        // CARNET RECEIPT NOTE: Total des achats + Montant reçu
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(JournalPaper)
-                .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.75f)), RoundedCornerShape(10.dp))
-                .padding(12.dp)
+                .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.60f)), RoundedCornerShape(12.dp))
+                .padding(14.dp)
         ) {
+            // SECTION 1: Total des achats
             val labelTotal = stringResource(R.string.cash_register_purchase_total)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -644,7 +756,12 @@ private fun CashRegisterChangeReturnContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text("🛒", fontSize = 15.sp)
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Page,
+                        contentDescription = null,
+                        tint = JournalInk,
+                        size = 16.dp
+                    )
                     Text(
                         text = labelTotal,
                         fontFamily = resolveJournalFont(labelTotal, isRtl),
@@ -677,12 +794,18 @@ private fun CashRegisterChangeReturnContent(
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(HighlighterYellow.copy(alpha = 0.35f))
+                            .background(HighlighterYellow.copy(alpha = 0.40f))
                             .clickable(role = Role.Button, onClick = onBackToCalc)
-                            .padding(horizontal = 7.dp, vertical = 2.5.dp),
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Calculator,
+                            contentDescription = null,
+                            tint = JournalWritingInk,
+                            size = 13.dp
+                        )
                         Text(
                             text = stringResource(R.string.cash_register_back_to_calc),
                             fontFamily = resolveJournalFont(stringResource(R.string.cash_register_back_to_calc), isRtl),
@@ -691,7 +814,6 @@ private fun CashRegisterChangeReturnContent(
                             color = JournalWritingInk,
                             style = TextStyle(platformStyle = NoFontPadding)
                         )
-                        Text("🧮", fontSize = 11.sp)
                     }
                 }
             }
@@ -704,7 +826,7 @@ private fun CashRegisterChangeReturnContent(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .background(JournalDockBg)
-                    .border(BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.6f)), RoundedCornerShape(8.dp))
+                    .border(BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.50f)), RoundedCornerShape(8.dp))
                     .padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -746,17 +868,15 @@ private fun CashRegisterChangeReturnContent(
                     color = JournalMutedInk
                 )
             }
-        }
 
-        // CARD 2: Amount Received from Customer
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(JournalPaper)
-                .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.75f)), RoundedCornerShape(10.dp))
-                .padding(12.dp)
-        ) {
+            // Notebook ruled divider between Total and Reçu
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 10.dp),
+                color = JournalRule.copy(alpha = 0.35f),
+                thickness = 0.8.dp
+            )
+
+            // SECTION 2: Montant reçu du client
             val labelReceived = stringResource(R.string.cash_register_amount_received)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -767,7 +887,12 @@ private fun CashRegisterChangeReturnContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text("💵", fontSize = 15.sp)
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Wallet,
+                        contentDescription = null,
+                        tint = JournalInk,
+                        size = 16.dp
+                    )
                     Text(
                         text = labelReceived,
                         fontFamily = resolveJournalFont(labelReceived, isRtl),
@@ -801,7 +926,7 @@ private fun CashRegisterChangeReturnContent(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .background(JournalDockBg)
-                    .border(BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.6f)), RoundedCornerShape(8.dp))
+                    .border(BorderStroke(0.6.dp, JournalRule.copy(alpha = 0.50f)), RoundedCornerShape(8.dp))
                     .padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -846,7 +971,7 @@ private fun CashRegisterChangeReturnContent(
 
             Spacer(Modifier.height(8.dp))
 
-            // Quick Note Chips: [20 DH] [50 DH] [100 DH] [200 DH]
+            // Preset Banknote Chips: [20 DH] [50 DH] [100 DH] [200 DH]
             val presetNotes = listOf(20L, 50L, 100L, 200L)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -862,9 +987,9 @@ private fun CashRegisterChangeReturnContent(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(6.dp))
-                            .background(HighlighterYellow.copy(alpha = 0.25f))
+                            .background(HighlighterYellow.copy(alpha = 0.32f))
                             .border(
-                                BorderStroke(0.8.dp, JournalRule.copy(alpha = 0.65f)),
+                                BorderStroke(0.7.dp, JournalRule.copy(alpha = 0.55f)),
                                 RoundedCornerShape(6.dp)
                             )
                             .clickable { onPresetSelect(noteDh) }
@@ -884,7 +1009,7 @@ private fun CashRegisterChangeReturnContent(
             }
         }
 
-        // CARD 3: Change Due Status Banner
+        // CHANGE DUE RESULT BAND (JOURNAL SIGNATURE STYLE)
         if (state.changeCentimes > 0L) {
             val changeDh = MoneyMath.fromCentimes(state.changeCentimes, MoneyUnit.DIRHAM)
             val changeRial = MoneyMath.fromCentimes(state.changeCentimes, MoneyUnit.RIAL)
@@ -894,19 +1019,19 @@ private fun CashRegisterChangeReturnContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(HighlighterYellow.copy(alpha = 0.35f))
                     .border(
-                        BorderStroke(1.dp, HighlighterPink.copy(alpha = 0.65f)),
-                        RoundedCornerShape(10.dp)
+                        BorderStroke(0.9.dp, HighlighterPink.copy(alpha = 0.65f)),
+                        RoundedCornerShape(12.dp)
                     )
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                    .padding(horizontal = 16.dp, vertical = 11.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = changeLabel,
                     fontFamily = resolveJournalFont(changeLabel, isRtl),
-                    fontSize = if (isRtl) 14.sp else 14.5.sp,
+                    fontSize = if (isRtl) 14.5.sp else 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding)
@@ -919,21 +1044,29 @@ private fun CashRegisterChangeReturnContent(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = changeFormatted,
+                        text = "= $changeFormatted",
                         fontFamily = PatrickHandFamily,
-                        fontSize = 28.sp,
+                        fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
                         color = ColorOrange
                     )
                     Text(
                         text = currencySuffix,
                         fontFamily = resolveJournalFont(currencySuffix, isRtl),
-                        fontSize = 16.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
-                        modifier = Modifier.padding(bottom = 2.dp)
+                        modifier = Modifier.padding(bottom = 3.dp)
                     )
                 }
+
+                JournalDoubleUnderline(
+                    modifier = Modifier.padding(top = 2.dp),
+                    color = HighlighterPink,
+                    width = 170.dp
+                )
+
+                Spacer(Modifier.height(3.dp))
 
                 val secondaryText = if (state.currencyUnit == MoneyUnit.DIRHAM) {
                     "= $changeRial ${stringResource(R.string.currency_rial)}"
@@ -953,19 +1086,30 @@ private fun CashRegisterChangeReturnContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(ColorEmerald.copy(alpha = 0.14f))
-                    .border(BorderStroke(0.85.dp, ColorEmerald.copy(alpha = 0.45f)), RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(ColorEmerald.copy(alpha = 0.12f))
+                    .border(BorderStroke(0.85.dp, ColorEmerald.copy(alpha = 0.45f)), RoundedCornerShape(12.dp))
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "✓ $exactText",
-                    fontFamily = resolveJournalFont(exactText, isRtl),
-                    fontSize = 14.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorEmerald
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Check,
+                        contentDescription = null,
+                        tint = ColorEmerald,
+                        size = 17.dp
+                    )
+                    Text(
+                        text = exactText,
+                        fontFamily = resolveJournalFont(exactText, isRtl),
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorEmerald
+                    )
+                }
             }
         } else if (state.isInsufficient && state.shortageCentimes > 0L) {
             val shortageDh = MoneyMath.fromCentimes(state.shortageCentimes, state.currencyUnit)
@@ -973,23 +1117,34 @@ private fun CashRegisterChangeReturnContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(ColorCoral.copy(alpha = 0.12f))
-                    .border(BorderStroke(0.85.dp, ColorCoral.copy(alpha = 0.5f)), RoundedCornerShape(10.dp))
+                    .border(BorderStroke(0.85.dp, ColorCoral.copy(alpha = 0.5f)), RoundedCornerShape(12.dp))
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "⚠️ $shortageMsg",
-                    fontFamily = resolveJournalFont(shortageMsg, isRtl),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorCoral
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Exclamation,
+                        contentDescription = null,
+                        tint = ColorCoral,
+                        size = 17.dp
+                    )
+                    Text(
+                        text = shortageMsg,
+                        fontFamily = resolveJournalFont(shortageMsg, isRtl),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorCoral
+                    )
+                }
             }
         }
 
-        // CARD 4: Tstifa dial l-wra9 o l-coins (Clean Banknotes & Coins Board)
+        // TSTIFA TRAY: Banknotes & Coins Board
         if (state.pieces.isNotEmpty()) {
             CashRegisterDenominationsBoard(
                 pieces = state.pieces,
@@ -999,29 +1154,34 @@ private fun CashRegisterChangeReturnContent(
 
         Spacer(Modifier.height(4.dp))
 
-        // Bottom bar: Client suivant button
-        Button(
-            onClick = onNextClient,
+        // Bottom bar: Client suivant action button
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = HighlighterPink.copy(alpha = 0.90f),
-                contentColor = Color.White
-            ),
-            shape = RoundedCornerShape(10.dp)
+                .height(48.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(HighlighterPink.copy(alpha = 0.55f))
+                .border(
+                    BorderStroke(0.85.dp, HighlighterPink.copy(alpha = 0.85f)),
+                    RoundedCornerShape(12.dp)
+                )
+                .clickable(role = Role.Button) {
+                    onNextClient()
+                },
+            contentAlignment = Alignment.Center
         ) {
             val nextText = stringResource(R.string.cash_register_next_client)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("↺", fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                Text("↺", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = JournalInk)
                 Text(
                     text = nextText,
                     fontFamily = resolveJournalFont(nextText, isRtl),
-                    fontSize = 15.5.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
+                    color = JournalInk,
                     style = TextStyle(platformStyle = NoFontPadding)
                 )
             }
@@ -1046,10 +1206,10 @@ private fun CashRegisterDenominationsBoard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(JournalPaper)
-            .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.70f)), RoundedCornerShape(10.dp))
-            .padding(12.dp)
+            .border(BorderStroke(0.85.dp, JournalRule.copy(alpha = 0.60f)), RoundedCornerShape(12.dp))
+            .padding(14.dp)
     ) {
         // Section: Banknotes (L-Wra9)
         if (banknotes.isNotEmpty()) {
@@ -1059,18 +1219,23 @@ private fun CashRegisterDenominationsBoard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text("💵", fontSize = 13.sp)
+                HisabiSketchIcon(
+                    symbol = HisabiSymbol.Wallet,
+                    contentDescription = null,
+                    tint = JournalWritingInk,
+                    size = 16.dp
+                )
                 Text(
                     text = headingBanknotes,
                     fontFamily = resolveJournalFont(headingBanknotes, isRtl),
                     color = JournalWritingInk,
-                    fontSize = if (isRtl) 13.sp else 13.5.sp,
+                    fontSize = if (isRtl) 13.5.sp else 14.sp,
                     fontWeight = FontWeight.Bold,
                     style = TextStyle(platformStyle = NoFontPadding)
                 )
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
 
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
