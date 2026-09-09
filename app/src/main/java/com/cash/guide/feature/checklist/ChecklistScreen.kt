@@ -164,6 +164,7 @@ fun ChecklistScreen(
                 tonalElevation = 0.dp
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    // --- Row 1: Back button + Title in Watercolor Pink Pill (Centered / Alone) ---
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -238,6 +239,19 @@ fun ChecklistScreen(
                             }
                         }
 
+                        // Balancing Spacer so Title is centered
+                        Spacer(modifier = Modifier.size(42.dp))
+                    }
+
+                    // --- Row 2: Sub-toolbar (Left: ≡ Listes, Center: Count, Right: Partager ↗) ---
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(38.dp)
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
@@ -246,7 +260,7 @@ fun ChecklistScreen(
                                     viewModel.hideKeyboard()
                                     viewModel.showListsDialog()
                                 }
-                                .padding(horizontal = 8.dp, vertical = 5.dp),
+                                .padding(horizontal = 9.dp, vertical = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -259,7 +273,29 @@ fun ChecklistScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "$completedCount / $totalCount faits",
+                                fontFamily = PatrickHandFamily,
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isAllCompleted) ColorEmerald else JournalWritingInk,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                            if (isAllCompleted) {
+                                Text(
+                                    text = "✓",
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = ColorEmerald,
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
+                            }
+                        }
 
                         Box(
                             modifier = Modifier
@@ -269,7 +305,7 @@ fun ChecklistScreen(
                                     viewModel.hideKeyboard()
                                     showShareMenu = true
                                 }
-                                .padding(horizontal = 8.dp, vertical = 5.dp),
+                                .padding(horizontal = 9.dp, vertical = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -316,6 +352,7 @@ fun ChecklistScreen(
                         }
                     }
 
+                    // Divider line separating Header from notebook
                     Spacer(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -332,80 +369,26 @@ fun ChecklistScreen(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(JournalRuleSpacing)
-                        .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                // If there are completed items, show a clean, spacious "Supprimer les cochés" action at the top
+                if (completedCount > 0) {
                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(JournalRuleSpacing)
+                            .padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.End
                     ) {
                         Text(
-                            text = "$completedCount / $totalCount faits",
+                            text = "Supprimer les cochés ($completedCount)",
                             fontFamily = PatrickHandFamily,
-                            fontSize = 15.sp,
+                            fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isAllCompleted) ColorEmerald else JournalWritingInk,
-                            style = TextStyle(platformStyle = NoFontPadding),
-                            modifier = Modifier.journalBaselineOnRule()
-                        )
-                        if (isAllCompleted) {
-                            Text(
-                                text = "✓",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ColorEmerald,
-                                style = TextStyle(platformStyle = NoFontPadding),
-                                modifier = Modifier.journalBaselineOnRule()
-                            )
-                        }
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        if (totalCount > 0) {
-                            val allChecked = completedCount == totalCount
-                            Text(
-                                text = if (allChecked) "Tout décocher" else "Tout cocher",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 13.sp,
-                                color = JournalMutedInk,
-                                style = TextStyle(platformStyle = NoFontPadding),
-                                modifier = Modifier
-                                    .journalBaselineOnRule()
-                                    .clickable { viewModel.setAllItemsChecked(!allChecked) }
-                            )
-
-                            if (completedCount > 0) {
-                                Text(
-                                    text = "Supprimer les cochés",
-                                    fontFamily = PatrickHandFamily,
-                                    fontSize = 13.sp,
-                                    color = ColorCoral,
-                                    style = TextStyle(platformStyle = NoFontPadding),
-                                    modifier = Modifier
-                                        .journalBaselineOnRule()
-                                        .clickable { viewModel.deleteCompletedItems() }
-                                )
-                            }
-                        }
-
-                        Text(
-                            text = "Supprimer la liste",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 13.sp,
-                            color = ColorCoral.copy(alpha = 0.85f),
+                            color = ColorCoral,
                             style = TextStyle(platformStyle = NoFontPadding),
                             modifier = Modifier
                                 .journalBaselineOnRule()
-                                .clickable { showDeleteConfirmDialog = true }
+                                .clickable { viewModel.deleteCompletedItems() }
                         )
                     }
                 }
@@ -441,10 +424,18 @@ fun ChecklistScreen(
                         verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        // Left: Number + Text (NO red vertical line)
                         Row(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    viewModel.toggleItem(item.id, !item.isChecked)
+                                },
                             verticalAlignment = Alignment.Bottom,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Text(
                                 text = "$rowNumber",
@@ -458,40 +449,27 @@ fun ChecklistScreen(
                                     .journalBaselineOnRule()
                             )
 
-                            Box(
-                                modifier = Modifier
-                                    .width(1.dp)
-                                    .height(JournalRuleSpacing)
-                                    .background(Color(0xFFE57373).copy(alpha = 0.45f))
-                            )
-
+                            // Item text: light green strikethrough ONLY over the text itself
                             Text(
                                 text = item.text,
-                                fontFamily = PatrickHandFamily,
+                                fontFamily = resolveJournalFont(item.text, isRtl),
                                 fontSize = 16.sp,
                                 fontWeight = if (item.isChecked) FontWeight.Normal else FontWeight.Medium,
-                                color = if (item.isChecked) JournalMutedInk.copy(alpha = 0.50f) else JournalInk,
+                                color = if (item.isChecked) JournalMutedInk.copy(alpha = 0.55f) else JournalInk,
                                 style = TextStyle(platformStyle = NoFontPadding),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier
-                                    .weight(1f)
                                     .journalBaselineOnRule()
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) {
-                                        viewModel.toggleItem(item.id, !item.isChecked)
-                                    }
                                     .drawWithContent {
                                         drawContent()
                                         if (item.isChecked) {
-                                            val strikeY = size.height * 0.54f
+                                            val strikeY = size.height * 0.52f
                                             drawLine(
-                                                color = JournalInk.copy(alpha = 0.65f),
+                                                color = Color(0xFF16A34A).copy(alpha = 0.70f),
                                                 start = Offset(0f, strikeY),
                                                 end = Offset(size.width, strikeY),
-                                                strokeWidth = 1.8.dp.toPx(),
+                                                strokeWidth = 1.2.dp.toPx(),
                                                 cap = StrokeCap.Round
                                             )
                                         }
@@ -499,32 +477,15 @@ fun ChecklistScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(10.dp))
+                        // Whitespace between item text and right buttons
+                        Spacer(modifier = Modifier.weight(1f))
 
+                        // Right: [Checkbox] on the left, [Trash Icon] on the far right (Reversed!)
                         Row(
                             verticalAlignment = Alignment.Bottom,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clickable(
-                                        role = Role.Button,
-                                        onClickLabel = "Supprimer l'élément",
-                                        onClick = { viewModel.deleteItem(item.id) }
-                                    )
-                                    .journalBaselineOnRule(opticalOffsetFromBottom = 0.dp),
-                                contentAlignment = Alignment.BottomCenter
-                            ) {
-                                HisabiSketchIcon(
-                                    symbol = HisabiSymbol.Trash,
-                                    contentDescription = "Supprimer",
-                                    tint = JournalActionDelete.copy(alpha = 0.75f),
-                                    size = 17.dp,
-                                    modifier = Modifier.offset(y = 1.dp)
-                                )
-                            }
-
+                            // Checkbox (left of trash)
                             Box(
                                 modifier = Modifier
                                     .size(24.dp)
@@ -541,7 +502,7 @@ fun ChecklistScreen(
                                         .size(19.dp)
                                         .offset(y = 1.dp)
                                 ) {
-                                    val strokeWidth = 1.5.dp.toPx()
+                                    val strokeWidth = 1.35.dp.toPx()
                                     val corner = 3.dp.toPx()
                                     val rect = androidx.compose.ui.geometry.RoundRect(
                                         left = strokeWidth / 2f,
@@ -555,7 +516,7 @@ fun ChecklistScreen(
                                     if (item.isChecked) {
                                         drawPath(
                                             path = path,
-                                            color = Color(0xFFDCFCE7).copy(alpha = 0.75f),
+                                            color = Color(0xFFDCFCE7).copy(alpha = 0.65f),
                                             style = Fill
                                         )
                                         drawPath(
@@ -572,7 +533,7 @@ fun ChecklistScreen(
                                             path = checkPath,
                                             color = Color(0xFF15803D),
                                             style = Stroke(
-                                                width = 2.2.dp.toPx(),
+                                                width = 2.dp.toPx(),
                                                 cap = StrokeCap.Round,
                                                 join = StrokeJoin.Round
                                             )
@@ -586,7 +547,53 @@ fun ChecklistScreen(
                                     }
                                 }
                             }
+
+                            // Trash icon (far right)
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable(
+                                        role = Role.Button,
+                                        onClickLabel = "Supprimer l'élément",
+                                        onClick = { viewModel.deleteItem(item.id) }
+                                    )
+                                    .journalBaselineOnRule(opticalOffsetFromBottom = 0.dp),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                HisabiSketchIcon(
+                                    symbol = HisabiSymbol.Trash,
+                                    contentDescription = "Supprimer",
+                                    tint = JournalActionDelete.copy(alpha = 0.70f),
+                                    size = 17.dp,
+                                    modifier = Modifier.offset(y = 1.dp)
+                                )
+                            }
                         }
+                    }
+                }
+
+                // Delete list action at the bottom of the list
+                if (items.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(JournalRuleSpacing))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(JournalRuleSpacing)
+                            .padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Supprimer cette liste",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = ColorCoral.copy(alpha = 0.75f),
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier
+                                .journalBaselineOnRule()
+                                .clickable { showDeleteConfirmDialog = true }
+                        )
                     }
                 }
 

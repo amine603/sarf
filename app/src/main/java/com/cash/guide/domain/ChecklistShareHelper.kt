@@ -148,15 +148,6 @@ object ChecklistShareHelper {
             curY += ruleSpacing
         }
 
-        // Draw vertical red margin line
-        val marginLinePaint = Paint().apply {
-            color = Color.argb(40, 0xD4, 0x5A, 0x5A)
-            strokeWidth = 2.5f
-            isAntiAlias = true
-        }
-        val redLineX = 130f
-        canvas.drawLine(redLineX, 0f, redLineX, height.toFloat(), marginLinePaint)
-
         // Header Title in Pink Pill
         var baselineY = (topPaddingRules + 1) * ruleSpacing - 18f
         val headerTitle = if (title.isBlank()) "Checklist" else title
@@ -184,7 +175,7 @@ object ChecklistShareHelper {
         canvas.drawRoundRect(pillRect, 20f, 20f, pillPaint)
         canvas.drawText(headerTitle, width / 2f, baselineY, titlePaint)
 
-        // Date and progress line
+        // Date and progress line (Centered)
         baselineY += ruleSpacing
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         val dateStr = sdf.format(Date())
@@ -196,9 +187,9 @@ object ChecklistShareHelper {
             color = mutedInkColor
             isAntiAlias = true
             textSize = 28f
-            textAlign = Paint.Align.LEFT
+            textAlign = Paint.Align.CENTER
         }
-        canvas.drawText(statusStr, 150f, baselineY, subPaint)
+        canvas.drawText(statusStr, width / 2f, baselineY, subPaint)
 
         // Draw separator
         val dividerPaint = Paint().apply {
@@ -246,7 +237,7 @@ object ChecklistShareHelper {
             // 1. Draw number on the left
             val dotColor = rowDotColors[index % rowDotColors.size]
             numberPaint.color = dotColor
-            canvas.drawText("${index + 1}", 85f, baselineY, numberPaint)
+            canvas.drawText("${index + 1}", 75f, baselineY, numberPaint)
 
             // 2. Draw Checkbox on far right
             val boxX = width - 110f
@@ -264,7 +255,6 @@ object ChecklistShareHelper {
             canvas.drawRoundRect(rect, 8f, 8f, checkStrokePaint)
 
             if (item.isChecked) {
-                // Draw checkmark inside
                 val p1x = rect.left + checkboxSize * 0.20f
                 val p1y = rect.top + checkboxSize * 0.52f
                 val p2x = rect.left + checkboxSize * 0.42f
@@ -276,11 +266,10 @@ object ChecklistShareHelper {
                 canvas.drawLine(p2x, p2y, p3x, p3y, checkFillPaint)
             }
 
-            // 3. Draw text between red margin and checkbox
-            val itemTextX = 155f
+            // 3. Draw text starting right next to line numbers (NO red line)
+            val itemTextX = 125f
             val itemPaint = Paint(textPaint).apply {
                 color = if (item.isChecked) mutedInkColor else inkColor
-                isStrikeThruText = item.isChecked
                 textAlign = Paint.Align.LEFT
             }
             val maxTextWidth = boxX - itemTextX - 25f
@@ -295,6 +284,19 @@ object ChecklistShareHelper {
             }
 
             canvas.drawText(displayText, itemTextX, baselineY, itemPaint)
+
+            // Light green strikethrough line ONLY across the text width
+            if (item.isChecked) {
+                val textW = itemPaint.measureText(displayText)
+                val strikePaint = Paint().apply {
+                    color = Color.argb(180, 0x16, 0xA3, 0x4A)
+                    strokeWidth = 3f
+                    strokeCap = Paint.Cap.ROUND
+                    isAntiAlias = true
+                }
+                val strikeY = baselineY - 14f
+                canvas.drawLine(itemTextX - 4f, strikeY, itemTextX + textW + 4f, strikeY, strikePaint)
+            }
         }
 
         // Footer brand
