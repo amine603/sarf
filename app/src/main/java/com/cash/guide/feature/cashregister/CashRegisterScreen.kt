@@ -297,7 +297,7 @@ private fun CashRegisterCalculatorContent(
             .padding(horizontal = 14.dp)
             .padding(bottom = 8.dp)
     ) {
-        // TOP: Ruled Ledger Calculation Display (lifted up to leave 1-2 ruled lines between pink double underline and keypad)
+        // TOP: Ruled Ledger Calculation Display (Encadred with Theme Ink Outline, 2 ruled lines above keypad)
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -307,7 +307,9 @@ private fun CashRegisterCalculatorContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = JournalRuleSpacing + 6.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(BorderStroke(1.2.dp, JournalWritingInk), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
             ) {
                 // Header of the display: sketch icon + label + clear button
                 Row(
@@ -451,18 +453,20 @@ private fun CashRegisterCalculatorContent(
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        // 2 ruled lines gap between the calculation cadre and the keypad cadre
+        Spacer(modifier = Modifier.height(JournalRuleSpacing * 2))
 
         // BOTTOM: Docked Keyboard + Journal Action button
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Authentic In-App Keyboard with transparent paper background and theme ink outline (Bic blue / ink)
+            // Authentic In-App Keyboard with clean paper background (hiding notebook blue lines) and theme ink outline
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
+                    .background(JournalPaper)
                     .border(BorderStroke(1.2.dp, JournalWritingInk), RoundedCornerShape(12.dp))
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -859,10 +863,11 @@ private fun CashRegisterChangeReturnContent(
             )
         }
 
-        // Notebook ruled divider
+        // Dividing line between Total des achats and Montant reçu du client (clearly visible on ruled paper)
         HorizontalDivider(
-            color = JournalRule.copy(alpha = 0.40f),
-            thickness = 0.8.dp
+            color = JournalWritingInk.copy(alpha = 0.38f),
+            thickness = 1.2.dp,
+            modifier = Modifier.padding(vertical = 2.dp)
         )
 
         // SECTION 2: Montant reçu du client
