@@ -39,7 +39,7 @@ class ChecklistLinkHelperTest {
         )
 
         val link = ChecklistLinkHelper.createDeepLink("تقضية الجمعة", items)
-        assertTrue("Link should start with HTTPS base", link.startsWith("https://sarf.app/checklist?d="))
+        assertTrue("Link should start with HTTPS base", link.startsWith("https://amine603.github.io/sarf/checklist?d="))
 
         val parsed = ChecklistLinkHelper.parseDeepLink(link)
         assertNotNull(parsed)
@@ -48,6 +48,16 @@ class ChecklistLinkHelperTest {
         assertEquals("مطيشة" to false, parsed.items[0])
         assertEquals("بطاطا" to true, parsed.items[1])
         assertEquals("حليب" to false, parsed.items[2])
+    }
+
+    @Test
+    fun parseLegacyHttpsLink() {
+        val legacyLink = "https://sarf.app/checklist?t=Marjane&i=Pain"
+        val parsed = ChecklistLinkHelper.parseDeepLink(legacyLink)
+        assertNotNull(parsed)
+        assertEquals("Marjane", parsed!!.title)
+        assertEquals(1, parsed.items.size)
+        assertEquals("Pain" to false, parsed.items[0])
     }
 
     @Test

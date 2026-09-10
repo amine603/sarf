@@ -16,7 +16,7 @@ data class ParsedChecklist(
 
 object ChecklistLinkHelper {
 
-    private const val HTTPS_BASE_URL = "https://sarf.app/checklist"
+    private const val HTTPS_BASE_URL = "https://amine603.github.io/sarf/checklist"
     private const val CUSTOM_SCHEME = "sarf"
     private const val CUSTOM_HOST = "checklist"
 
@@ -69,9 +69,13 @@ object ChecklistLinkHelper {
         val uri = try { java.net.URI(url) } catch (_: Exception) { return null }
         val scheme = uri.scheme?.lowercase()
         val host = uri.host?.lowercase()
+        val path = uri.path ?: ""
 
-        val isHttpsMatch = (scheme == "https" || scheme == "http") && (host == "sarf.app" || host == "www.sarf.app") && (uri.path?.startsWith("/checklist") == true)
-        val isCustomSchemeMatch = scheme == CUSTOM_SCHEME && (host == CUSTOM_HOST || uri.path?.contains(CUSTOM_HOST) == true)
+        val isHttpsMatch = (scheme == "https" || scheme == "http") && (
+            ((host == "amine603.github.io") && (path.startsWith("/sarf/checklist") || path.startsWith("/sarf"))) ||
+            ((host == "sarf.app" || host == "www.sarf.app") && path.startsWith("/checklist"))
+        )
+        val isCustomSchemeMatch = scheme == CUSTOM_SCHEME && (host == CUSTOM_HOST || path.contains(CUSTOM_HOST))
 
         if (!isHttpsMatch && !isCustomSchemeMatch) {
             return null

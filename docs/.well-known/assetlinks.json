@@ -1,0 +1,22 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tajir.sarf.debug",
+      "sha256_cert_fingerprints": [
+        "9C:F7:9E:5C:CD:E1:07:F5:F8:AF:11:EE:CB:F3:76:9A:8A:CE:E6:63:D1:58:05:91:18:78:1E:31:CC:08:9C:2F"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tajir.sarf",
+      "sha256_cert_fingerprints": [
+        "9C:F7:9E:5C:CD:E1:07:F5:F8:AF:11:EE:CB:F3:76:9A:8A:CE:E6:63:D1:58:05:91:18:78:1E:31:CC:08:9C:2F"
+      ]
+    }
+  }
+]

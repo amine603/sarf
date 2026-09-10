@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sarf • قائمة الحسابات والتشيك ليست</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper-bg: #FBF6E8;
+            --rule-color: rgba(30, 92, 168, 0.18);
+            --rule-spacing: 38px;
+            --ink: #242421;
+            --muted-ink: #757570;
+            --brand-pink: #FCE7F0;
+            --brand-pink-border: #F48FB1;
+            --brand-pink-text: #9C27B0;
+            --emerald: #1B7A4B;
+            --emerald-hover: #145E39;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--paper-bg);
+            background-image: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent calc(var(--rule-spacing) - 1px),
+                var(--rule-color) calc(var(--rule-spacing) - 1px),
+                var(--rule-color) var(--rule-spacing)
+            );
+            color: var(--ink);
+            font-family: 'Tajawal', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .brand-header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .brand-header h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--ink);
+            letter-spacing: -0.5px;
+        }
+
+        .brand-header p {
+            font-size: 13px;
+            color: var(--muted-ink);
+            margin-top: 2px;
+        }
+
+        .title-pill {
+            background-color: var(--brand-pink);
+            border: 1.5px solid var(--brand-pink-border);
+            color: #880E4F;
+            font-size: 22px;
+            font-weight: 700;
+            padding: 8px 24px;
+            border-radius: 24px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(244, 143, 177, 0.2);
+            word-break: break-word;
+        }
+
+        .cta-box {
+            width: 100%;
+            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-open {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            background-color: var(--emerald);
+            color: #FFFFFF;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 14px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(27, 122, 75, 0.3);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-open:hover {
+            background-color: var(--emerald-hover);
+            transform: translateY(-1px);
+        }
+
+        .checklist-card {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(4px);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--muted-ink);
+        }
+
+        .items-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: var(--rule-spacing);
+            font-size: 17px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .item-row.checked .item-text {
+            text-decoration: line-through;
+            color: var(--muted-ink);
+            opacity: 0.65;
+        }
+
+        .item-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #5E8C3B;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            flex-shrink: 0;
+            transition: all 0.15s ease;
+        }
+
+        .item-row.checked .item-checkbox {
+            background-color: #1B7A4B;
+            border-color: #1B7A4B;
+        }
+
+        .item-checkbox svg {
+            width: 14px;
+            height: 14px;
+            fill: none;
+            stroke: white;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: none;
+        }
+
+        .item-row.checked .item-checkbox svg {
+            display: block;
+        }
+
+        .item-number {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 20px;
+            font-weight: bold;
+            color: #3B82B6;
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .item-text {
+            flex-grow: 1;
+            font-size: 16.5px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .footer {
+            margin-top: auto;
+            text-align: center;
+            padding-top: 16px;
+            font-size: 13px;
+            color: var(--muted-ink);
+        }
+
+        .footer a {
+            color: var(--emerald);
+            text-decoration: none;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="brand-header">
+            <h1>Sarf • كناش الحسابات المغربي 📒</h1>
+            <p>قائمة مشتريات مشتركة</p>
+        </header>
+
+        <div class="title-pill" id="checklistTitle">قائمة مشتريات</div>
+
+        <div class="cta-box">
+            <button class="btn-open" id="openAppBtn" onclick="launchApp()">
+                <span>📱</span>
+                <span>فتح القائمة في تطبيق صرف</span>
+            </button>
+        </div>
+
+        <div class="checklist-card">
+            <div class="progress-header">
+                <span id="itemsCounter">0 عناصر</span>
+                <span id="completedCounter">0 مكتمل</span>
+            </div>
+            <ul class="items-list" id="itemsList">
+                <!-- Checklist items injected dynamically -->
+            </ul>
+        </div>
+
+        <footer class="footer">
+            <p>تم الإنشاء بواسطة تطبيق <strong>صرف (Sarf)</strong></p>
+            <p style="margin-top: 4px;">تطبيق الحسابات المغربي بدون إنترنت 100%</p>
+        </footer>
+    </div>
+
+    <script>
+        // 1. Base64 URL-safe decoder
+        function decodeBase64Url(str) {
+            str = str.replace(/-/g, '+').replace(/_/g, '/');
+            while (str.length % 4) {
+                str += '=';
+            }
+            const binary = atob(str);
+            const bytes = Uint8Array.from(binary, m => m.charCodeAt(0));
+            return new TextDecoder().decode(bytes);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const rawData = urlParams.get('d');
+        const rawTitle = urlParams.get('t');
+
+        let checklistData = {
+            title: "قائمة مشتريات",
+            items: []
+        };
+
+        if (rawData) {
+            try {
+                const jsonStr = decodeBase64Url(rawData);
+                const parsed = JSON.parse(jsonStr);
+                checklistData.title = parsed.t || "قائمة مشتريات";
+                const items = parsed.i || [];
+                const checked = parsed.c || [];
+                checklistData.items = items.map((text, idx) => ({
+                    text: text,
+                    isChecked: Boolean(checked[idx] === 1)
+                }));
+            } catch (e) {
+                console.error("Error decoding data:", e);
+            }
+        } else if (rawTitle) {
+            checklistData.title = rawTitle;
+        }
+
+        // Render checklist in UI
+        document.getElementById('checklistTitle').textContent = checklistData.title;
+        document.title = checklistData.title + " • Sarf";
+
+        const itemsListEl = document.getElementById('itemsList');
+        itemsListEl.innerHTML = '';
+
+        function updateCounters() {
+            const total = checklistData.items.length;
+            const completed = checklistData.items.filter(it => it.isChecked).length;
+            document.getElementById('itemsCounter').textContent = `${total} عناصر`;
+            document.getElementById('completedCounter').textContent = `${completed} / ${total} مكتمل`;
+        }
+
+        const rowColors = ['#3B82B6', '#D65D82', '#5E8C3B', '#C7881E', '#7E5AA8', '#CC673B'];
+
+        checklistData.items.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.className = 'item-row' + (item.isChecked ? ' checked' : '');
+            
+            const color = rowColors[index % rowColors.length];
+            
+            li.innerHTML = `
+                <div class="item-checkbox">
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div class="item-number" style="color: ${color}">${index + 1}</div>
+                <div class="item-text">${escapeHtml(item.text)}</div>
+            `;
+
+            li.addEventListener('click', () => {
+                item.isChecked = !item.isChecked;
+                li.classList.toggle('checked', item.isChecked);
+                updateCounters();
+            });
+
+            itemsListEl.appendChild(li);
+        });
+
+        updateCounters();
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 2. Launching the App
+        function launchApp() {
+            const d = rawData || '';
+            const isAndroid = /android/i.test(navigator.userAgent);
+            
+            if (isAndroid) {
+                // Try debug package first, then general intent
+                const debugIntent = `intent://checklist?d=${encodeURIComponent(d)}#Intent;scheme=sarf;package=com.tajir.sarf.debug;end`;
+                const releaseIntent = `intent://checklist?d=${encodeURIComponent(d)}#Intent;scheme=sarf;package=com.tajir.sarf;end`;
+                const customScheme = `sarf://checklist?d=${encodeURIComponent(d)}`;
+
+                window.location.href = debugIntent;
+                setTimeout(() => {
+                    window.location.href = customScheme;
+                }, 400);
+            } else {
+                // Non-android or iOS
+                window.location.href = `sarf://checklist?d=${encodeURIComponent(d)}`;
+            }
+        }
+
+        // 3. Auto-redirect on page load if ?d= is present and user came from mobile
+        if (rawData && /android/i.test(navigator.userAgent)) {
+            // Instant redirect attempt
+            launchApp();
+        }
+    </script>
+</body>
+</html>
