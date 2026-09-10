@@ -379,63 +379,14 @@ fun CalculationEditorScreen(
                 ) {
                     AiVoiceDockedBottomButton(
                         target = AiVoiceInputTarget.CALCULATION,
-                        existingRows = state.rows.mapIndexed { idx, row ->
-                            ExistingCalculationRowContext(
-                                id = row.id.toString(),
-                                index = idx + 1,
-                                label = row.title.text.ifBlank { "السطر ${idx + 1}" },
-                                currentAmount = row.amount.text.toDoubleOrNull() ?: 0.0
-                            )
-                        },
                         onCalculationResult = { result ->
-                            val updates = result.entries.filter { it.existingRowId != null }
-                            updates.forEach { entry ->
-                                val rowIdLong = entry.existingRowId?.toLongOrNull()
-                                if (rowIdLong != null) {
-                                    val amtStr = if (entry.amount <= 0.0) {
-                                        ""
-                                    } else if (entry.amount % 1.0 == 0.0) {
-                                        entry.amount.toLong().toString()
-                                    } else {
-                                        String.format(java.util.Locale.US, "%.2f", entry.amount)
-                                    }
-                                    viewModel.updateRowAmount(
-                                        rowIdLong,
-                                        TextFieldValue(amtStr, TextRange(amtStr.length))
-                                    )
-                                    val existingRow = state.rows.find { it.id == rowIdLong }
-                                    if (existingRow != null) {
-                                        val isOldGeneric = existingRow.title.text.isBlank() ||
-                                                existingRow.title.text.startsWith("السطر") ||
-                                                existingRow.title.text.startsWith("سطر") ||
-                                                existingRow.title.text.startsWith("Ligne") ||
-                                                existingRow.title.text.startsWith("ligne") ||
-                                                existingRow.title.text.startsWith("Star") ||
-                                                existingRow.title.text.startsWith("star")
-                                        val isNewGeneric = entry.label.isBlank() ||
-                                                entry.label.startsWith("السطر") ||
-                                                entry.label.startsWith("سطر") ||
-                                                entry.label.startsWith("Ligne") ||
-                                                entry.label.startsWith("ligne") ||
-                                                entry.label.startsWith("Star") ||
-                                                entry.label.startsWith("star")
-                                        if (isOldGeneric && !isNewGeneric) {
-                                            viewModel.updateRowTitle(
-                                                rowIdLong,
-                                                TextFieldValue(entry.label, TextRange(entry.label.length))
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            val newEntries = result.entries.filter { it.existingRowId == null }
-                            if (newEntries.isNotEmpty()) {
-                                viewModel.addAiEntries(newEntries, result.title)
+                            if (result.entries.isNotEmpty()) {
+                                viewModel.addAiEntries(result.entries, result.title)
                             }
                             val count = result.entries.size
                             Toast.makeText(
                                 context,
-                                if (isRtl) "تمت معالجة $count عمليات بالذكاء الاصطناعي 🪄" else "$count opérations traitées avec l'IA 🪄",
+                                if (isRtl) "تمت إضافة $count بنود بالذكاء الاصطناعي 🪄" else "$count éléments ajoutés avec l'IA 🪄",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }

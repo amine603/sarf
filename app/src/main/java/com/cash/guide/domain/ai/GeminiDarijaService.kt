@@ -92,7 +92,27 @@ object GeminiDarijaService {
             """.trimIndent()
             AiOutputScript.FRENCH -> """
                 Output ALL item names and titles translated into clean, natural French.
-                Examples: Pommes de terre, Tomates, Carottes, Oignons, Poulet, Viande de boeuf, Viande hachée, Pain, Lait, Beurre, Huile d'olive, Oeufs, Pommes, Bananes, Oranges, Poisson, Café, Thé, Sucre, Fromage, Bouteille d'eau, Ligne 1, Ligne 5.
+                Translate any Moroccan Darija terms into French:
+                - بطاطا -> Pommes de terre
+                - مطيشة -> Tomates
+                - خيزو -> Carottes
+                - بصلة -> Oignons
+                - دجاج -> Poulet
+                - لحم -> Viande
+                - كفتة -> Viande hachée
+                - حليب -> Lait
+                - زبدة -> Beurre
+                - زيت -> Huile
+                - بيض -> Oeufs
+                - تفاح -> Pommes
+                - بنان -> Bananes
+                - ليمون -> Oranges
+                - حوت -> Poisson
+                - قهوة -> Café
+                - أتاي -> Thé
+                - سكر -> Sucre
+                - فرماج -> Fromage
+                - خبز -> Pain
                 Quantities: 1 kg, 500 g, 2 L, 1 paquet, 1 bouteille.
                 Titles: "Liste de courses", "Calcul des dépenses", "Facture".
             """.trimIndent()
@@ -154,9 +174,6 @@ object GeminiDarijaService {
 
     /**
      * Parses a spoken Darija/French/Arabic sentence into accounting ledger rows with amounts in Dirhams.
-     * Supports:
-     * 1. Creating NEW entries.
-     * 2. Updating existing rows if the user specifies prices for already listed items (by name or row index).
      * Amounts are OPTIONAL: items without specified price will have amount = 0.0.
      */
     suspend fun parseCalculationFromDarija(
@@ -172,53 +189,24 @@ object GeminiDarijaService {
 
         val scriptRule = getScriptInstruction(outputScript)
 
-        val existingContextBuilder = StringBuilder()
-        if (existingRows.isNotEmpty()) {
-            existingContextBuilder.append("\nCURRENT EXISTING ROWS IN THE NOTEBOOK (The user may update their prices):\n")
-            existingRows.forEach { row ->
-                existingContextBuilder.append("- Row #${row.index} [ID: \"${row.id}\"]: Names=[\"السطر ${row.index}\", \"سطر ${row.index}\", \"Ligne ${row.index}\", \"Star ${row.index}\", \"Article ${row.index}\"], Label=\"${row.label}\", Current Amount=${row.currentAmount} DH\n")
-            }
-            existingContextBuilder.append("""
-                
-                CRITICAL RULES FOR ROW UPDATES:
-                1. If the user mentions ANY row/line number to update, for example:
-                   - Arabic: "السطر 5 دير 15 درهم والسطر 6 دير 77 درهم" or "فالسطر الخامس..." or "نمرة 5..."
-                   - French: "dans la ligne 5 mets 15 dh et dans la ligne 6 mets 77 dh" or "ligne 5 15 dh, ligne 6 77 dh"
-                   - Franco: "f star 5 dir 15 dh o f star 6 dir 77 dh" or "star 5 15 derhem"
-                   YOU MUST:
-                   - Match Row #${'$'}{index} to its ID above!
-                   - Set "existingRowId": "<ID of that Row>"
-                   - Set "amount": <price mentioned in Dirhams>
-                   - Set "label": <the existing label of that row, or "السطر X" / "Ligne X" / "Star X" matching the requested script>
-                2. If the user updates an existing row by item name (e.g. existing row has "مطيشة" and user says "مطيشة دير فيها 10 دراهم" or "tomates 10 dh"):
-                   - Set "existingRowId": "<ID of that row>" and "amount": 10.0.
-                3. Multiple row updates:
-                   If user mentions multiple rows (e.g. "في السطر 5 دير 15 درهم وفي السطر 6 دير 77 درهم"):
-                   You MUST output an entry for EACH updated row with its own "existingRowId"!
-                4. DO NOT return existing rows that the user did NOT mention or did NOT update.
-                5. Brand new items (not matching any existing row number or label) must have "existingRowId": null.
-            """.trimIndent())
-        }
-
         val systemPrompt = """
             You are an expert Moroccan accountant assistant for the app "Sarf".
             The user dictated monetary entries, purchases, or expenses in Moroccan Darija, French, or Arabic.
-            $existingContextBuilder
+            Extract ALL items into a clean calculation list with amounts in Dirhams (MAD).
 
             AMOUNTS & CURRENCY CONVERSIONS:
             - If the user mentions a price for an item, convert it to DIRHAMS (MAD):
               * "ريال" (Riyal): 1 Riyal = 0.05 Dirham. (Example: 100 ريال = 5 DH, 500 ريال = 25 DH, 1000 ريال = 50 DH, 2000 ريال = 100 DH).
               * "فرانك" (Franc): 1 Franc = 0.01 Dirham. (Example: 1000 فرانك = 10 DH).
               * "درهم" (Dirham): 1 Dirham = 1 DH.
-            - If the user DOES NOT mention an amount or price for a new item, set amount to 0.0. DO NOT omit or drop the item! Include every item mentioned.
+            - If the user DOES NOT mention an amount or price for an item, set amount to 0.0. Include every item mentioned.
             $scriptRule
 
             Respond ONLY with a valid JSON object matching this schema:
             {
                "title": "short title",
                "entries": [
-                  { "label": "description", "amount": 150.0, "existingRowId": null },
-                  { "label": "updated item", "amount": 25.0, "existingRowId": "id_if_updating_existing_row_else_null" }
+                  { "label": "description", "amount": 150.0 }
                ]
             }
             Do not wrap in markdown code blocks. Output pure JSON only.
@@ -239,20 +227,17 @@ object GeminiDarijaService {
                 val obj = entriesArr.getJSONObject(i)
                 val label = obj.optString("label", "بند").trim()
                 val amount = obj.optDouble("amount", 0.0)
-                val rawRowId = obj.optString("existingRowId", "").trim()
-                val existingRowId = if (rawRowId.isNotBlank() && rawRowId != "null") rawRowId else null
                 if (label.isNotBlank()) {
                     entries.add(
                         CalculationAiEntry(
                             label = label,
                             amount = maxOf(0.0, amount),
-                            existingRowId = existingRowId
+                            existingRowId = null
                         )
                     )
                 }
             }
-            val resolvedEntries = resolveRowMatches(entries, existingRows)
-            CalculationAiResult(title = title, entries = resolvedEntries)
+            CalculationAiResult(title = title, entries = entries)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse calculation AI response", e)
             null

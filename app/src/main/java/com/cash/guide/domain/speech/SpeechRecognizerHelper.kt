@@ -47,18 +47,13 @@ class SpeechRecognizerHelper(private val context: Context) {
 
     var onSpeechResult: ((String) -> Unit)? = null
 
-    var preferredScript: com.cash.guide.domain.ai.AiOutputScript = com.cash.guide.domain.ai.AiOutputScript.ARABIC
-        set(value) {
-            val changed = field != value
-            field = value
-            if (changed && isUserRecording) {
-                mainHandler.post {
-                    if (isUserRecording) {
-                        startListeningSafe()
-                    }
-                }
-            }
+    init {
+        mainHandler.post {
+            initRecognizer()
         }
+    }
+
+    var preferredScript: com.cash.guide.domain.ai.AiOutputScript = com.cash.guide.domain.ai.AiOutputScript.ARABIC
 
     fun reset() {
         isUserRecording = false
@@ -79,7 +74,14 @@ class SpeechRecognizerHelper(private val context: Context) {
             return
         }
 
-        reset()
+        isUserRecording = false
+        stopListening()
+        _accumulatedText.value = ""
+        _partialText.value = ""
+        latestPartial = ""
+        consecutiveSilenceCount = 0
+        _errorMessage.value = null
+
         isUserRecording = true
         _state.value = SpeechRecognitionState.LISTENING
         initRecognizer()
@@ -87,13 +89,14 @@ class SpeechRecognizerHelper(private val context: Context) {
     }
 
     private fun initRecognizer() {
-        try {
-            speechRecognizer?.destroy()
-        } catch (e: Exception) {
-            Log.w(TAG, "Error destroying speech recognizer", e)
-        }
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
-            setRecognitionListener(createListener())
+        if (speechRecognizer == null) {
+            try {
+                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
+                    setRecognitionListener(createListener())
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error initializing speech recognizer", e)
+            }
         }
     }
 
@@ -129,6 +132,7 @@ class SpeechRecognizerHelper(private val context: Context) {
             speechRecognizer?.startListening(buildIntent())
         } catch (e: Exception) {
             Log.w(TAG, "Exception starting listening, re-initializing", e)
+            destroy()
             initRecognizer()
             try {
                 speechRecognizer?.startListening(buildIntent())
@@ -139,32 +143,13 @@ class SpeechRecognizerHelper(private val context: Context) {
     }
 
     private fun buildIntent(): Intent {
-        val primaryLang = if (preferredScript == com.cash.guide.domain.ai.AiOutputScript.FRENCH) "fr-FR" else "ar-MA"
-        val altLangs = if (preferredScript == com.cash.guide.domain.ai.AiOutputScript.FRENCH) {
-            arrayOf("ar-MA", "ar", "fr-FR", "fr", Locale.getDefault().toLanguageTag())
-        } else {
-            arrayOf("fr-FR", "fr", "ar-MA", "ar", Locale.getDefault().toLanguageTag())
-        }
-
         return Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, primaryLang)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, primaryLang)
-            putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", altLangs)
-            // Android 13/14 language detection and auto-switch
-            putExtra("android.speech.extra.ENABLE_LANGUAGE_SWITCH", true)
-            putExtra("android.speech.extra.ENABLE_LANGUAGE_DETECTION", true)
-            putExtra("android.speech.extra.LANGUAGE_DETECTION_ALLOWED_LANGUAGES", arrayOf("ar-MA", "fr-FR", "ar", "fr"))
-            putExtra("android.speech.extra.LANGUAGE_SWITCH_ALLOWED_LANGUAGES", arrayOf("ar-MA", "fr-FR", "ar", "fr"))
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-MA")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ar-MA")
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            // 5 minutes max, 15 seconds complete silence timeout to prevent Samsung beep loop
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 300000L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 15000L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 12000L)
-            putExtra("android.speech.extras.SPEECH_INPUT_MINIMUM_LENGTH_MILLIS", 300000L)
-            putExtra("android.speech.extras.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS", 15000L)
-            putExtra("android.speech.extras.SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS", 12000L)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
         }
     }
 
@@ -250,7 +235,7 @@ class SpeechRecognizerHelper(private val context: Context) {
                     if (isUserRecording) {
                         startListeningSafe()
                     }
-                }, 250)
+                }, 100)
             }
         }
 
@@ -289,15 +274,27 @@ class SpeechRecognizerHelper(private val context: Context) {
         mainHandler.removeCallbacksAndMessages(null)
         unmuteBeeps()
         try {
-            speechRecognizer?.stopListening()
+            speechRecognizer?.cancel()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error canceling speech recognizer", e)
+        } finally {
+            if (_state.value != SpeechRecognitionState.PROCESSING) {
+                _state.value = SpeechRecognitionState.IDLE
+            }
+        }
+    }
+
+    fun destroy() {
+        isUserRecording = false
+        mainHandler.removeCallbacksAndMessages(null)
+        unmuteBeeps()
+        try {
             speechRecognizer?.destroy()
         } catch (e: Exception) {
             Log.e(TAG, "Error destroying speech recognizer", e)
         } finally {
             speechRecognizer = null
-            if (_state.value != SpeechRecognitionState.PROCESSING) {
-                _state.value = SpeechRecognitionState.IDLE
-            }
+            _state.value = SpeechRecognitionState.IDLE
         }
     }
 

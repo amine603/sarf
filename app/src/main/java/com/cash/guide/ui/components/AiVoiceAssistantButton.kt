@@ -137,7 +137,6 @@ fun AiVoiceRowContainer(
                     }
                 } else {
                     buttonState = AiVoiceButtonState.IDLE
-                    Toast.makeText(context, "لم يتم التقاط أي صوت، عاود جرب وتحدث بوضوح", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -170,7 +169,7 @@ fun AiVoiceRowContainer(
 
     DisposableEffect(Unit) {
         onDispose {
-            speechHelper.stopListening()
+            speechHelper.destroy()
         }
     }
 
@@ -194,8 +193,14 @@ fun AiVoiceRowContainer(
             }
 
             AiVoiceButtonState.RECORDING -> {
-                buttonState = AiVoiceButtonState.ANALYZING
-                speechHelper.stopAndDeliver()
+                val currentText = speechHelper.getBestTranscript()
+                if (currentText.isBlank()) {
+                    buttonState = AiVoiceButtonState.IDLE
+                    speechHelper.stopListening()
+                } else {
+                    buttonState = AiVoiceButtonState.ANALYZING
+                    speechHelper.stopAndDeliver()
+                }
             }
 
             AiVoiceButtonState.ANALYZING -> {}
@@ -353,7 +358,6 @@ fun AiVoiceDockedBottomButton(
                     }
                 } else {
                     buttonState = AiVoiceButtonState.IDLE
-                    Toast.makeText(context, "لم يتم التقاط أي صوت، عاود جرب وتحدث بوضوح", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -386,7 +390,7 @@ fun AiVoiceDockedBottomButton(
 
     DisposableEffect(Unit) {
         onDispose {
-            speechHelper.stopListening()
+            speechHelper.destroy()
         }
     }
 
@@ -410,8 +414,14 @@ fun AiVoiceDockedBottomButton(
             }
 
             AiVoiceButtonState.RECORDING -> {
-                buttonState = AiVoiceButtonState.ANALYZING
-                speechHelper.stopAndDeliver()
+                val currentText = speechHelper.getBestTranscript()
+                if (currentText.isBlank()) {
+                    buttonState = AiVoiceButtonState.IDLE
+                    speechHelper.stopListening()
+                } else {
+                    buttonState = AiVoiceButtonState.ANALYZING
+                    speechHelper.stopAndDeliver()
+                }
             }
 
             AiVoiceButtonState.ANALYZING -> {}
