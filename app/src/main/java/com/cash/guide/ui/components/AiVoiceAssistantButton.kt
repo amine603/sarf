@@ -7,24 +7,23 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -45,12 +44,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -61,19 +58,23 @@ import com.cash.guide.domain.ai.AiVoiceOnboardingManager
 import com.cash.guide.domain.ai.CalculationAiResult
 import com.cash.guide.domain.ai.ChecklistAiResult
 import com.cash.guide.domain.ai.GeminiDarijaService
-import com.cash.guide.domain.speech.SpeechRecognitionState
 import com.cash.guide.domain.speech.SpeechRecognizerHelper
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalPaper
 import kotlinx.coroutines.launch
 
+/**
+ * Wraps a bottom action/input row with an in-place AI voice button and a docked Manga speech bubble above.
+ * This guarantees zero squishing of the input row and maintains the mic button strictly in-place.
+ */
 @Composable
-fun AiVoiceAssistantButton(
+fun AiVoiceRowContainer(
     target: AiVoiceInputTarget,
     onChecklistResult: (ChecklistAiResult) -> Unit = {},
     onCalculationResult: (CalculationAiResult) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -125,6 +126,7 @@ fun AiVoiceAssistantButton(
                     }
                 } else {
                     buttonState = AiVoiceButtonState.IDLE
+                    Toast.makeText(context, "لم يتم التقاط أي صوت، عاود جرب وتحدث بوضوح", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -188,29 +190,45 @@ fun AiVoiceAssistantButton(
         }
     }
 
-    AiVoiceButton(
-        state = buttonState,
-        onClick = { handleMicClick() },
+    Column(
         modifier = modifier
-    )
+    ) {
+        // 1. Manga Speech Bubble docked above the row
+        AnimatedVisibility(
+            visible = buttonState == AiVoiceButtonState.RECORDING || buttonState == AiVoiceButtonState.ANALYZING,
+            enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
+            exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut()
+        ) {
+            MangaVoiceSpeechBubble(
+                liveTranscript = partialText,
+                isAnalyzing = buttonState == AiVoiceButtonState.ANALYZING,
+                onCancel = {
+                    buttonState = AiVoiceButtonState.IDLE
+                    speechHelper.stopListening()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp)
+            )
+        }
 
-    // Live Voice Recording Window (Real-time transcription & equalizer)
-    if (buttonState == AiVoiceButtonState.RECORDING || buttonState == AiVoiceButtonState.ANALYZING) {
-        AiLiveRecordingSheet(
-            liveTranscript = partialText,
-            isAnalyzing = buttonState == AiVoiceButtonState.ANALYZING,
-            onFinishRecording = {
-                if (buttonState == AiVoiceButtonState.RECORDING) {
-                    buttonState = AiVoiceButtonState.ANALYZING
-                    speechHelper.stopAndDeliver()
-                }
-            },
-            onCancel = {
-                buttonState = AiVoiceButtonState.IDLE
-                speechHelper.stopListening()
-            }
-        )
+        // 2. Action row containing caller's content + in-place AiVoiceButton
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            content()
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            AiVoiceButton(
+                state = buttonState,
+                onClick = { handleMicClick() }
+            )
+        }
     }
+
+    // --- DIALOGS ---
 
     // 1. One-Time Educational Onboarding Dialog
     if (showOnboardingDialog) {
@@ -327,7 +345,7 @@ fun AiVoiceAssistantButton(
         }
     }
 
-    // 3. Review & Confirmation Dialog for Checklist
+    // 3. Review & Confirmation Dialog for Checklist (Popped up ONLY AFTER AI finishes!)
     val checklistRes = pendingChecklistResult
     if (checklistRes != null) {
         AiChecklistReviewDialog(
@@ -342,7 +360,7 @@ fun AiVoiceAssistantButton(
         )
     }
 
-    // 4. Review & Confirmation Dialog for Calculations
+    // 4. Review & Confirmation Dialog for Calculations (Popped up ONLY AFTER AI finishes!)
     val calcRes = pendingCalculationResult
     if (calcRes != null) {
         AiCalculationReviewDialog(
@@ -355,5 +373,25 @@ fun AiVoiceAssistantButton(
                 pendingCalculationResult = null
             }
         )
+    }
+}
+
+/**
+ * Standalone button wrapper for backwards compatibility if needed.
+ */
+@Composable
+fun AiVoiceAssistantButton(
+    target: AiVoiceInputTarget,
+    onChecklistResult: (ChecklistAiResult) -> Unit = {},
+    onCalculationResult: (CalculationAiResult) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    AiVoiceRowContainer(
+        target = target,
+        onChecklistResult = onChecklistResult,
+        onCalculationResult = onCalculationResult,
+        modifier = modifier
+    ) {
+        Spacer(modifier = Modifier.weight(1f))
     }
 }

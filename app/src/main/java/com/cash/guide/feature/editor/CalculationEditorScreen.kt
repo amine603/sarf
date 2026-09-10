@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
 import android.widget.Toast
 import com.cash.guide.ui.components.AiVoiceAssistantButton
 import com.cash.guide.ui.components.AiVoiceInputTarget
+import com.cash.guide.ui.components.AiVoiceRowContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -329,12 +330,20 @@ fun CalculationEditorScreen(
                 // 1 empty notebook line before Add Row to prevent accidental taps (faux clic)
                 Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-                // Add Row Button & AI Voice Dictation Button
-                Row(
+                // Add Row Button & AI Voice Dictation Button with Manga Speech Bubble
+                AiVoiceRowContainer(
+                    target = AiVoiceInputTarget.CALCULATION,
+                    onCalculationResult = { result ->
+                        viewModel.addAiEntries(result.entries, result.title)
+                        Toast.makeText(
+                            context,
+                            if (isRtl) "تمت إضافة ${result.entries.size} عمليات بالذكاء الاصطناعي 🪄" else "${result.entries.size} lignes ajoutées avec l'IA 🪄",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 14.dp)
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
                         JournalAddRowButton(
@@ -346,20 +355,6 @@ fun CalculationEditorScreen(
                             }
                         )
                     }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    AiVoiceAssistantButton(
-                        target = AiVoiceInputTarget.CALCULATION,
-                        onCalculationResult = { result ->
-                            viewModel.addAiEntries(result.entries, result.title)
-                            Toast.makeText(
-                                context,
-                                if (isRtl) "تمت إضافة ${result.entries.size} عمليات بالذكاء الاصطناعي 🪄" else "${result.entries.size} lignes ajoutées avec l'IA 🪄",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    )
                 }
 
                 // Exactly 2 empty notebook lines between Add Row and Total

@@ -42,6 +42,7 @@ import androidx.compose.material3.Text
 import android.widget.Toast
 import com.cash.guide.ui.components.AiVoiceAssistantButton
 import com.cash.guide.ui.components.AiVoiceInputTarget
+import com.cash.guide.ui.components.AiVoiceRowContainer
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -608,12 +609,20 @@ fun ChecklistScreen(
                 Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
             }
 
-            Row(
+            AiVoiceRowContainer(
+                target = AiVoiceInputTarget.CHECKLIST,
+                onChecklistResult = { result ->
+                    viewModel.addMultipleItems(result.items)
+                    Toast.makeText(
+                        context,
+                        if (isRtl) "تمت إضافة ${result.items.size} عناصر بالذكاء الاصطناعي 🪄" else "${result.items.size} éléments ajoutés avec l'IA 🪄",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(JournalPaper)
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -714,20 +723,6 @@ fun ChecklistScreen(
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                AiVoiceAssistantButton(
-                    target = AiVoiceInputTarget.CHECKLIST,
-                    onChecklistResult = { result ->
-                        viewModel.addMultipleItems(result.items)
-                        Toast.makeText(
-                            context,
-                            if (isRtl) "تمت إضافة ${result.items.size} عناصر بالذكاء الاصطناعي 🪄" else "${result.items.size} éléments ajoutés avec l'IA 🪄",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                )
             }
 
             if (state.activeInputTarget != ChecklistInputTarget.NONE) {
