@@ -2,7 +2,10 @@ package com.cash.guide.ui.components
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -40,6 +43,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -47,7 +51,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -69,7 +75,15 @@ import com.cash.guide.domain.speech.SpeechRecognizerHelper
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalPaper
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private fun isNetworkAvailable(context: Context): Boolean {
+    val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return true
+    val network = cm.activeNetwork ?: return false
+    val caps = cm.getNetworkCapabilities(network) ?: return false
+    return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+}
 
 /**
  * Wraps a bottom action/input row with an in-place AI voice button and a docked Manga speech bubble above.
@@ -149,6 +163,34 @@ fun AiVoiceRowContainer(
         }
     }
 
+    val haptic = LocalHapticFeedback.current
+    var secondsRemaining by remember { mutableIntStateOf(45) }
+
+    LaunchedEffect(buttonState) {
+        if (buttonState == AiVoiceButtonState.RECORDING) {
+            secondsRemaining = 45
+            while (secondsRemaining > 0 && buttonState == AiVoiceButtonState.RECORDING) {
+                delay(1000L)
+                if (buttonState == AiVoiceButtonState.RECORDING) {
+                    secondsRemaining--
+                }
+            }
+            if (buttonState == AiVoiceButtonState.RECORDING) {
+                val currentText = speechHelper.getBestTranscript()
+                if (currentText.isBlank()) {
+                    buttonState = AiVoiceButtonState.IDLE
+                    speechHelper.stopListening()
+                } else {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    buttonState = AiVoiceButtonState.ANALYZING
+                    speechHelper.stopAndDeliver()
+                }
+            }
+        } else {
+            secondsRemaining = 45
+        }
+    }
+
     LaunchedEffect(currentScript) {
         speechHelper.updateScript(currentScript)
     }
@@ -169,6 +211,7 @@ fun AiVoiceRowContainer(
     ) { isGranted ->
         hasAudioPermission = isGranted
         if (isGranted && (AiCreditManager.IS_TEST_UNLIMITED || credits > 0)) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             buttonState = AiVoiceButtonState.RECORDING
             speechHelper.startListening(currentScript)
         }
@@ -183,6 +226,15 @@ fun AiVoiceRowContainer(
     fun handleMicClick() {
         when (buttonState) {
             AiVoiceButtonState.IDLE -> {
+                if (!isNetworkAvailable(context)) {
+                    val noNetMsg = when {
+                        appLang == "fr" -> "Connexion Internet requise pour l'assistant vocal 📡"
+                        appLang == "en" -> "Internet connection required for Voice Assistant 📡"
+                        else -> "خاصك اتصال بالإنترنت باش يخدم المساعد الذكي 📡"
+                    }
+                    Toast.makeText(context, noNetMsg, Toast.LENGTH_SHORT).show()
+                    return
+                }
                 if (!hasSeenOnboarding) {
                     showOnboardingDialog = true
                     return
@@ -195,11 +247,13 @@ fun AiVoiceRowContainer(
                     permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     return
                 }
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 buttonState = AiVoiceButtonState.RECORDING
                 speechHelper.startListening(currentScript)
             }
 
             AiVoiceButtonState.RECORDING -> {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 val currentText = speechHelper.getBestTranscript()
                 if (currentText.isBlank()) {
                     buttonState = AiVoiceButtonState.IDLE
@@ -227,6 +281,7 @@ fun AiVoiceRowContainer(
                 liveTranscript = partialText,
                 isAnalyzing = buttonState == AiVoiceButtonState.ANALYZING,
                 currentScript = currentScript,
+                secondsRemaining = secondsRemaining,
                 onScriptSelected = {
                     scriptManager.setScript(it)
                     speechHelper.updateScript(it)
@@ -377,6 +432,34 @@ fun AiVoiceDockedBottomButton(
         }
     }
 
+    val haptic = LocalHapticFeedback.current
+    var secondsRemaining by remember { mutableIntStateOf(45) }
+
+    LaunchedEffect(buttonState) {
+        if (buttonState == AiVoiceButtonState.RECORDING) {
+            secondsRemaining = 45
+            while (secondsRemaining > 0 && buttonState == AiVoiceButtonState.RECORDING) {
+                delay(1000L)
+                if (buttonState == AiVoiceButtonState.RECORDING) {
+                    secondsRemaining--
+                }
+            }
+            if (buttonState == AiVoiceButtonState.RECORDING) {
+                val currentText = speechHelper.getBestTranscript()
+                if (currentText.isBlank()) {
+                    buttonState = AiVoiceButtonState.IDLE
+                    speechHelper.stopListening()
+                } else {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    buttonState = AiVoiceButtonState.ANALYZING
+                    speechHelper.stopAndDeliver()
+                }
+            }
+        } else {
+            secondsRemaining = 45
+        }
+    }
+
     LaunchedEffect(currentScript) {
         speechHelper.updateScript(currentScript)
     }
@@ -397,6 +480,7 @@ fun AiVoiceDockedBottomButton(
     ) { isGranted ->
         hasAudioPermission = isGranted
         if (isGranted && (AiCreditManager.IS_TEST_UNLIMITED || credits > 0)) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             buttonState = AiVoiceButtonState.RECORDING
             speechHelper.startListening(currentScript)
         }
@@ -411,6 +495,15 @@ fun AiVoiceDockedBottomButton(
     fun handleMicClick() {
         when (buttonState) {
             AiVoiceButtonState.IDLE -> {
+                if (!isNetworkAvailable(context)) {
+                    val noNetMsg = when {
+                        appLang == "fr" -> "Connexion Internet requise pour l'assistant vocal 📡"
+                        appLang == "en" -> "Internet connection required for Voice Assistant 📡"
+                        else -> "خاصك اتصال بالإنترنت باش يخدم المساعد الذكي 📡"
+                    }
+                    Toast.makeText(context, noNetMsg, Toast.LENGTH_SHORT).show()
+                    return
+                }
                 if (!hasSeenOnboarding) {
                     showOnboardingDialog = true
                     return
@@ -423,11 +516,13 @@ fun AiVoiceDockedBottomButton(
                     permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     return
                 }
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 buttonState = AiVoiceButtonState.RECORDING
                 speechHelper.startListening(currentScript)
             }
 
             AiVoiceButtonState.RECORDING -> {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 val currentText = speechHelper.getBestTranscript()
                 if (currentText.isBlank()) {
                     buttonState = AiVoiceButtonState.IDLE
@@ -455,6 +550,7 @@ fun AiVoiceDockedBottomButton(
                 liveTranscript = partialText,
                 isAnalyzing = buttonState == AiVoiceButtonState.ANALYZING,
                 currentScript = currentScript,
+                secondsRemaining = secondsRemaining,
                 onScriptSelected = {
                     scriptManager.setScript(it)
                     speechHelper.updateScript(it)

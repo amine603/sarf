@@ -141,6 +141,8 @@ object GeminiDarijaService {
             The user dictated a list of items or groceries in Moroccan Darija, Arabic, or French.
             Extract ALL items into a clean list, separating each item even if spoken rapidly in a single sentence.
             If the user mentioned quantities (e.g. 2kg, نص كيلو, رابعة, بكية, قرعة, ربطة, 3 حبات, 5 لتر), include the quantity in the item label.
+            SMART DUPLICATE & QUANTITY MERGING:
+            - If the user mentioned the same item multiple times or added quantity to an item previously mentioned (e.g. "2 كيلو بطاطا... وزيد كيلو د بطاطا" or "2 cahiers... et encore 3 cahiers"), MERGE them into a single clean entry with the combined total quantity (e.g. "3 كيلو بطاطا" or "5 cahiers"). Do not output duplicate items.
             $scriptRule
             Respond ONLY with a valid JSON object matching this schema:
             {
@@ -207,6 +209,8 @@ object GeminiDarijaService {
               * "فرانك" (Franc): 1 Franc = 0.01 Dirham. (Example: 1000 فرانك = 10 DH).
               * "درهم" (Dirham): 1 Dirham = 1 DH.
             - If the user DOES NOT mention an amount or price for an item, set amount to 0.0. Include every item mentioned.
+            SMART DUPLICATE & QUANTITY MERGING:
+            - If the user mentioned the same item multiple times or added to a previously mentioned purchase (e.g. "2 كيلو بطاطا بـ 10 دراهم... وزيد كيلو آخر د بطاطا بـ 5 دراهم"), MERGE them into a single entry with the combined total quantity and total amount (e.g. "3 كيلو بطاطا" with amount 15.0). Do not output duplicate rows for the exact same item.
             $scriptRule
 
             Respond ONLY with a valid JSON object matching this schema:

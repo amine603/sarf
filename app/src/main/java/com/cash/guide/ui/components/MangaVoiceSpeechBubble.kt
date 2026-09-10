@@ -116,6 +116,7 @@ fun MangaVoiceSpeechBubble(
     liveTranscript: String,
     isAnalyzing: Boolean,
     currentScript: AiOutputScript = AiOutputScript.ARABIC,
+    secondsRemaining: Int = 45,
     onScriptSelected: (AiOutputScript) -> Unit = {},
     forceRightArrow: Boolean = false,
     onCancel: () -> Unit = {},
@@ -276,15 +277,53 @@ fun MangaVoiceSpeechBubble(
                         }
                     }
 
-                    // Close icon (at logical end)
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = closeDesc,
-                        tint = JournalMutedInk.copy(alpha = 0.7f),
-                        modifier = Modifier
-                            .size(18.dp)
-                            .clickable { onCancel() }
-                    )
+                    // Right/End area: Countdown timer badge + Close icon
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val timerMinutes = secondsRemaining / 60
+                        val timerSecs = secondsRemaining % 60
+                        val timerText = String.format(java.util.Locale.US, "%02d:%02d", timerMinutes, timerSecs)
+                        val isUrgent = secondsRemaining <= 10
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isUrgent) Color(0xFFFFEBEE) else Color(0xFFF0F4F8))
+                                .border(
+                                    1.dp,
+                                    if (isUrgent) Color(0xFFE53935).copy(alpha = 0.6f) else Color(0xFFCFD8DC),
+                                    RoundedCornerShape(10.dp)
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Text(
+                                    text = "⏱️",
+                                    fontSize = 9.5.sp
+                                )
+                                Text(
+                                    text = timerText,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isUrgent) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isUrgent) Color(0xFFD32F2F) else Color(0xFF455A64)
+                                )
+                            }
+                        }
+
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = closeDesc,
+                            tint = JournalMutedInk.copy(alpha = 0.7f),
+                            modifier = Modifier
+                                .size(18.dp)
+                                .clickable { onCancel() }
+                        )
+                    }
                 }
 
                 // Output Script Selector Chips (العربية | العرنسية Franco | Français)
