@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -49,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.cash.guide.domain.ai.CalculationAiEntry
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
@@ -64,19 +66,54 @@ fun AiChecklistReviewDialog(
     val items = remember { mutableStateListOf<String>().apply { addAll(initialItems) } }
     var newItemText by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales.get(0)
+        val appLang = currentLocale?.language ?: "ar"
+        val isFrench = appLang == "fr"
+        val isEnglish = appLang == "en"
+
+        val dialogTitle = when {
+            isFrench -> "Vérification des éléments 📋"
+            isEnglish -> "Review extracted items 📋"
+            else -> "مراجعة السلعة المستخرجة 📋"
+        }
+        val dialogSub = when {
+            isFrench -> "Vous pouvez supprimer 🗑️ ou modifier avant de confirmer :"
+            isEnglish -> "You can delete 🗑️ or edit items before confirming:"
+            else -> "تقدر تمسح 🗑️ أو تصحح أي عنصر قبل ما تأكد:"
+        }
+        val addPlaceholder = when {
+            isFrench -> "+ Ajouter un autre élément..."
+            isEnglish -> "+ Add another item..."
+            else -> "+ زيد عنصر آخر يدوياً..."
+        }
+        val cancelBtn = when {
+            isFrench -> "Annuler"
+            isEnglish -> "Cancel"
+            else -> "إلغاء"
+        }
+        val confirmBtn = when {
+            isFrench -> "Confirmer et ajouter (${items.size}) ✅"
+            isEnglish -> "Confirm and add (${items.size}) ✅"
+            else -> "تأكيد وإضافة (${items.size}) ✅"
+        }
+
+        Surface(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
+                .fillMaxWidth(0.92f)
+                .wrapContentHeight(),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = JournalPaper),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            color = Color(0xFFFFFDF7),
+            tonalElevation = 6.dp,
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFD7CCC8))
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp)
+                    .padding(20.dp)
             ) {
                 // Header
                 Row(
@@ -85,13 +122,13 @@ fun AiChecklistReviewDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "مراجعة السلعة المستخرجة 📋",
+                        text = dialogTitle,
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
                         color = JournalInk
                     )
                     IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "إلغاء", tint = JournalMutedInk)
+                        Icon(imageVector = Icons.Default.Close, contentDescription = cancelBtn, tint = JournalMutedInk)
                     }
                 }
 
@@ -117,7 +154,7 @@ fun AiChecklistReviewDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "تقدر تمسح 🗑️ أو تصحح أي عنصر قبل ما تأكد:",
+                    text = dialogSub,
                     fontSize = 12.5.sp,
                     color = JournalMutedInk
                 )
@@ -195,7 +232,7 @@ fun AiChecklistReviewDialog(
                                     ) {
                                         if (newItemText.isBlank()) {
                                             Text(
-                                                text = "+ زيد عنصر آخر يدوياً...",
+                                                text = addPlaceholder,
                                                 color = JournalMutedInk,
                                                 fontSize = 12.5.sp
                                             )
@@ -216,7 +253,7 @@ fun AiChecklistReviewDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
-                                    contentDescription = "إضافة",
+                                    contentDescription = null,
                                     tint = Color.White,
                                     modifier = Modifier.padding(6.dp).size(18.dp)
                                 )
@@ -240,7 +277,7 @@ fun AiChecklistReviewDialog(
                             .clickable { onDismiss() }
                     ) {
                         Text(
-                            text = "إلغاء",
+                            text = cancelBtn,
                             color = JournalInk,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
@@ -271,7 +308,7 @@ fun AiChecklistReviewDialog(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "تأكيد وإضافة (${items.size}) ✅",
+                                text = confirmBtn,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp
@@ -311,19 +348,69 @@ fun AiCalculationReviewDialog(
 
     val totalDh = entries.sumOf { it.amountStr.toDoubleOrNull() ?: 0.0 }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales.get(0)
+        val appLang = currentLocale?.language ?: "ar"
+        val isFrench = appLang == "fr"
+        val isEnglish = appLang == "en"
+
+        val dialogTitle = when {
+            isFrench -> "Vérification des calculs 💰"
+            isEnglish -> "Review extracted rows 💰"
+            else -> "مراجعة الحسابات المستخرجة 💰"
+        }
+        val dialogSub = when {
+            isFrench -> "Les montants sont optionnels ! Vous pouvez les modifier maintenant ou laisser vide :"
+            isEnglish -> "Amounts are optional! You can set them now or leave blank:"
+            else -> "الأثمنة اختيارية! تقدر تكتب الثمن دابا أو تخليه فارغ:"
+        }
+        val updateBadge = when {
+            isFrench -> "Mise à jour 🔄"
+            isEnglish -> "Update 🔄"
+            else -> "تحديث 🔄"
+        }
+        val addRowPlaceholder = when {
+            isFrench -> "+ Autre ligne..."
+            isEnglish -> "+ Add row..."
+            else -> "+ بند إضافي..."
+        }
+        val pricePlaceholder = when {
+            isFrench -> "Prix"
+            isEnglish -> "Price"
+            else -> "الثمن"
+        }
+        val totalLabel = when {
+            isFrench -> "Total calculé :"
+            isEnglish -> "Calculated total:"
+            else -> "المجموع المحسوب:"
+        }
+        val cancelBtn = when {
+            isFrench -> "Annuler"
+            isEnglish -> "Cancel"
+            else -> "إلغاء"
+        }
+        val confirmBtn = when {
+            isFrench -> "Confirmer et ajouter (${entries.size}) ✅"
+            isEnglish -> "Confirm and add (${entries.size}) ✅"
+            else -> "تأكيد وإضافة (${entries.size}) ✅"
+        }
+
+        Surface(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
+                .fillMaxWidth(0.92f)
+                .wrapContentHeight(),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = JournalPaper),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            color = Color(0xFFFFFDF7),
+            tonalElevation = 6.dp,
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFD7CCC8))
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp)
+                    .padding(20.dp)
             ) {
                 // Header
                 Row(
@@ -332,13 +419,13 @@ fun AiCalculationReviewDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "مراجعة الحسابات المستخرجة 💰",
+                        text = dialogTitle,
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
                         color = JournalInk
                     )
                     IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "إلغاء", tint = JournalMutedInk)
+                        Icon(imageVector = Icons.Default.Close, contentDescription = cancelBtn, tint = JournalMutedInk)
                     }
                 }
 
@@ -364,7 +451,7 @@ fun AiCalculationReviewDialog(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "الأثمنة اختيارية! تقدر تكتب الثمن دابا أو تخليه فارغ:",
+                    text = dialogSub,
                     fontSize = 12.sp,
                     color = JournalMutedInk
                 )
@@ -394,7 +481,7 @@ fun AiCalculationReviewDialog(
                                     modifier = Modifier.padding(end = 4.dp)
                                 ) {
                                     Text(
-                                        text = "تحديث 🔄",
+                                        text = updateBadge,
                                         color = Color(0xFF1565C0),
                                         fontSize = 9.5.sp,
                                         fontWeight = FontWeight.Bold,
@@ -463,7 +550,7 @@ fun AiCalculationReviewDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "حذف",
+                                    contentDescription = cancelBtn,
                                     tint = Color(0xFFD32F2F),
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -492,7 +579,7 @@ fun AiCalculationReviewDialog(
                                             .border(1.dp, Color(0xFFD7CCC8), RoundedCornerShape(6.dp))
                                             .padding(horizontal = 6.dp, vertical = 5.dp)
                                     ) {
-                                        if (newLabel.isBlank()) Text("+ بند إضافي...", color = JournalMutedInk, fontSize = 12.sp)
+                                        if (newLabel.isBlank()) Text(addRowPlaceholder, color = JournalMutedInk, fontSize = 12.sp)
                                         inner()
                                     }
                                 },
@@ -513,7 +600,7 @@ fun AiCalculationReviewDialog(
                                             .border(1.dp, Color(0xFFD7CCC8), RoundedCornerShape(6.dp))
                                             .padding(horizontal = 6.dp, vertical = 5.dp)
                                     ) {
-                                        if (newAmount.isBlank()) Text("الثمن", color = JournalMutedInk, fontSize = 12.sp, textAlign = TextAlign.End)
+                                        if (newAmount.isBlank()) Text(pricePlaceholder, color = JournalMutedInk, fontSize = 12.sp, textAlign = TextAlign.End)
                                         inner()
                                     }
                                 },
@@ -531,7 +618,7 @@ fun AiCalculationReviewDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
-                                    contentDescription = "إضافة",
+                                    contentDescription = null,
                                     tint = Color.White,
                                     modifier = Modifier.padding(5.dp).size(16.dp)
                                 )
@@ -555,7 +642,7 @@ fun AiCalculationReviewDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "المجموع المحسوب:",
+                            text = totalLabel,
                             fontWeight = FontWeight.Bold,
                             color = JournalInk,
                             fontSize = 13.5.sp
@@ -585,7 +672,7 @@ fun AiCalculationReviewDialog(
                             .clickable { onDismiss() }
                     ) {
                         Text(
-                            text = "إلغاء",
+                            text = cancelBtn,
                             color = JournalInk,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
@@ -623,7 +710,7 @@ fun AiCalculationReviewDialog(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "تأكيد وإضافة (${entries.size}) ✅",
+                                text = confirmBtn,
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp

@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
@@ -51,7 +53,9 @@ import androidx.compose.ui.unit.sp
 import com.cash.guide.domain.ai.AiOutputScript
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
+import com.cash.guide.ui.notebook.isArabicScript
 import com.cash.guide.ui.notebook.resolveJournalFont
+import java.util.Locale
 
 /**
  * Comic / Manga speech bubble shape with a pointer arrow at the bottom.
@@ -118,6 +122,16 @@ fun MangaVoiceSpeechBubble(
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
+    val configuration = LocalConfiguration.current
+    val currentLocale = configuration.locales.get(0) ?: Locale.getDefault()
+    val langCode = currentLocale.language.lowercase()
+    val isFrench = langCode == "fr"
+    val isEnglish = langCode == "en"
+    val isArabic = !isFrench && !isEnglish
+
     val shape = MangaSpeechBubbleShape(
         cornerRadius = 12.dp,
         arrowHeight = 8.dp,
@@ -139,6 +153,36 @@ fun MangaVoiceSpeechBubble(
         if (liveTranscript.isNotBlank()) {
             scrollState.animateScrollTo(scrollState.maxValue)
         }
+    }
+
+    val analyzingText = when {
+        isFrench -> "Analyse et extraction par l'IA 🪄..."
+        isEnglish -> "Analyzing & extracting with AI 🪄..."
+        else -> "جاري التحليل واستخراج البنود بالذكاء الاصطناعي 🪄..."
+    }
+
+    val statusTitle = when {
+        isFrench -> "À votre écoute... Parlez librement"
+        isEnglish -> "Listening now... Speak freely"
+        else -> "كنسمع ليك دابا... هضر براحتك"
+    }
+
+    val statusSub = when {
+        isFrench -> "(Appuyez sur le bouton rouge pour terminer)"
+        isEnglish -> "(Tap red button when finished)"
+        else -> "(برك على الزر الأحمر ملي تسالي)"
+    }
+
+    val scriptLabel = when {
+        isFrench -> "Format :"
+        isEnglish -> "Format:"
+        else -> "شكل الكتابة:"
+    }
+
+    val closeDesc = when {
+        isFrench -> "Fermer"
+        isEnglish -> "Close"
+        else -> "إلغاء"
     }
 
     Box(
@@ -165,8 +209,8 @@ fun MangaVoiceSpeechBubble(
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "جاري التحليل واستخراج البنود بالذكاء الاصطناعي 🪄...",
-                    fontFamily = resolveJournalFont("جاري التحليل واستخراج البنود", true),
+                    text = analyzingText,
+                    fontFamily = resolveJournalFont(analyzingText, isArabic),
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF1B7A4B)
@@ -182,40 +226,65 @@ fun MangaVoiceSpeechBubble(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    // Status and recording indicator (at logical start)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (!isRtl) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE53935).copy(alpha = pulseAlpha))
+                            )
+                            Text(
+                                text = statusTitle,
+                                fontFamily = resolveJournalFont(statusTitle, false),
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalInk
+                            )
+                            Text(
+                                text = statusSub,
+                                fontFamily = resolveJournalFont(statusSub, false),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = Color(0xFFD32F2F)
+                            )
+                        } else {
+                            Text(
+                                text = statusSub,
+                                fontFamily = resolveJournalFont(statusSub, true),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = Color(0xFFD32F2F)
+                            )
+                            Text(
+                                text = statusTitle,
+                                fontFamily = resolveJournalFont(statusTitle, true),
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalInk
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE53935).copy(alpha = pulseAlpha))
+                            )
+                        }
+                    }
+
+                    // Close icon (at logical end)
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "إلغاء",
+                        contentDescription = closeDesc,
                         tint = JournalMutedInk.copy(alpha = 0.7f),
                         modifier = Modifier
                             .size(18.dp)
                             .clickable { onCancel() }
                     )
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = "(برك على الزر الأحمر ملي تسالي)",
-                            fontFamily = resolveJournalFont("برك على الزر ملي تسالي", true),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = Color(0xFFD32F2F)
-                        )
-                        Text(
-                            text = "كنسمع ليك دابا... هضر براحتك",
-                            fontFamily = resolveJournalFont("كنسمع ليك دابا", true),
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalInk
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE53935).copy(alpha = pulseAlpha))
-                        )
-                    }
                 }
 
                 // Output Script Selector Chips (العربية | العرنسية Franco | Français)
@@ -227,7 +296,8 @@ fun MangaVoiceSpeechBubble(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "شكل الكتابة:",
+                        text = scriptLabel,
+                        fontFamily = resolveJournalFont(scriptLabel, isArabic),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = JournalMutedInk,
@@ -235,6 +305,11 @@ fun MangaVoiceSpeechBubble(
                     )
                     AiOutputScript.entries.forEach { script ->
                         val isSelected = currentScript == script
+                        val chipText = when (script) {
+                            AiOutputScript.ARABIC -> if (isFrench) "Arabe" else if (isEnglish) "Arabic" else "العربية"
+                            AiOutputScript.FRANCO -> if (isFrench) "Franco" else if (isEnglish) "Franco" else "العرنسية"
+                            AiOutputScript.FRENCH -> if (isEnglish) "French" else "Français"
+                        }
                         Box(
                             modifier = Modifier
                                 .padding(horizontal = 3.dp)
@@ -251,7 +326,8 @@ fun MangaVoiceSpeechBubble(
                                 .padding(horizontal = 7.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = script.label,
+                                text = chipText,
+                                fontFamily = resolveJournalFont(chipText, isArabicScript(chipText)),
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 color = if (isSelected) Color.White else JournalInk
@@ -269,20 +345,34 @@ fun MangaVoiceSpeechBubble(
                         .heightIn(min = 28.dp, max = 75.dp)
                 ) {
                     if (liveTranscript.isBlank()) {
-                        val hint = when (currentScript) {
-                            AiOutputScript.FRENCH -> "تكلم بالفرنسية أو بالدارجة... غادي يفهمك ويكتبها بالفرنسية ✍️"
-                            AiOutputScript.FRANCO -> "تكلم بالدارجة أو بالفرنسية... غادي يفهمك ويكتبها بالعرنسية ✍️"
-                            AiOutputScript.ARABIC -> "تكلم بالدارجة أو بالفرنسية... كاع داكشي لي كتقولو كيتكتب هنا فالحين ✍️"
+                        val hint = when {
+                            isFrench -> when (currentScript) {
+                                AiOutputScript.FRENCH -> "Parlez en français ou en darija... tout s'écrira en français ✍️"
+                                AiOutputScript.FRANCO -> "Parlez en darija ou en français... tout s'écrira en franco ✍️"
+                                AiOutputScript.ARABIC -> "Parlez en darija ou en français... tout s'écrira en arabe ✍️"
+                            }
+                            isEnglish -> when (currentScript) {
+                                AiOutputScript.FRENCH -> "Speak in French or Darija... result will be in French ✍️"
+                                AiOutputScript.FRANCO -> "Speak in Darija or French... result will be in Franco ✍️"
+                                AiOutputScript.ARABIC -> "Speak in Darija or English... result will be in Arabic ✍️"
+                            }
+                            else -> when (currentScript) {
+                                AiOutputScript.FRENCH -> "تكلم بالفرنسية أو بالدارجة... غادي يفهمك ويكتبها بالفرنسية ✍️"
+                                AiOutputScript.FRANCO -> "تكلم بالدارجة أو بالفرنسية... غادي يفهمك ويكتبها بالعرنسية ✍️"
+                                AiOutputScript.ARABIC -> "تكلم بالدارجة أو بالفرنسية... كاع داكشي لي كتقولو كيتكتب هنا فالحين ✍️"
+                            }
                         }
+                        val isHintArabic = isArabicScript(hint)
                         Text(
                             text = hint,
-                            fontFamily = resolveJournalFont(hint, true),
+                            fontFamily = resolveJournalFont(hint, isHintArabic),
                             fontSize = 12.5.sp,
                             color = JournalMutedInk.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Right,
+                            textAlign = if (isHintArabic) TextAlign.Right else TextAlign.Left,
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
+                        val isTranscriptArabic = isArabicScript(liveTranscript)
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -290,12 +380,12 @@ fun MangaVoiceSpeechBubble(
                         ) {
                             Text(
                                 text = liveTranscript,
-                                fontFamily = resolveJournalFont(liveTranscript, true),
+                                fontFamily = resolveJournalFont(liveTranscript, isTranscriptArabic),
                                 fontSize = 14.5.sp,
                                 lineHeight = 20.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = JournalInk,
-                                textAlign = TextAlign.Right,
+                                textAlign = if (isTranscriptArabic) TextAlign.Right else TextAlign.Left,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

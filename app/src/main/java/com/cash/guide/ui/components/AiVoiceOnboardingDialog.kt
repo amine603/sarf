@@ -1,4 +1,4 @@
-﻿package com.cash.guide.ui.components
+package com.cash.guide.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +40,35 @@ import com.cash.guide.ui.notebook.JournalPaper
 fun AiVoiceOnboardingDialog(
     onDismiss: () -> Unit
 ) {
+    val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales.get(0)
+    val appLang = currentLocale?.language ?: "ar"
+    val isFrench = appLang == "fr"
+    val isEnglish = appLang == "en"
+
+    val titleText = when {
+        isFrench -> "Assistant vocal IA 🎙️"
+        isEnglish -> "AI Voice Assistant 🎙️"
+        else -> "المساعد الصوتي بالدارجة 🎙️"
+    }
+
+    val bodyText = when {
+        isFrench -> "Enregistrez vos articles et calculs d'un seul trait par la voix !\n\n" +
+                "• Appuyez sur le micro et parlez librement.\n" +
+                "• Dès que vous avez terminé, vérifiez et modifiez les prix avant de confirmer."
+        isEnglish -> "Record your items and calculations in a single voice flow!\n\n" +
+                "• Tap the mic and speak freely.\n" +
+                "• When finished, review and edit prices before confirming."
+        else -> "دابا تقدر تسجل كاع السلعة أو الحسابات ديالك بأوديو كامل ومسترسل بلا ما تقيد حاجة بحاجة!\n\n" +
+                "• برك على الميكروفون وهضر بالدارجة بكل راحة.\n" +
+                "• فاش تسالي، غادي تطلع ليك شاشة كتشوف فيها كلشي وتصحح الأثمنة قبل ما تأكد الإضافة."
+    }
+
+    val buttonText = when {
+        isFrench -> "Compris, c'est parti 👍"
+        isEnglish -> "Got it, let's start 👍"
+        else -> "فهمت، نبدا دابا 👍"
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
@@ -74,7 +103,7 @@ fun AiVoiceOnboardingDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "المساعد الصوتي بالدارجة 🎙️",
+                    text = titleText,
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
@@ -84,9 +113,7 @@ fun AiVoiceOnboardingDialog(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "دابا تقدر تسجل كاع السلعة أو الحسابات ديالك بأوديو كامل ومسترسل بلا ما تقيد حاجة بحاجة!\n\n" +
-                            "• برك على الميكروفون وهضر بالدارجة بكل راحة.\n" +
-                            "• فاش تسالي، غادي تطلع ليك شاشة كتشوف فيها كلشي وتصحح الأثمنة قبل ما تأكد الإضافة.",
+                    text = bodyText,
                     fontSize = 13.5.sp,
                     color = JournalMutedInk,
                     textAlign = TextAlign.Start,
@@ -115,7 +142,7 @@ fun AiVoiceOnboardingDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "فهمت، نبدا دابا 👍",
+                            text = buttonText,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
