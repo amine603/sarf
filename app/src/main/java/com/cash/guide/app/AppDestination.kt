@@ -7,10 +7,15 @@ sealed class AppDestination(val route: String) {
     data object Settings : AppDestination("settings")
     data object StyleShowcase : AppDestination("style_showcase")
     data object CashRegister : AppDestination("cash_register")
-    data object Checklist : AppDestination("checklist") {
-        const val ROUTE_PATTERN = "checklist?checklistId={checklistId}"
+    data object Checklists : AppDestination("checklists")
+    data object ChecklistDetail : AppDestination("checklist_detail") {
+        const val ROUTE_PATTERN = "checklist_detail/{checklistId}"
+        fun createRoute(checklistId: String): String = "checklist_detail/$checklistId"
+    }
+    data object Checklist : AppDestination("checklists") {
+        const val ROUTE_PATTERN = "checklist_detail/{checklistId}"
         fun createRoute(checklistId: String? = null): String {
-            return if (checklistId != null) "checklist?checklistId=$checklistId" else "checklist"
+            return if (checklistId != null) "checklist_detail/$checklistId" else "checklists"
         }
     }
     data object NewCalculation : AppDestination("calculation/new") {

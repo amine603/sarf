@@ -244,14 +244,7 @@ object ChecklistShareHelper {
             val boxY = baselineY - checkboxSize + 6f
             val rect = RectF(boxX, boxY, boxX + checkboxSize, boxY + checkboxSize)
 
-            if (item.isChecked) {
-                val boxBgPaint = Paint().apply {
-                    color = Color.argb(160, 0xDC, 0xFC, 0xE7)
-                    style = Paint.Style.FILL
-                    isAntiAlias = true
-                }
-                canvas.drawRoundRect(rect, 8f, 8f, boxBgPaint)
-            }
+            // Checkbox stroke (no colored background fill)
             canvas.drawRoundRect(rect, 8f, 8f, checkStrokePaint)
 
             if (item.isChecked) {
@@ -285,12 +278,12 @@ object ChecklistShareHelper {
 
             canvas.drawText(displayText, itemTextX, baselineY, itemPaint)
 
-            // Light green strikethrough line ONLY across the text width
+            // Soft pencil black strikethrough line ONLY across the text width
             if (item.isChecked) {
                 val textW = itemPaint.measureText(displayText)
                 val strikePaint = Paint().apply {
-                    color = Color.argb(180, 0x16, 0xA3, 0x4A)
-                    strokeWidth = 3f
+                    color = Color.argb(90, 0x24, 0x24, 0x21)
+                    strokeWidth = 2.5f
                     strokeCap = Paint.Cap.ROUND
                     isAntiAlias = true
                 }

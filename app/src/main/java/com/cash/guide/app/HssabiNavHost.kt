@@ -29,6 +29,8 @@ import com.cash.guide.data.ChecklistRepository
 import com.cash.guide.data.SettingsRepository
 import com.cash.guide.feature.checklist.ChecklistScreen
 import com.cash.guide.feature.checklist.ChecklistViewModel
+import com.cash.guide.feature.checklist.ChecklistsOverviewScreen
+import com.cash.guide.feature.checklist.ChecklistsOverviewViewModel
 import com.cash.guide.feature.history.MonthCalculationsScreen
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -144,20 +146,23 @@ fun HssabiNavHost(
             )
         }
 
-        composable(AppDestination.Checklist.route) { backStackEntry ->
-            val checklistViewModel: ChecklistViewModel = viewModel(
+        composable(AppDestination.Checklists.route) { backStackEntry ->
+            val overviewViewModel: ChecklistsOverviewViewModel = viewModel(
                 viewModelStoreOwner = backStackEntry
             ) {
-                ChecklistViewModel(checklistRepository)
+                ChecklistsOverviewViewModel(checklistRepository)
             }
-            ChecklistScreen(
-                viewModel = checklistViewModel,
+            ChecklistsOverviewScreen(
+                viewModel = overviewViewModel,
+                onOpenChecklist = { checklistId ->
+                    navController.navigate(AppDestination.ChecklistDetail.createRoute(checklistId))
+                },
                 onNavigateBack = { navController.popBackStack() }
             )
         }
 
         composable(
-            route = AppDestination.Checklist.ROUTE_PATTERN,
+            route = AppDestination.ChecklistDetail.ROUTE_PATTERN,
             arguments = listOf(navArgument("checklistId") {
                 type = NavType.StringType
                 nullable = true

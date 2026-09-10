@@ -100,7 +100,9 @@ class ChecklistViewModel(
     }
 
     fun setInputText(value: TextFieldValue) {
-        _uiState.update { it.copy(inputText = value) }
+        if (value.text.length <= 80) {
+            _uiState.update { it.copy(inputText = value) }
+        }
     }
 
     fun focusItemInput() {
@@ -179,6 +181,7 @@ class ChecklistViewModel(
 
         when (state.activeInputTarget) {
             ChecklistInputTarget.ITEM_INPUT -> {
+                if (state.inputText.text.length >= 80) return
                 val newVal = JournalKeyboardController.insertText(state.inputText, key)
                 _uiState.update {
                     it.copy(
@@ -189,6 +192,7 @@ class ChecklistViewModel(
                 }
             }
             ChecklistInputTarget.TITLE -> {
+                if (state.titleInput.text.length >= 40) return
                 val newVal = JournalKeyboardController.insertText(state.titleInput, key)
                 _uiState.update {
                     it.copy(
@@ -199,6 +203,7 @@ class ChecklistViewModel(
                 }
             }
             ChecklistInputTarget.NONE -> {
+                if (state.inputText.text.length >= 80) return
                 val newVal = JournalKeyboardController.insertText(state.inputText, key)
                 _uiState.update {
                     it.copy(
