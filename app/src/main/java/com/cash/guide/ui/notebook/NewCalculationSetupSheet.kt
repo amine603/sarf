@@ -462,14 +462,6 @@ fun NewCalculationSetupSheet(
                                         }
                                 )
 
-                                val configuration = LocalConfiguration.current
-                                val screenWidth = configuration.screenWidthDp.dp
-                                val cardWidth = (screenWidth - 40.dp).coerceAtMost(390.dp)
-                                val contentWidth = cardWidth - 32.dp // inside padding horizontal 16.dp
-                                val optionsBlockWidth = if (isRtl) 124.dp else 129.dp
-                                // Push options rightward so Crédit sits close to the right edge, without overflowing on smaller screens:
-                                val labelColumnWidth = (contentWidth - optionsBlockWidth - 10.dp).coerceIn(115.dp, 175.dp)
-
                                 // 5. Row: Type de calcul ("Type de calcul" on left, "Personnel | Crédit" on right)
                                 Row(
                                     modifier = Modifier
@@ -484,121 +476,27 @@ fun NewCalculationSetupSheet(
                                             )
                                         }
                                         .padding(horizontal = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     val typeLabel = stringResource(R.string.new_calc_type_label)
-                                    Box(
-                                        modifier = Modifier
-                                            .width(labelColumnWidth)
-                                            .fillMaxHeight(),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        Text(
-                                            text = typeLabel,
-                                            fontFamily = resolveJournalFont(typeLabel, isRtl),
-                                            fontSize = if (isRtl) 13.sp else 13.5.sp,
-                                            color = JournalMutedInk,
-                                            style = TextStyle(platformStyle = NoFontPadding)
-                                        )
-                                    }
+                                    Text(
+                                        text = typeLabel,
+                                        fontFamily = resolveJournalFont(typeLabel, isRtl),
+                                        fontSize = if (isRtl) 13.sp else 13.5.sp,
+                                        color = JournalMutedInk,
+                                        style = TextStyle(platformStyle = NoFontPadding),
+                                        modifier = Modifier.journalBaselineOnRule(opticalOffsetFromBottom = 2.dp)
+                                    )
 
-                                    // In same row: Personnel | Crédit (shifted right, matching home filter tabs with pink underline)
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        val isPersonnel = selectedType == "PERSONNEL"
-                                        val personnelLabel = stringResource(R.string.calc_type_personnel)
-                                        Box(
-                                            modifier = Modifier
-                                                .height(25.dp)
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(
-                                                    if (isPersonnel) JournalInk.copy(alpha = 0.08f)
-                                                    else Color.Transparent
-                                                )
-                                                .clickable(
-                                                    interactionSource = remember { MutableInteractionSource() },
-                                                    indication = null,
-                                                    role = Role.RadioButton
-                                                ) { selectedType = "PERSONNEL" }
-                                                .drawBehind {
-                                                    if (isPersonnel) {
-                                                        val strokeW = 2.dp.toPx()
-                                                        val y = size.height - strokeW / 2
-                                                        val insetX = 6.dp.toPx()
-                                                        drawLine(
-                                                            color = HighlighterPink,
-                                                            start = Offset(insetX, y),
-                                                            end = Offset(size.width - insetX, y),
-                                                            strokeWidth = strokeW,
-                                                            cap = StrokeCap.Round
-                                                        )
-                                                    }
-                                                }
-                                                .padding(horizontal = 9.dp, vertical = 2.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = personnelLabel,
-                                                fontFamily = resolveJournalFont(personnelLabel, isRtl),
-                                                fontSize = if (isRtl) 13.sp else 13.5.sp,
-                                                fontWeight = if (isPersonnel) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isPersonnel) JournalInk else JournalMutedInk,
-                                                style = TextStyle(platformStyle = NoFontPadding)
-                                            )
-                                        }
-
-                                        // Vertical divider
-                                        Box(
-                                            modifier = Modifier
-                                                .width(1.dp)
-                                                .height(11.dp)
-                                                .background(JournalRule.copy(alpha = 0.70f), RoundedCornerShape(0.5.dp))
-                                        )
-
-                                        val isCredit = selectedType == "CREDIT"
-                                        val creditLabel = stringResource(R.string.calc_type_credit)
-                                        Box(
-                                            modifier = Modifier
-                                                .height(25.dp)
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(
-                                                    if (isCredit) JournalInk.copy(alpha = 0.08f)
-                                                    else Color.Transparent
-                                                )
-                                                .clickable(
-                                                    interactionSource = remember { MutableInteractionSource() },
-                                                    indication = null,
-                                                    role = Role.RadioButton
-                                                ) { selectedType = "CREDIT" }
-                                                .drawBehind {
-                                                    if (isCredit) {
-                                                        val strokeW = 2.dp.toPx()
-                                                        val y = size.height - strokeW / 2
-                                                        val insetX = 6.dp.toPx()
-                                                        drawLine(
-                                                            color = HighlighterPink,
-                                                            start = Offset(insetX, y),
-                                                            end = Offset(size.width - insetX, y),
-                                                            strokeWidth = strokeW,
-                                                            cap = StrokeCap.Round
-                                                        )
-                                                    }
-                                                }
-                                                .padding(horizontal = 9.dp, vertical = 2.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = creditLabel,
-                                                fontFamily = resolveJournalFont(creditLabel, isRtl),
-                                                fontSize = if (isRtl) 13.sp else 13.5.sp,
-                                                fontWeight = if (isCredit) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isCredit) JournalInk else JournalMutedInk,
-                                                style = TextStyle(platformStyle = NoFontPadding)
-                                            )
-                                        }
-                                    }
+                                    NotebookSegmentedControl(
+                                        options = listOf(
+                                            "PERSONNEL" to stringResource(R.string.calc_type_personnel),
+                                            "CREDIT" to stringResource(R.string.calc_type_credit)
+                                        ),
+                                        selectedOption = selectedType,
+                                        onSelectOption = { selectedType = it }
+                                    )
                                 }
 
                                 // 6. Row: Devise ("Devise" on left, "DH | Rial" on right)
@@ -615,121 +513,27 @@ fun NewCalculationSetupSheet(
                                             )
                                         }
                                         .padding(horizontal = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     val currencyLabel = stringResource(R.string.new_calc_currency_label)
-                                    Box(
-                                        modifier = Modifier
-                                            .width(labelColumnWidth)
-                                            .fillMaxHeight(),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        Text(
-                                            text = currencyLabel,
-                                            fontFamily = resolveJournalFont(currencyLabel, isRtl),
-                                            fontSize = if (isRtl) 13.sp else 13.5.sp,
-                                            color = JournalMutedInk,
-                                            style = TextStyle(platformStyle = NoFontPadding)
-                                        )
-                                    }
+                                    Text(
+                                        text = currencyLabel,
+                                        fontFamily = resolveJournalFont(currencyLabel, isRtl),
+                                        fontSize = if (isRtl) 13.sp else 13.5.sp,
+                                        color = JournalMutedInk,
+                                        style = TextStyle(platformStyle = NoFontPadding),
+                                        modifier = Modifier.journalBaselineOnRule(opticalOffsetFromBottom = 2.dp)
+                                    )
 
-                                    // In same row: DH | Rial (starts at exact same X position as Personnel!)
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        val isDirham = selectedCurrency == MoneyUnit.DIRHAM
-                                        val dirhamLabel = if (isRtl) "درهم (DH)" else "DH"
-                                        Box(
-                                            modifier = Modifier
-                                                .height(25.dp)
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(
-                                                    if (isDirham) JournalInk.copy(alpha = 0.08f)
-                                                    else Color.Transparent
-                                                )
-                                                .clickable(
-                                                    interactionSource = remember { MutableInteractionSource() },
-                                                    indication = null,
-                                                    role = Role.RadioButton
-                                                ) { selectedCurrency = MoneyUnit.DIRHAM }
-                                                .drawBehind {
-                                                    if (isDirham) {
-                                                        val strokeW = 2.dp.toPx()
-                                                        val y = size.height - strokeW / 2
-                                                        val insetX = 6.dp.toPx()
-                                                        drawLine(
-                                                            color = HighlighterPink,
-                                                            start = Offset(insetX, y),
-                                                            end = Offset(size.width - insetX, y),
-                                                            strokeWidth = strokeW,
-                                                            cap = StrokeCap.Round
-                                                        )
-                                                    }
-                                                }
-                                                .padding(horizontal = 10.dp, vertical = 2.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = dirhamLabel,
-                                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                                fontSize = 13.5.sp,
-                                                fontWeight = if (isDirham) FontWeight.Bold else FontWeight.Normal,
-                                                color = JournalInk,
-                                                style = TextStyle(platformStyle = NoFontPadding)
-                                            )
-                                        }
-
-                                        // Vertical divider
-                                        Box(
-                                            modifier = Modifier
-                                                .width(1.dp)
-                                                .height(11.dp)
-                                                .background(JournalRule.copy(alpha = 0.70f), RoundedCornerShape(0.5.dp))
-                                        )
-
-                                        val isRial = selectedCurrency == MoneyUnit.RIAL
-                                        val rialLabel = if (isRtl) "ريال (rial)" else "Rial"
-                                        Box(
-                                            modifier = Modifier
-                                                .height(25.dp)
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(
-                                                    if (isRial) JournalInk.copy(alpha = 0.08f)
-                                                    else Color.Transparent
-                                                )
-                                                .clickable(
-                                                    interactionSource = remember { MutableInteractionSource() },
-                                                    indication = null,
-                                                    role = Role.RadioButton
-                                                ) { selectedCurrency = MoneyUnit.RIAL }
-                                                .drawBehind {
-                                                    if (isRial) {
-                                                        val strokeW = 2.dp.toPx()
-                                                        val y = size.height - strokeW / 2
-                                                        val insetX = 6.dp.toPx()
-                                                        drawLine(
-                                                            color = HighlighterPink,
-                                                            start = Offset(insetX, y),
-                                                            end = Offset(size.width - insetX, y),
-                                                            strokeWidth = strokeW,
-                                                            cap = StrokeCap.Round
-                                                        )
-                                                    }
-                                                }
-                                                .padding(horizontal = 10.dp, vertical = 2.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = rialLabel,
-                                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                                fontSize = 13.5.sp,
-                                                fontWeight = if (isRial) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isRial) JournalInk else JournalMutedInk,
-                                                style = TextStyle(platformStyle = NoFontPadding)
-                                            )
-                                        }
-                                    }
+                                    NotebookSegmentedControl(
+                                        options = listOf(
+                                            MoneyUnit.DIRHAM to (if (isRtl) "درهم (DH)" else "DH"),
+                                            MoneyUnit.RIAL to (if (isRtl) "ريال (rial)" else "Rial")
+                                        ),
+                                        selectedOption = selectedCurrency,
+                                        onSelectOption = { selectedCurrency = it }
+                                    )
                                 }
 
                                 // 7. Row: Modèles de calcul ("Modèles de calcul" on left, clear selector on right)
@@ -746,25 +550,19 @@ fun NewCalculationSetupSheet(
                                             )
                                         }
                                         .padding(horizontal = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     val templatesLabel = stringResource(R.string.new_calc_templates_label)
-                                    Box(
-                                        modifier = Modifier
-                                            .width(labelColumnWidth)
-                                            .fillMaxHeight(),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        Text(
-                                            text = templatesLabel,
-                                            fontFamily = resolveJournalFont(templatesLabel, isRtl),
-                                            fontSize = if (isRtl) 13.sp else 13.5.sp,
-                                            color = JournalMutedInk,
-                                            style = TextStyle(platformStyle = NoFontPadding)
-                                        )
-                                    }
+                                    Text(
+                                        text = templatesLabel,
+                                        fontFamily = resolveJournalFont(templatesLabel, isRtl),
+                                        fontSize = if (isRtl) 13.sp else 13.5.sp,
+                                        color = JournalMutedInk,
+                                        style = TextStyle(platformStyle = NoFontPadding)
+                                    )
 
-                                    // In same row: Dropdown menu selector (starts at exact same X position as Personnel and DH!)
+                                    // In same row: Dropdown menu selector
                                     Box(
                                         modifier = Modifier.wrapContentSize()
                                     ) {

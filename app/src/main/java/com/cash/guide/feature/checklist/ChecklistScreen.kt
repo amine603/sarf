@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -65,6 +66,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -219,9 +221,16 @@ fun ChecklistScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center
                             ) {
+                                val defaultTitle = if (isRtl) "قائمة" else "Checklist"
+                                val currentTitle = if (state.activeInputTarget == ChecklistInputTarget.TITLE) {
+                                    state.titleInput.text
+                                } else {
+                                    current?.checklist?.title ?: defaultTitle
+                                }
+                                val displayTitle = currentTitle.ifBlank { defaultTitle }
                                 Text(
-                                    text = (if (state.activeInputTarget == ChecklistInputTarget.TITLE) state.titleInput.text else current?.checklist?.title ?: "Checklist").ifBlank { "Checklist" },
-                                    fontFamily = PatrickHandFamily,
+                                    text = displayTitle,
+                                    fontFamily = resolveJournalFont(displayTitle, isRtl),
                                     fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = JournalWritingInk,
@@ -260,10 +269,11 @@ fun ChecklistScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
+                            val countText = if (isRtl) "$completedCount / $totalCount مكتمل" else "$completedCount / $totalCount faits"
                             Text(
-                                text = "$completedCount / $totalCount faits",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 14.5.sp,
+                                text = countText,
+                                fontFamily = resolveJournalFont(countText, isRtl),
+                                fontSize = if (isRtl) 14.sp else 14.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isAllCompleted) ColorEmerald else JournalWritingInk,
                                 style = TextStyle(platformStyle = NoFontPadding)
@@ -280,23 +290,34 @@ fun ChecklistScreen(
                             }
                         }
 
+                        val shareText = if (isRtl) "مشاركة ↗" else "Partager ↗"
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(HighlighterPink.copy(alpha = 0.45f))
+                                .clip(RoundedCornerShape(6.dp))
                                 .clickable(role = Role.Button) {
                                     viewModel.hideKeyboard()
                                     showShareMenu = true
                                 }
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                                .drawBehind {
+                                    val strokeW = 1.35.dp.toPx()
+                                    val y = size.height + 2.5.dp.toPx()
+                                    drawLine(
+                                        color = HighlighterPink,
+                                        start = Offset(0f, y),
+                                        end = Offset(size.width, y),
+                                        strokeWidth = strokeW,
+                                        cap = StrokeCap.Round
+                                    )
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Partager ↗",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 13.5.sp,
+                                text = shareText,
+                                fontFamily = resolveJournalFont(shareText, isRtl),
+                                fontSize = if (isRtl) 14.sp else 14.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = JournalWritingInk,
+                                color = JournalInk,
                                 style = TextStyle(platformStyle = NoFontPadding)
                             )
 
@@ -305,7 +326,12 @@ fun ChecklistScreen(
                                 onDismissRequest = { showShareMenu = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("🖼️ Partager comme image (Image carnet)") },
+                                    text = {
+                                        Text(
+                                            if (isRtl) "🖼️ مشاركة كصورة (ورقة مذكرة)"
+                                            else "🖼️ Partager comme image (Carnet)"
+                                        )
+                                    },
                                     onClick = {
                                         showShareMenu = false
                                         val cl = state.currentChecklist ?: return@DropdownMenuItem
@@ -320,11 +346,16 @@ fun ChecklistScreen(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("🔗 Partager sur WhatsApp (Texte + Lien cliquable)") },
+                                    text = {
+                                        Text(
+                                            if (isRtl) "🔗 مشاركة النص والرابط (كافة التطبيقات)"
+                                            else "🔗 Partager texte & lien (Toutes les applications)"
+                                        )
+                                    },
                                     onClick = {
                                         showShareMenu = false
                                         val cl = state.currentChecklist ?: return@DropdownMenuItem
-                                        ChecklistShareHelper.shareAsWhatsAppTextAndLink(
+                                        ChecklistShareHelper.shareAsTextAndLink(
                                             context = context,
                                             title = cl.checklist.title,
                                             items = cl.sortedItems
@@ -362,10 +393,11 @@ fun ChecklistScreen(
                         verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.End
                     ) {
+                        val deleteCheckedText = if (isRtl) "حذف المشطوبين ($completedCount)" else "Supprimer les cochés ($completedCount)"
                         Text(
-                            text = "Supprimer les cochés ($completedCount)",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 13.5.sp,
+                            text = deleteCheckedText,
+                            fontFamily = resolveJournalFont(deleteCheckedText, isRtl),
+                            fontSize = if (isRtl) 13.sp else 13.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = ColorCoral,
                             style = TextStyle(platformStyle = NoFontPadding),
@@ -386,10 +418,11 @@ fun ChecklistScreen(
                             .padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.Bottom
                     ) {
+                        val emptyHint = if (isRtl) "أدخل عنصراً بالأسفل للبدء في كتابة قائمتك ✍️" else "Tapez un article ci-dessous pour commencer votre liste ✍️"
                         Text(
-                            text = "Tapez un article ci-dessous pour commencer votre liste ✍️",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 15.sp,
+                            text = emptyHint,
+                            fontFamily = resolveJournalFont(emptyHint, isRtl),
+                            fontSize = if (isRtl) 14.5.sp else 15.sp,
                             color = JournalMutedInk.copy(alpha = 0.50f),
                             style = TextStyle(platformStyle = NoFontPadding),
                             modifier = Modifier.journalBaselineOnRule()
@@ -400,7 +433,6 @@ fun ChecklistScreen(
                 items.forEachIndexed { index, item ->
                     val rowNumber = index + 1
                     val dotColor = rowDotColors[index % rowDotColors.size]
-                    var cachedLayout by remember(item.id, item.text) { mutableStateOf<TextLayoutResult?>(null) }
 
                     Row(
                         modifier = Modifier
@@ -442,46 +474,12 @@ fun ChecklistScreen(
                                 lineHeight = 29.sp,
                                 fontWeight = if (item.isChecked) FontWeight.Normal else FontWeight.Medium,
                                 color = if (item.isChecked) JournalMutedInk.copy(alpha = 0.55f) else JournalInk,
+                                textDecoration = if (item.isChecked) TextDecoration.LineThrough else TextDecoration.None,
                                 style = TextStyle(platformStyle = NoFontPadding, lineHeight = 29.sp),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
-                                onTextLayout = { layoutResult ->
-                                    cachedLayout = layoutResult
-                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .drawWithContent {
-                                        drawContent()
-                                        if (item.isChecked) {
-                                            val strikeColor = JournalWritingInk.copy(alpha = 0.35f)
-                                            val layout = cachedLayout
-                                            if (layout != null) {
-                                                for (i in 0 until layout.lineCount) {
-                                                    val lineTop = layout.getLineTop(i)
-                                                    val lineBottom = layout.getLineBottom(i)
-                                                    val strikeY = (lineTop + lineBottom) / 2f + 1f
-                                                    val startX = layout.getLineLeft(i)
-                                                    val endX = layout.getLineRight(i)
-                                                    drawLine(
-                                                        color = strikeColor,
-                                                        start = Offset(startX, strikeY),
-                                                        end = Offset(endX, strikeY),
-                                                        strokeWidth = 1.2.dp.toPx(),
-                                                        cap = StrokeCap.Round
-                                                    )
-                                                }
-                                            } else {
-                                                val strikeY = size.height * 0.52f
-                                                drawLine(
-                                                    color = strikeColor,
-                                                    start = Offset(0f, strikeY),
-                                                    end = Offset(size.width, strikeY),
-                                                    strokeWidth = 1.2.dp.toPx(),
-                                                    cap = StrokeCap.Round
-                                                )
-                                            }
-                                        }
-                                    }
                                     .journalTextOnRules()
                             )
                         }
@@ -585,10 +583,11 @@ fun ChecklistScreen(
                         verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.Center
                     ) {
+                        val deleteListText = if (isRtl) "حذف هذه القائمة" else "Supprimer cette liste"
                         Text(
-                            text = "Supprimer cette liste",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 13.5.sp,
+                            text = deleteListText,
+                            fontFamily = resolveJournalFont(deleteListText, isRtl),
+                            fontSize = if (isRtl) 13.sp else 13.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = ColorCoral.copy(alpha = 0.75f),
                             style = TextStyle(platformStyle = NoFontPadding),
@@ -645,10 +644,11 @@ fun ChecklistScreen(
                         )
 
                         if (state.inputText.text.isEmpty()) {
+                            val placeholderText = if (isRtl) "زيد شي حاجة (مثلاً: خبز، حليب...)" else "Ajouter un élément (ex: Pain, Lait...)"
                             Text(
-                                text = "Ajouter un élément (ex: Pain, Lait...)",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 15.sp,
+                                text = placeholderText,
+                                fontFamily = resolveJournalFont(placeholderText, isRtl),
+                                fontSize = if (isRtl) 14.sp else 15.sp,
                                 color = JournalMutedInk.copy(alpha = 0.45f),
                                 style = TextStyle(platformStyle = NoFontPadding)
                             )
@@ -694,9 +694,10 @@ fun ChecklistScreen(
                                 .padding(horizontal = 10.dp, vertical = 5.dp),
                             contentAlignment = Alignment.Center
                         ) {
+                            val addBtnText = if (isRtl) "إضافة" else "Ajouter"
                             Text(
-                                text = "Ajouter",
-                                fontFamily = PatrickHandFamily,
+                                text = addBtnText,
+                                fontFamily = resolveJournalFont(addBtnText, isRtl),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = JournalWritingInk,
@@ -728,23 +729,27 @@ fun ChecklistScreen(
     }
 
     if (showDeleteConfirmDialog) {
+        val dialogTitle = if (isRtl) "حذف القائمة ؟" else "Supprimer la checklist ?"
+        val dialogMessage = if (isRtl) "هل أنت متأكد من رغبتك في حذف هذه القائمة نهائياً؟ هذا الإجراء لا يمكن التراجع عنه." else "Êtes-vous sûr de vouloir supprimer cette checklist ? Cette action est irréversible."
+        val confirmText = if (isRtl) "حذف" else "Supprimer"
+        val dismissText = if (isRtl) "إلغاء" else "Annuler"
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
             containerColor = JournalPaper,
             title = {
                 Text(
-                    text = "Supprimer la checklist ?",
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 20.sp,
+                    text = dialogTitle,
+                    fontFamily = resolveJournalFont(dialogTitle, isRtl),
+                    fontSize = if (isRtl) 17.5.sp else 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = ColorCoral
                 )
             },
             text = {
                 Text(
-                    text = "Êtes-vous sûr de vouloir supprimer cette checklist ? Cette action est irréversible.",
-                    fontFamily = PatrickHandFamily,
-                    fontSize = 16.sp,
+                    text = dialogMessage,
+                    fontFamily = resolveJournalFont(dialogMessage, isRtl),
+                    fontSize = if (isRtl) 14.5.sp else 16.sp,
                     color = JournalInk
                 )
             },
@@ -757,9 +762,9 @@ fun ChecklistScreen(
                     }
                 ) {
                     Text(
-                        text = "Supprimer",
-                        fontFamily = PatrickHandFamily,
-                        fontSize = 16.sp,
+                        text = confirmText,
+                        fontFamily = resolveJournalFont(confirmText, isRtl),
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = ColorCoral
                     )
@@ -767,7 +772,12 @@ fun ChecklistScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Annuler", fontFamily = PatrickHandFamily, fontSize = 16.sp)
+                    Text(
+                        text = dismissText,
+                        fontFamily = resolveJournalFont(dismissText, isRtl),
+                        fontSize = 15.sp,
+                        color = JournalMutedInk
+                    )
                 }
             }
         )

@@ -1679,65 +1679,101 @@ fun NotebookSectionBand(
 }
 
 /**
- * Segmented toggle control for notebook settings (Language: FR/AR, Currency: DH/rial).
- * Lightweight, soft pink pill highlight without heavy cards.
+ * Unified segmented choice control for notebook tabs & settings (Filters, Language, Currency, Security, etc.).
+ * Style:
+ * - Selected option: Subtle grey background (JournalInk alpha 0.09f) with rounded corners + underline indicator (HighlighterPink)
+ * - Non-selected option: Transparent background, muted ink text
+ * - Separator between options: Light delicate divider line ("tiret خفيفة")
  */
 @Composable
 fun <T> NotebookSegmentedControl(
     options: List<Pair<T, String>>,
     selectedOption: T,
     onSelectOption: (T) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    indicatorColor: Color = HighlighterPink
 ) {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val padH = if (options.size > 3) 5.dp else 9.dp
+    val spacing = if (options.size > 3) 2.dp else 4.dp
 
     Row(
         modifier = modifier
             .height(JournalRuleSpacing)
             .padding(horizontal = 2.dp),
         verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(spacing)
     ) {
-        options.forEach { (value, label) ->
+        options.forEachIndexed { index, (value, label) ->
             val isSelected = value == selectedOption
             val isOptionArabic = isArabicScript(label)
+
             Box(
                 modifier = Modifier
                     .height(JournalRuleSpacing)
-                    .clickable(role = Role.RadioButton, onClick = {
-                        focusManager.clearFocus()
-                        keyboardController?.hide()
-                        onSelectOption(value)
-                    })
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.RadioButton,
+                        onClick = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            onSelectOption(value)
+                        }
+                    )
                     .drawBehind {
                         if (isSelected) {
-                            val h = size.height
-                            val w = size.width
-                            val washHeight = 20.dp.toPx()
-                            val washCenterY = h - 6.dp.toPx()
-                            val washY = washCenterY - (washHeight / 2f)
-                            val padH = 7.dp.toPx()
+                            val strokeW = 1.6.dp.toPx()
+                            val underlineY = size.height - (strokeW / 2f)
+                            val insetX = 2.dp.toPx()
+                            // 1. Subtle grey background pill (gris شوية)
                             drawRoundRect(
-                                color = HighlighterPink.copy(alpha = 0.45f),
-                                topLeft = Offset(-padH, washY),
-                                size = Size(w + padH * 2, washHeight),
-                                cornerRadius = CornerRadius(6.dp.toPx())
+                                color = JournalInk.copy(alpha = 0.08f),
+                                topLeft = Offset(0f, 2.dp.toPx()),
+                                size = Size(size.width, size.height - 4.dp.toPx()),
+                                cornerRadius = CornerRadius(5.dp.toPx())
+                            )
+                            // 2. Underline indicator directly on the blue rule (تحتها خط)
+                            drawLine(
+                                color = indicatorColor,
+                                start = Offset(insetX, underlineY),
+                                end = Offset(size.width - insetX, underlineY),
+                                strokeWidth = strokeW,
+                                cap = StrokeCap.Round
                             )
                         }
                     }
-                    .padding(horizontal = 7.dp),
+                    .padding(horizontal = padH),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 Text(
                     text = label,
                     fontFamily = if (isOptionArabic) TajawalFamily else PatrickHandFamily,
-                    fontSize = if (isOptionArabic) 14.5.sp else 15.5.sp,
+                    fontSize = if (isOptionArabic) (if (options.size > 3) 12.sp else 13.5.sp) else (if (options.size > 3) 12.5.sp else 14.sp),
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = if (isSelected) JournalInk else JournalMutedInk,
                     style = TextStyle(platformStyle = NoFontPadding),
-                    modifier = Modifier.journalBaselineOnRule()
+                    modifier = Modifier.journalBaselineOnRule(opticalOffsetFromBottom = 2.dp)
                 )
+            }
+
+            // Light separator divider between choices ("tiret خفيفة")
+            if (index < options.lastIndex) {
+                Canvas(
+                    modifier = Modifier
+                        .width(6.dp)
+                        .height(JournalRuleSpacing)
+                ) {
+                    val y = size.height / 2f + 1.dp.toPx()
+                    drawLine(
+                        color = JournalRule.copy(alpha = 0.50f),
+                        start = Offset(0.5.dp.toPx(), y),
+                        end = Offset(size.width - 0.5.dp.toPx(), y),
+                        strokeWidth = 1.1.dp.toPx(),
+                        cap = StrokeCap.Round
+                    )
+                }
             }
         }
     }

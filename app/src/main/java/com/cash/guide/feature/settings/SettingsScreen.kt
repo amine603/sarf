@@ -176,11 +176,12 @@ fun SettingsScreen(
                 isCentered = false
             )
 
-            // Theme Cards Grid (2 rows of 2 cards)
+            // Theme Cards Grid (2 rows of 2 cards) - exactly 8 rules (232dp)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                    .height(JournalRuleSpacing * 8)
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Row 1: Classic Yellow & Kraft Vintage
@@ -240,7 +241,7 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .height(JournalRuleSpacing * 2)
             ) {
-                // Line 1 (29dp): Label & bullet on Start, Description on End
+                // Line 1 (29dp): Label & bullet on Start, Segmented control on End
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -272,32 +273,12 @@ fun SettingsScreen(
                         )
                     }
 
-                    Text(
-                        text = stringResource(R.string.settings_language_description),
-                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        fontSize = if (isRtl) 11.5.sp else 12.sp,
-                        fontWeight = FontWeight.Light,
-                        color = JournalMutedInk.copy(alpha = 0.75f),
-                        style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.journalBaselineOnRule()
-                    )
-                }
-
-                // Line 2 (29dp): 4 Language segmented control options sitting on rule 2
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(JournalRuleSpacing)
-                        .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.Center
-                ) {
                     NotebookSegmentedControl(
                         options = listOf(
-                            "fr" to stringResource(R.string.settings_french),
-                            "en" to stringResource(R.string.settings_english),
+                            "dar" to stringResource(R.string.settings_darija),
                             "ar" to stringResource(R.string.settings_arabic),
-                            "dar" to stringResource(R.string.settings_darija)
+                            "fr" to stringResource(R.string.settings_french),
+                            "en" to stringResource(R.string.settings_english)
                         ),
                         selectedOption = when {
                             state.currentLanguage == "dar" -> "dar"
@@ -306,6 +287,25 @@ fun SettingsScreen(
                             else -> "fr"
                         },
                         onSelectOption = { viewModel.selectLanguage(it) }
+                    )
+                }
+
+                // Line 2 (29dp): Description sitting on rule 2
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(JournalRuleSpacing)
+                        .padding(horizontal = 29.5.dp),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_language_description),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = if (isRtl) 11.5.sp else 12.sp,
+                        fontWeight = FontWeight.Light,
+                        color = JournalMutedInk.copy(alpha = 0.75f),
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
                     )
                 }
             }
@@ -639,7 +639,8 @@ fun SettingsScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f, fill = false)
                     ) {
                         Canvas(
                             modifier = Modifier
@@ -919,7 +920,8 @@ private fun JournalActionRow(
         ) {
             Row(
                 verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f, fill = false)
             ) {
                 Canvas(
                     modifier = Modifier
@@ -1015,7 +1017,7 @@ private fun ThemePackCard(
 
     Surface(
         modifier = modifier
-            .height(108.dp)
+            .height(104.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(role = Role.RadioButton, onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)

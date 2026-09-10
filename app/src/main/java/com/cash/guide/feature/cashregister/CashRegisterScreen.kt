@@ -123,6 +123,8 @@ fun CashRegisterScreen(
         modifier = modifier
             .fillMaxSize()
             .background(JournalPaper)
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .drawBehind {
                 // 1. Subtle tactile paper grain / flecks
                 val dotColor = JournalInk.copy(alpha = 0.022f)
@@ -153,8 +155,6 @@ fun CashRegisterScreen(
                     y += rowHeightPx
                 }
             }
-            .statusBarsPadding()
-            .navigationBarsPadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Line 1: Header bar strictly resting on ruled line (29dp)
@@ -240,9 +240,6 @@ fun CashRegisterScreen(
                 }
             }
 
-            // Spacer to separate header from content
-            Spacer(modifier = Modifier.height(10.dp))
-
             // Main content switcher
             when (state.step) {
                 CashRegisterStep.CALCULATOR -> {
@@ -297,163 +294,208 @@ private fun CashRegisterCalculatorContent(
             .padding(horizontal = 14.dp)
             .padding(bottom = 8.dp)
     ) {
-        // TOP: Ruled Ledger Calculation Display (Encadred with Theme Ink Outline, Fixed & Grand)
-        Box(
+        // TOP: Ruled Ledger Calculation Display (Encadred with Theme Ink Outline, Fixed & Grand, exactly 7 rules = 203dp)
+        Column(
             modifier = Modifier
-                .weight(1f)
                 .fillMaxWidth()
+                .height(JournalRuleSpacing * 7)
+                .clip(RoundedCornerShape(12.dp))
+                .border(BorderStroke(1.2.dp, JournalWritingInk), RoundedCornerShape(12.dp))
         ) {
-            Column(
+            // Line 1 (29dp): Header of the display: sketch icon + label + clear button
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(BorderStroke(1.2.dp, JournalWritingInk), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 14.dp, vertical = 12.dp)
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Header of the display: sketch icon + label + clear button
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Calculator,
-                            contentDescription = null,
-                            tint = JournalInk,
-                            size = 17.dp
-                        )
-                        val hintHeader = stringResource(R.string.cash_register_calc_title)
-                        Text(
-                            text = hintHeader,
-                            fontFamily = resolveJournalFont(hintHeader, isRtl),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = JournalMutedInk,
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    }
-
-                    if (state.calcExpression.isNotBlank()) {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(ColorCoral.copy(alpha = 0.12f))
-                                .clickable {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    onKeyClick("C")
-                                }
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            HisabiSketchIcon(
-                                symbol = HisabiSymbol.Close,
-                                contentDescription = null,
-                                tint = ColorCoral,
-                                size = 11.dp
-                            )
-                            val clearText = stringResource(R.string.cash_register_clear_input)
-                            Text(
-                                text = clearText,
-                                fontFamily = resolveJournalFont(clearText, isRtl),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ColorCoral,
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        }
-                    }
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Calculator,
+                        contentDescription = null,
+                        tint = JournalInk,
+                        size = 17.dp,
+                        modifier = Modifier.offset(y = (-4).dp)
+                    )
+                    val hintHeader = stringResource(R.string.cash_register_calc_title)
+                    Text(
+                        text = hintHeader,
+                        fontFamily = resolveJournalFont(hintHeader, isRtl),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = JournalMutedInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
+                    )
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                if (state.calcExpression.isNotBlank()) {
+                    Row(
+                        modifier = Modifier
+                            .height(JournalRuleSpacing)
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                onKeyClick("C")
+                            },
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Close,
+                            contentDescription = null,
+                            tint = ColorCoral,
+                            size = 11.dp,
+                            modifier = Modifier.offset(y = (-4).dp)
+                        )
+                        val clearText = stringResource(R.string.cash_register_clear_input)
+                        Text(
+                            text = clearText,
+                            fontFamily = resolveJournalFont(clearText, isRtl),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorCoral,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.journalBaselineOnRule()
+                        )
+                    }
+                }
+            }
 
-                // Expression line directly on paper rules
+            // Lines 2-4 (87dp = 3 rules): Expression text area resting on blue rule
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing * 3)
+                    .padding(horizontal = 14.dp),
+                contentAlignment = Alignment.BottomStart
+            ) {
                 val expressionText = state.calcExpression.ifBlank {
                     stringResource(R.string.cash_register_calc_hint)
                 }
                 Text(
                     text = expressionText,
                     fontFamily = if (state.calcExpression.isBlank()) resolveJournalFont(expressionText, isRtl) else PatrickHandFamily,
-                    fontSize = if (state.calcExpression.isBlank()) 15.sp else 30.sp,
+                    fontSize = if (state.calcExpression.isBlank()) 15.sp else 28.sp,
                     fontWeight = if (state.calcExpression.isBlank()) FontWeight.Normal else FontWeight.Medium,
                     color = if (state.calcExpression.isBlank()) JournalMutedInk.copy(alpha = 0.50f) else JournalWritingInk,
                     maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.journalBaselineOnRule()
                 )
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                HorizontalDivider(
-                    color = JournalRule.copy(alpha = 0.40f),
-                    thickness = 0.8.dp
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Evaluated total line with JournalDoubleUnderline
-                val displayTotal = state.purchaseText.ifBlank { "0" }
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.Bottom,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "= $displayTotal",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 38.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ColorOrange
-                            )
-                            Text(
-                                text = currencySuffix,
-                                fontFamily = resolveJournalFont(currencySuffix, isRtl),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalInk,
-                                modifier = Modifier.padding(bottom = 4.dp)
-                            )
-                        }
-
-                        // Secondary currency representation
-                        if (state.purchaseCentimes > 0L) {
-                            val secondaryValue = if (state.currencyUnit == MoneyUnit.DIRHAM) {
-                                val rials = MoneyMath.fromCentimes(state.purchaseCentimes, MoneyUnit.RIAL)
-                                "$rials ${stringResource(R.string.currency_rial)}"
-                            } else {
-                                val dh = MoneyMath.fromCentimes(state.purchaseCentimes, MoneyUnit.DIRHAM)
-                                "$dh ${stringResource(R.string.currency_dirham)}"
-                            }
-                            Text(
-                                text = "($secondaryValue)",
-                                fontFamily = resolveJournalFont(secondaryValue, isRtl),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = JournalMutedInk,
-                                modifier = Modifier.padding(bottom = 5.dp)
-                            )
-                        }
+            // Line 5 (29dp): Divider directly on the blue rule + optional secondary currency
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .drawBehind {
+                        drawLine(
+                            color = JournalRule.copy(alpha = 0.45f),
+                            start = Offset(0f, 0f),
+                            end = Offset(size.width, 0f),
+                            strokeWidth = 0.8.dp.toPx()
+                        )
                     }
+                    .padding(horizontal = 14.dp),
+                contentAlignment = Alignment.BottomStart
+            ) {
+                if (state.purchaseCentimes > 0L) {
+                    val secondaryValue = if (state.currencyUnit == MoneyUnit.DIRHAM) {
+                        val rials = MoneyMath.fromCentimes(state.purchaseCentimes, MoneyUnit.RIAL)
+                        "$rials ${stringResource(R.string.currency_rial)}"
+                    } else {
+                        val dh = MoneyMath.fromCentimes(state.purchaseCentimes, MoneyUnit.DIRHAM)
+                        "$dh ${stringResource(R.string.currency_dirham)}"
+                    }
+                    Text(
+                        text = "($secondaryValue)",
+                        fontFamily = resolveJournalFont(secondaryValue, isRtl),
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = JournalMutedInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
+                    )
+                }
+            }
 
-                    JournalDoubleUnderline(
-                        modifier = Modifier.padding(top = 2.dp),
+            // Line 6 (29dp): Evaluated total line resting strictly on blue rule
+            val displayTotal = state.purchaseText.ifBlank { "0" }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "= $displayTotal",
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ColorOrange,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
+                    )
+                    Text(
+                        text = currencySuffix,
+                        fontFamily = resolveJournalFont(currencySuffix, isRtl),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
+                    )
+                }
+            }
+
+            // Line 7 (29dp): Double underline line resting right underneath Rule 6
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Canvas(
+                    modifier = Modifier
+                        .width(140.dp)
+                        .height(8.dp)
+                ) {
+                    val strokeW = 1.3.dp.toPx()
+                    drawLine(
                         color = HighlighterPink,
-                        width = 180.dp
+                        start = Offset(0f, 1.dp.toPx()),
+                        end = Offset(size.width, 1.dp.toPx()),
+                        strokeWidth = strokeW,
+                        cap = StrokeCap.Round
+                    )
+                    drawLine(
+                        color = HighlighterPink,
+                        start = Offset(0f, 4.5.dp.toPx()),
+                        end = Offset(size.width, 4.5.dp.toPx()),
+                        strokeWidth = strokeW,
+                        cap = StrokeCap.Round
                     )
                 }
             }
         }
 
-        // 2 ruled lines gap between the calculation cadre and the keypad cadre
-        Spacer(modifier = Modifier.height(JournalRuleSpacing * 2))
+        // 1 ruled lines gap between the calculation cadre and the keypad cadre
+        Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
         // BOTTOM: Docked Keyboard + Journal Action button
         Column(
@@ -736,28 +778,28 @@ private fun CashRegisterChangeReturnContent(
     Column(
         modifier = modifier
             .verticalScroll(scrollState)
-            .padding(horizontal = 14.dp)
-            .padding(bottom = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(bottom = 24.dp)
     ) {
-        // SECTION 1: Total des achats (sitting directly on notebook ruled paper)
+        // Rule 1 (29dp): Total des achats (Header sitting directly on Rule 1)
         val labelTotal = stringResource(R.string.cash_register_purchase_total)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(JournalRuleSpacing),
-            verticalAlignment = Alignment.CenterVertically,
+                .height(JournalRuleSpacing)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 HisabiSketchIcon(
                     symbol = HisabiSymbol.Page,
                     contentDescription = null,
                     tint = JournalInk,
-                    size = 16.dp
+                    size = 16.dp,
+                    modifier = Modifier.offset(y = (-4).dp)
                 )
                 Text(
                     text = labelTotal,
@@ -771,7 +813,7 @@ private fun CashRegisterChangeReturnContent(
             }
 
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 if (state.purchaseText.isNotEmpty()) {
@@ -781,28 +823,27 @@ private fun CashRegisterChangeReturnContent(
                         fontSize = 12.sp,
                         color = ColorCoral,
                         fontWeight = FontWeight.Bold,
+                        style = TextStyle(platformStyle = NoFontPadding),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
                             .clickable { onPurchaseChange("") }
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                            .journalBaselineOnRule()
                     )
                 }
 
                 // Link back to calculator
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(HighlighterYellow.copy(alpha = 0.40f))
-                        .clickable(role = Role.Button, onClick = onBackToCalc)
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .height(JournalRuleSpacing)
+                        .clickable(role = Role.Button, onClick = onBackToCalc),
+                    verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     HisabiSketchIcon(
                         symbol = HisabiSymbol.Calculator,
                         contentDescription = null,
                         tint = JournalWritingInk,
-                        size = 13.dp
+                        size = 13.dp,
+                        modifier = Modifier.offset(y = (-4).dp)
                     )
                     Text(
                         text = stringResource(R.string.cash_register_back_to_calc),
@@ -810,24 +851,37 @@ private fun CashRegisterChangeReturnContent(
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalWritingInk,
-                        style = TextStyle(platformStyle = NoFontPadding)
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
                     )
                 }
             }
         }
 
-        // Purchase input row directly resting on ruled line
+        // Rule 2 (29dp): Purchase input row resting strictly on Rule 2
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .height(JournalRuleSpacing)
+                .drawBehind {
+                    // Crisp dividing line right on the blue rule (size.height)
+                    drawLine(
+                        color = JournalWritingInk.copy(alpha = 0.38f),
+                        start = Offset(14.dp.toPx(), size.height),
+                        end = Offset(size.width - 14.dp.toPx(), size.height),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                }
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             BasicTextField(
                 value = state.purchaseText,
                 onValueChange = onPurchaseChange,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .journalBaselineOnRule(),
                 textStyle = TextStyle(
                     fontFamily = PatrickHandFamily,
                     fontSize = 28.sp,
@@ -858,35 +912,32 @@ private fun CashRegisterChangeReturnContent(
                 fontFamily = resolveJournalFont(currencySuffix, isRtl),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
-                color = JournalMutedInk
+                color = JournalMutedInk,
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.journalBaselineOnRule()
             )
         }
 
-        // Dividing line between Total des achats and Montant reçu du client (clearly visible on ruled paper)
-        HorizontalDivider(
-            color = JournalWritingInk.copy(alpha = 0.38f),
-            thickness = 1.2.dp,
-            modifier = Modifier.padding(vertical = 2.dp)
-        )
-
-        // SECTION 2: Montant reçu du client
+        // Rule 3 (29dp): Montant reçu du client (Header sitting directly on Rule 3)
         val labelReceived = stringResource(R.string.cash_register_amount_received)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(JournalRuleSpacing),
-            verticalAlignment = Alignment.CenterVertically,
+                .height(JournalRuleSpacing)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 HisabiSketchIcon(
                     symbol = HisabiSymbol.Wallet,
                     contentDescription = null,
                     tint = JournalInk,
-                    size = 16.dp
+                    size = 16.dp,
+                    modifier = Modifier.offset(y = (-4).dp)
                 )
                 Text(
                     text = labelReceived,
@@ -906,26 +957,38 @@ private fun CashRegisterChangeReturnContent(
                     fontSize = 12.sp,
                     color = ColorCoral,
                     fontWeight = FontWeight.Bold,
+                    style = TextStyle(platformStyle = NoFontPadding),
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
                         .clickable { onReceivedChange("") }
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .journalBaselineOnRule()
                 )
             }
         }
 
-        // Received input row directly resting on ruled line
+        // Rule 4 (29dp): Received input row resting strictly on Rule 4
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .height(JournalRuleSpacing)
+                .drawBehind {
+                    // Crisp dividing line right on the blue rule (size.height)
+                    drawLine(
+                        color = JournalWritingInk.copy(alpha = 0.25f),
+                        start = Offset(14.dp.toPx(), size.height),
+                        end = Offset(size.width - 14.dp.toPx(), size.height),
+                        strokeWidth = 0.8.dp.toPx()
+                    )
+                }
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             BasicTextField(
                 value = state.receivedText,
                 onValueChange = onReceivedChange,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .journalBaselineOnRule(),
                 textStyle = TextStyle(
                     fontFamily = PatrickHandFamily,
                     fontSize = 28.sp,
@@ -956,14 +1019,20 @@ private fun CashRegisterChangeReturnContent(
                 fontFamily = resolveJournalFont(currencySuffix, isRtl),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
-                color = JournalMutedInk
+                color = JournalMutedInk,
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.journalBaselineOnRule()
             )
         }
 
-        // Preset Banknote Chips: [20 DH] [50 DH] [100 DH] [200 DH]
+        // Rule 5 (29dp): Preset Banknote Chips [20 DH] [50 DH] [100 DH] [200 DH]
         val presetNotes = listOf(20L, 50L, 100L, 200L)
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             presetNotes.forEach { noteDh ->
@@ -975,20 +1044,20 @@ private fun CashRegisterChangeReturnContent(
                 Box(
                     modifier = Modifier
                         .weight(1f)
+                        .height(24.dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(HighlighterYellow.copy(alpha = 0.30f))
                         .border(
                             BorderStroke(0.7.dp, JournalRule.copy(alpha = 0.55f)),
                             RoundedCornerShape(6.dp)
                         )
-                        .clickable { onPresetSelect(noteDh) }
-                        .padding(vertical = 6.dp),
+                        .clickable { onPresetSelect(noteDh) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = chipText,
                         fontFamily = PatrickHandFamily,
-                        fontSize = 14.5.sp,
+                        fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalWritingInk,
                         style = TextStyle(platformStyle = NoFontPadding)
@@ -997,18 +1066,21 @@ private fun CashRegisterChangeReturnContent(
             }
         }
 
-        // CHANGE DUE RESULT BAND (sitting directly on ruled lines)
+        // Rules 6-8: Change Due Result Band
         if (state.changeCentimes > 0L) {
             val changeDh = MoneyMath.fromCentimes(state.changeCentimes, MoneyUnit.DIRHAM)
             val changeRial = MoneyMath.fromCentimes(state.changeCentimes, MoneyUnit.RIAL)
             val changeFormatted = if (state.currencyUnit == MoneyUnit.DIRHAM) changeDh else changeRial
             val changeLabel = stringResource(R.string.cash_register_change_due)
 
-            Column(
+            // Rule 6 (29dp): Change Label
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = changeLabel,
@@ -1016,11 +1088,20 @@ private fun CashRegisterChangeReturnContent(
                     fontSize = if (isRtl) 14.5.sp else 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = JournalInk,
-                    style = TextStyle(platformStyle = NoFontPadding)
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.journalBaselineOnRule()
                 )
+            }
 
-                Spacer(Modifier.height(2.dp))
-
+            // Rule 7 (29dp): Primary Change Amount
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Center
+            ) {
                 Row(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -1028,39 +1109,46 @@ private fun CashRegisterChangeReturnContent(
                     Text(
                         text = "= $changeFormatted",
                         fontFamily = PatrickHandFamily,
-                        fontSize = 34.sp,
+                        fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ColorOrange
+                        color = ColorOrange,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
                     )
                     Text(
                         text = currencySuffix,
                         fontFamily = resolveJournalFont(currencySuffix, isRtl),
-                        fontSize = 17.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = JournalInk,
-                        modifier = Modifier.padding(bottom = 3.dp)
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
                     )
                 }
+            }
 
-                JournalDoubleUnderline(
-                    modifier = Modifier.padding(top = 2.dp),
-                    color = HighlighterPink,
-                    width = 170.dp
-                )
-
-                Spacer(Modifier.height(3.dp))
-
-                val secondaryText = if (state.currencyUnit == MoneyUnit.DIRHAM) {
-                    "= $changeRial ${stringResource(R.string.currency_rial)}"
-                } else {
-                    "= $changeDh ${stringResource(R.string.currency_dirham)}"
-                }
+            // Rule 8 (29dp): Secondary Currency Representation
+            val secondaryText = if (state.currencyUnit == MoneyUnit.DIRHAM) {
+                "= $changeRial ${stringResource(R.string.currency_rial)}"
+            } else {
+                "= $changeDh ${stringResource(R.string.currency_dirham)}"
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Center
+            ) {
                 Text(
                     text = secondaryText,
                     fontFamily = resolveJournalFont(secondaryText, isRtl),
-                    fontSize = 12.5.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    color = JournalMutedInk
+                    color = JournalMutedInk,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier.journalBaselineOnRule()
                 )
             }
         } else if (state.isExactAmount) {
@@ -1069,15 +1157,16 @@ private fun CashRegisterChangeReturnContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(JournalRuleSpacing)
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 HisabiSketchIcon(
                     symbol = HisabiSymbol.Check,
                     contentDescription = null,
                     tint = ColorEmerald,
-                    size = 17.dp
+                    size = 17.dp,
+                    modifier = Modifier.offset(y = (-4).dp)
                 )
                 Text(
                     text = exactText,
@@ -1096,15 +1185,16 @@ private fun CashRegisterChangeReturnContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(JournalRuleSpacing)
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 HisabiSketchIcon(
                     symbol = HisabiSymbol.Exclamation,
                     contentDescription = null,
                     tint = ColorCoral,
-                    size = 17.dp
+                    size = 17.dp,
+                    modifier = Modifier.offset(y = (-4).dp)
                 )
                 Text(
                     text = shortageMsg,
@@ -1118,46 +1208,56 @@ private fun CashRegisterChangeReturnContent(
             }
         }
 
+        // 1 empty notebook line spacer
+        Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
         // TSTIFA TRAY: Banknotes & Coins Board
         if (state.pieces.isNotEmpty()) {
             JournalDenominationsBoard(
                 pieces = state.pieces,
                 isRtl = isRtl
             )
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
         }
 
-        Spacer(Modifier.height(4.dp))
-
-        // Bottom bar: Client suivant action button
+        // Bottom bar: Client suivant action button (height 44dp inside 58dp container)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(HighlighterPink.copy(alpha = 0.55f))
-                .border(
-                    BorderStroke(0.85.dp, HighlighterPink.copy(alpha = 0.85f)),
-                    RoundedCornerShape(12.dp)
-                )
-                .clickable(role = Role.Button) {
-                    onNextClient()
-                },
+                .height(JournalRuleSpacing * 2)
+                .padding(horizontal = 14.dp),
             contentAlignment = Alignment.Center
         ) {
-            val nextText = stringResource(R.string.cash_register_next_client)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(HighlighterPink.copy(alpha = 0.55f))
+                    .border(
+                        BorderStroke(0.85.dp, HighlighterPink.copy(alpha = 0.85f)),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .clickable(role = Role.Button) {
+                        onNextClient()
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                Text("↺", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = JournalInk)
-                Text(
-                    text = nextText,
-                    fontFamily = resolveJournalFont(nextText, isRtl),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalInk,
-                    style = TextStyle(platformStyle = NoFontPadding)
-                )
+                val nextText = stringResource(R.string.cash_register_next_client)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("↺", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = JournalInk)
+                    Text(
+                        text = nextText,
+                        fontFamily = resolveJournalFont(nextText, isRtl),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
             }
         }
     }

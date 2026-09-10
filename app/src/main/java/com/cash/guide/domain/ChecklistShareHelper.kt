@@ -50,7 +50,7 @@ object ChecklistShareHelper {
         }
     }
 
-    fun shareAsWhatsAppTextAndLink(
+    fun shareAsTextAndLink(
         context: Context,
         title: String,
         items: List<ChecklistItemEntity>
@@ -83,6 +83,12 @@ object ChecklistShareHelper {
         }
         context.startActivity(chooser)
     }
+
+    fun shareAsWhatsAppTextAndLink(
+        context: Context,
+        title: String,
+        items: List<ChecklistItemEntity>
+    ) = shareAsTextAndLink(context, title, items)
 
     private fun renderChecklistBitmap(
         context: Context,

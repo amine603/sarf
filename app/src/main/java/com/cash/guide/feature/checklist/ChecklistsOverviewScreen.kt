@@ -73,6 +73,7 @@ import java.util.Locale
 
 private val ColorEmerald = Color(0xFF1B7A4B)
 private val ColorCoral = Color(0xFFD9534F)
+private val ColorOrange = Color(0xFFEA580C)
 
 @Composable
 fun ChecklistsOverviewScreen(
@@ -253,7 +254,7 @@ fun ChecklistsOverviewScreen(
                                 )
                                 .padding(horizontal = 14.dp)
                         ) {
-                            // Line 1: Number + Title on start, Date on end
+                            // Line 1: Number + Title on start, Status ("En cours" / "Terminé") + Trash icon on end
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -267,7 +268,7 @@ fun ChecklistsOverviewScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        text = "${index + 1}.",
+                                        text = "\u200E${index + 1}.",
                                         fontFamily = PatrickHandFamily,
                                         fontSize = 16.5.sp,
                                         fontWeight = FontWeight.Bold,
@@ -288,75 +289,69 @@ fun ChecklistsOverviewScreen(
                                     )
                                 }
 
-                                Text(
-                                    text = dateStr,
-                                    fontFamily = PatrickHandFamily,
-                                    fontSize = 12.sp,
-                                    color = JournalMutedInk.copy(alpha = 0.65f),
-                                    style = TextStyle(platformStyle = NoFontPadding),
-                                    modifier = Modifier.journalBaselineOnRule()
-                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                // Status badge + Trash icon button on far end
+                                Row(
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val statusText = if (isDone) {
+                                        if (isRtl) "مكتمل" else "Terminé"
+                                    } else {
+                                        if (isRtl) "قيد الإنجاز" else "En cours"
+                                    }
+                                    val statusColor = if (isDone) ColorEmerald else ColorOrange
+
+                                    Text(
+                                        text = statusText,
+                                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = statusColor,
+                                        style = TextStyle(platformStyle = NoFontPadding),
+                                        modifier = Modifier.journalBaselineOnRule()
+                                    )
+
+                                    // Delete checklist icon button
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .clickable(
+                                                role = Role.Button,
+                                                onClickLabel = "Supprimer cette checklist",
+                                                onClick = { viewModel.promptDeleteChecklist(item) }
+                                            )
+                                            .journalBaselineOnRule(opticalOffsetFromBottom = 0.dp),
+                                        contentAlignment = Alignment.BottomCenter
+                                    ) {
+                                        HisabiSketchIcon(
+                                            symbol = HisabiSymbol.Trash,
+                                            contentDescription = "Supprimer",
+                                            tint = JournalActionDelete.copy(alpha = 0.65f),
+                                            size = 16.dp
+                                        )
+                                    }
+                                }
                             }
 
-                            // Line 2: Status / Progress on start, Delete button on end
+                            // Line 2: Creation Date on start
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(JournalRuleSpacing),
-                                verticalAlignment = Alignment.Bottom,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                verticalAlignment = Alignment.Bottom
                             ) {
-                                // Progress Badge / Text
-                                Row(
-                                    verticalAlignment = Alignment.Bottom,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    modifier = Modifier.padding(start = 22.dp)
-                                ) {
-                                    if (total == 0) {
-                                        Text(
-                                            text = if (isRtl) "فارغة (0 عنصر)" else "Vide (0 élément)",
-                                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                            fontSize = 13.sp,
-                                            color = JournalMutedInk.copy(alpha = 0.70f),
-                                            style = TextStyle(platformStyle = NoFontPadding),
-                                            modifier = Modifier.journalBaselineOnRule()
-                                        )
-                                    } else {
-                                        Text(
-                                            text = if (isDone) {
-                                                if (isRtl) "✓ مكتملة ($total/$total)" else "✓ Terminée ($total/$total)"
-                                            } else {
-                                                if (isRtl) "$completed من $total متبقي" else "$completed / $total faits"
-                                            },
-                                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                            fontSize = 13.sp,
-                                            fontWeight = if (isDone) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isDone) ColorEmerald else JournalWritingInk,
-                                            style = TextStyle(platformStyle = NoFontPadding),
-                                            modifier = Modifier.journalBaselineOnRule()
-                                        )
-                                    }
-                                }
-
-                                // Delete checklist icon button
-                                Box(
+                                Text(
+                                    text = dateStr,
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 12.5.sp,
+                                    color = JournalMutedInk.copy(alpha = 0.65f),
+                                    style = TextStyle(platformStyle = NoFontPadding),
                                     modifier = Modifier
-                                        .size(24.dp)
-                                        .clickable(
-                                            role = Role.Button,
-                                            onClickLabel = "Supprimer cette checklist",
-                                            onClick = { viewModel.promptDeleteChecklist(item) }
-                                        )
-                                        .journalBaselineOnRule(opticalOffsetFromBottom = 0.dp),
-                                    contentAlignment = Alignment.BottomCenter
-                                ) {
-                                    HisabiSketchIcon(
-                                        symbol = HisabiSymbol.Trash,
-                                        contentDescription = "Supprimer",
-                                        tint = JournalActionDelete.copy(alpha = 0.65f),
-                                        size = 16.dp
-                                    )
-                                }
+                                        .padding(start = 22.dp)
+                                        .journalBaselineOnRule()
+                                )
                             }
                         }
                     }

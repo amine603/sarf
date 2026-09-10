@@ -93,6 +93,7 @@ import com.cash.guide.ui.notebook.NotebookCashRegisterActionButton
 import com.cash.guide.ui.notebook.NotebookChecklistActionButton
 import com.cash.guide.ui.notebook.NotebookSearchField
 import com.cash.guide.ui.notebook.NotebookSectionBand
+import com.cash.guide.ui.notebook.NotebookSegmentedControl
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -253,147 +254,17 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .height(JournalRuleSpacing)
                     .padding(horizontal = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                verticalAlignment = Alignment.Bottom
             ) {
-                // Filter: ALL (Tous / الكل)
-                val allSelected = state.selectedPaymentFilter == PaymentFilter.ALL
-                val allLabel = stringResource(R.string.filter_all)
-                Box(
-                    modifier = Modifier
-                        .height(25.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(
-                            if (allSelected) JournalInk.copy(alpha = 0.08f)
-                            else Color.Transparent
-                        )
-                        .clickable(role = Role.Tab) {
-                            viewModel.setPaymentFilter(PaymentFilter.ALL)
-                        }
-                        .drawBehind {
-                            if (allSelected) {
-                                val strokeW = 2.dp.toPx()
-                                val y = size.height - strokeW / 2
-                                val insetX = 6.dp.toPx()
-                                drawLine(
-                                    color = HighlighterPink,
-                                    start = Offset(insetX, y),
-                                    end = Offset(size.width - insetX, y),
-                                    strokeWidth = strokeW,
-                                    cap = StrokeCap.Round
-                                )
-                            }
-                        }
-                        .padding(horizontal = 11.dp, vertical = 2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = allLabel,
-                        fontFamily = resolveJournalFont(allLabel, isRtl),
-                        fontSize = if (isRtl) 13.sp else 13.5.sp,
-                        fontWeight = if (allSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (allSelected) JournalInk else JournalMutedInk,
-                        style = TextStyle(platformStyle = NoFontPadding)
-                    )
-                }
-
-                // Vertical Divider 1
-                Box(
-                    modifier = Modifier
-                        .width(1.dp)
-                        .height(11.dp)
-                        .background(JournalRule.copy(alpha = 0.70f), RoundedCornerShape(0.5.dp))
+                NotebookSegmentedControl(
+                    options = listOf(
+                        PaymentFilter.ALL to stringResource(R.string.filter_all),
+                        PaymentFilter.UNPAID to stringResource(R.string.filter_unpaid),
+                        PaymentFilter.PAID to stringResource(R.string.filter_paid)
+                    ),
+                    selectedOption = state.selectedPaymentFilter,
+                    onSelectOption = { viewModel.setPaymentFilter(it) }
                 )
-
-                // Filter: UNPAID (Crédits / الكريدي)
-                val unpaidSelected = state.selectedPaymentFilter == PaymentFilter.UNPAID
-                val unpaidLabel = stringResource(R.string.filter_unpaid)
-                Box(
-                    modifier = Modifier
-                        .height(25.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(
-                            if (unpaidSelected) JournalInk.copy(alpha = 0.08f)
-                            else Color.Transparent
-                        )
-                        .clickable(role = Role.Tab) {
-                            viewModel.setPaymentFilter(PaymentFilter.UNPAID)
-                        }
-                        .drawBehind {
-                            if (unpaidSelected) {
-                                val strokeW = 2.dp.toPx()
-                                val y = size.height - strokeW / 2
-                                val insetX = 6.dp.toPx()
-                                drawLine(
-                                    color = HighlighterPink,
-                                    start = Offset(insetX, y),
-                                    end = Offset(size.width - insetX, y),
-                                    strokeWidth = strokeW,
-                                    cap = StrokeCap.Round
-                                )
-                            }
-                        }
-                        .padding(horizontal = 11.dp, vertical = 2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = unpaidLabel,
-                        fontFamily = resolveJournalFont(unpaidLabel, isRtl),
-                        fontSize = if (isRtl) 13.sp else 13.5.sp,
-                        fontWeight = if (unpaidSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (unpaidSelected) JournalInk else JournalMutedInk,
-                        style = TextStyle(platformStyle = NoFontPadding)
-                    )
-                }
-
-                // Vertical Divider 2
-                Box(
-                    modifier = Modifier
-                        .width(1.dp)
-                        .height(11.dp)
-                        .background(JournalRule.copy(alpha = 0.70f), RoundedCornerShape(0.5.dp))
-                )
-
-                // Filter: PAID (Payés / الخالص)
-                val paidSelected = state.selectedPaymentFilter == PaymentFilter.PAID
-                val paidLabel = stringResource(R.string.filter_paid)
-                Box(
-                    modifier = Modifier
-                        .height(25.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(
-                            if (paidSelected) JournalInk.copy(alpha = 0.08f)
-                            else Color.Transparent
-                        )
-                        .clickable(role = Role.Tab) {
-                            viewModel.setPaymentFilter(PaymentFilter.PAID)
-                        }
-                        .drawBehind {
-                            if (paidSelected) {
-                                val strokeW = 2.dp.toPx()
-                                val y = size.height - strokeW / 2
-                                val insetX = 6.dp.toPx()
-                                drawLine(
-                                    color = HighlighterPink,
-                                    start = Offset(insetX, y),
-                                    end = Offset(size.width - insetX, y),
-                                    strokeWidth = strokeW,
-                                    cap = StrokeCap.Round
-                                )
-                            }
-                        }
-                        .padding(horizontal = 11.dp, vertical = 2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = paidLabel,
-                        fontFamily = resolveJournalFont(paidLabel, isRtl),
-                        fontSize = if (isRtl) 13.sp else 13.5.sp,
-                        fontWeight = if (paidSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (paidSelected) JournalInk else JournalMutedInk,
-                        style = TextStyle(platformStyle = NoFontPadding)
-                    )
-                }
             }
 
             // If filtering by UNPAID, show the total debt banner (29dp)

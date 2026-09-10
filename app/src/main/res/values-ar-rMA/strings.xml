@@ -295,7 +295,7 @@
     <string name="cash_register_pieces_heading">الفلوس لي غادي ترجع ليه</string>
     <string name="cash_register_quick_presets">الورقة لي عطا :</string>
     <string name="cash_register_clear_input">مسح</string>
-    <string name="cash_register_go_to_change">دوز لحساب الصرف →</string>
+    <string name="cash_register_go_to_change">← دوز لحساب الصرف</string>
     <string name="cash_register_back_to_calc">بدّل الحساب</string>
     <string name="cash_register_calc_title">حساب السلعة</string>
     <string name="cash_register_calc_hint">كتب الثمن ولا جمع السلعة بالزائد</string>

@@ -359,7 +359,7 @@
     <string name="cash_register_pieces_heading">الفئات المستحقة للإرجاع</string>
     <string name="cash_register_quick_presets">الورقة النقدية المستلمة :</string>
     <string name="cash_register_clear_input">مسح</string>
-    <string name="cash_register_go_to_change">حساب متبقي النقود →</string>
+    <string name="cash_register_go_to_change">← حساب متبقي النقود</string>
     <string name="cash_register_back_to_calc">تعديل المشتريات</string>
     <string name="cash_register_calc_title">حاسبة المشتريات</string>
     <string name="cash_register_calc_hint">اكتب المبلغ أو اجمع السلع مباشرة</string>
