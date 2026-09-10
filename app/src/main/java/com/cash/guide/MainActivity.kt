@@ -20,6 +20,9 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         deepLinkUriState.value = intent?.data
 
+        // Initialize Google Mobile Ads SDK (AdMob)
+        com.cash.guide.domain.ads.AdMobManager.getInstance(this).initialize()
+
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(
                 android.graphics.Color.TRANSPARENT,

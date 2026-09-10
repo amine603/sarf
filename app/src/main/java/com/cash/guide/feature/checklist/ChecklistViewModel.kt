@@ -255,6 +255,17 @@ class ChecklistViewModel(
         }
     }
 
+    fun addMultipleItems(items: List<String>) {
+        val current = _uiState.value.currentChecklist ?: return
+        viewModelScope.launch {
+            items.forEach { text ->
+                if (text.isNotBlank()) {
+                    checklistRepository.addItem(current.checklist.id, text.trim())
+                }
+            }
+        }
+    }
+
     fun toggleItem(itemId: String, isChecked: Boolean) {
         viewModelScope.launch {
             checklistRepository.toggleItem(itemId, isChecked)

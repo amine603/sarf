@@ -34,10 +34,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import android.widget.Toast
+import com.cash.guide.ui.components.AiVoiceInputDialog
+import com.cash.guide.ui.components.AiVoiceInputTarget
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -134,6 +140,7 @@ fun CalculationEditorScreen(
     val isRtl = layoutDirection == LayoutDirection.Rtl
     var showExportSheet by remember { mutableStateOf(false) }
     var showBreakdownSheet by rememberSaveable { mutableStateOf(false) }
+    var showAiVoiceDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(calculationId, initialGroupId, initialType, initialCurrency, initialTitle, templateId) {
         val currencyEnum = initialCurrency?.let { runCatching { MoneyUnit.valueOf(it) }.getOrNull() }
@@ -323,15 +330,44 @@ fun CalculationEditorScreen(
                 // 1 empty notebook line before Add Row to prevent accidental taps (faux clic)
                 Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-                // Add Row Button
-                JournalAddRowButton(
-                    onAddRow = {
-                        viewModel.addNewRow()
-                        coroutineScope.launch {
-                            listState.animateScrollToItem(state.rows.size)
+                // Add Row Button & AI Voice Dictation Button
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        JournalAddRowButton(
+                            onAddRow = {
+                                viewModel.addNewRow()
+                                coroutineScope.launch {
+                                    listState.animateScrollToItem(state.rows.size)
+                                }
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFF1B7A4B),
+                        shadowElevation = 2.dp,
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clickable { showAiVoiceDialog = true }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = "AI Voice Dictation",
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
                         }
                     }
-                )
+                }
 
                 // Exactly 2 empty notebook lines between Add Row and Total
                 Spacer(modifier = Modifier.height(JournalRuleSpacing * 2))
@@ -457,6 +493,22 @@ fun CalculationEditorScreen(
             MoneyBreakdownSheet(
                 totalCentimes = state.totalCentimes,
                 onDismiss = { showBreakdownSheet = false }
+            )
+        }
+
+        // AI Voice Input Dialog
+        if (showAiVoiceDialog) {
+            AiVoiceInputDialog(
+                target = AiVoiceInputTarget.CALCULATION,
+                onDismiss = { showAiVoiceDialog = false },
+                onCalculationResult = { result ->
+                    viewModel.addAiEntries(result.entries, result.title)
+                    Toast.makeText(
+                        context,
+                        if (isRtl) "تمت إضافة ${result.entries.size} عمليات بالذكاء الاصطناعي 🪄" else "${result.entries.size} lignes ajoutées avec l'IA 🪄",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             )
         }
     }

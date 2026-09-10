@@ -1,9 +1,19 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+val geminiApiKey: String = localProperties.getProperty("gemini.api.key", "")
 
 android {
     namespace = "com.cash.guide"
@@ -18,6 +28,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
+
         // Vector drawable support
         vectorDrawables {
             useSupportLibrary = true
@@ -107,6 +119,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     
     // Lint options for Play Store compliance
@@ -156,6 +169,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.google.play.services.ads)
 
     // Room persistence
     implementation(libs.androidx.room.runtime)

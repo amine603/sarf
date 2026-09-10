@@ -31,11 +31,17 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import android.widget.Toast
+import com.cash.guide.ui.components.AiVoiceInputDialog
+import com.cash.guide.ui.components.AiVoiceInputTarget
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -111,6 +117,7 @@ fun ChecklistScreen(
 
     var showShareMenu by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showAiVoiceDialog by remember { mutableStateOf(false) }
 
     BackHandler {
         if (state.activeInputTarget != ChecklistInputTarget.NONE) {
@@ -601,15 +608,16 @@ fun ChecklistScreen(
                 Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
             }
 
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(JournalPaper)
-                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .background(JournalPaper)
                         .border(
@@ -706,6 +714,26 @@ fun ChecklistScreen(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Surface(
+                    shape = CircleShape,
+                    color = ColorEmerald,
+                    shadowElevation = 2.dp,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clickable { showAiVoiceDialog = true }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Mic,
+                            contentDescription = "AI Voice Assistant",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
             }
 
             if (state.activeInputTarget != ChecklistInputTarget.NONE) {
@@ -779,6 +807,21 @@ fun ChecklistScreen(
                         color = JournalMutedInk
                     )
                 }
+            }
+        )
+    }
+
+    if (showAiVoiceDialog) {
+        AiVoiceInputDialog(
+            target = AiVoiceInputTarget.CHECKLIST,
+            onDismiss = { showAiVoiceDialog = false },
+            onChecklistResult = { result ->
+                viewModel.addMultipleItems(result.items)
+                Toast.makeText(
+                    context,
+                    if (isRtl) "تمت إضافة ${result.items.size} عناصر بالذكاء الاصطناعي 🪄" else "${result.items.size} éléments ajoutés avec l'IA 🪄",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         )
     }

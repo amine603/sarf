@@ -272,6 +272,40 @@ class CalculationEditorViewModel(
         scheduleDraftSave()
     }
 
+    fun addAiEntries(entries: List<com.cash.guide.domain.ai.CalculationAiEntry>, suggestedTitle: String = "") {
+        if (entries.isEmpty()) return
+        _uiState.update { current ->
+            val existingRows = current.rows.filter { it.title.text.isNotBlank() || it.amount.text.isNotBlank() }
+            val newRows = entries.map { entry ->
+                val amountStr = if (entry.amount % 1.0 == 0.0) {
+                    entry.amount.toLong().toString()
+                } else {
+                    String.format(java.util.Locale.US, "%.2f", entry.amount)
+                }
+                EditorRowUiState(
+                    id = nextRowId++,
+                    title = TextFieldValue(entry.label, TextRange(entry.label.length)),
+                    amount = TextFieldValue(amountStr, TextRange(amountStr.length)),
+                    rawExpression = amountStr
+                )
+            }
+            val combined = (existingRows + newRows).ifEmpty { listOf(EditorRowUiState(id = nextRowId++)) }
+            val updatedTitle = if (current.title.text.isBlank() && suggestedTitle.isNotBlank()) {
+                TextFieldValue(suggestedTitle, TextRange(suggestedTitle.length))
+            } else {
+                current.title
+            }
+            current.copy(
+                title = updatedTitle,
+                rows = combined,
+                activeRowId = combined.lastOrNull()?.id,
+                activeField = ActiveField.NONE,
+                isDirty = true
+            )
+        }
+        scheduleDraftSave()
+    }
+
     fun updateRowTitle(id: Long, value: TextFieldValue) {
         _uiState.update { state ->
             val updated = state.rows.map { row ->
