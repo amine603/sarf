@@ -18,9 +18,17 @@ data class ChecklistAiResult(
     val items: List<String>
 )
 
+data class ExistingCalculationRowContext(
+    val id: String,
+    val index: Int, // 1-based index (e.g. 1, 2, 3)
+    val label: String,
+    val currentAmount: Double
+)
+
 data class CalculationAiEntry(
     val label: String,
-    val amount: Double
+    val amount: Double,
+    val existingRowId: String? = null // if non-null, this is an update to an existing row!
 )
 
 data class CalculationAiResult(
@@ -39,24 +47,38 @@ object GeminiDarijaService {
         return BuildConfig.GEMINI_API_KEY
     }
 
+    private fun getScriptInstruction(script: AiOutputScript): String {
+        return when (script) {
+            AiOutputScript.ARABIC -> "Output ALL item names and titles in Moroccan Arabic / Darija using Arabic script (e.g. بطاطا، مطيشة، حليب، لحم بقري)."
+            AiOutputScript.FRANCO -> "Output ALL item names and titles in Moroccan Franco-Arabe / Darija Chati using Latin letters and numbers 3 (ع), 7 (ح), 9 (ق) (e.g. Batata, Maticha, 7lib, L7em lbaqri)."
+            AiOutputScript.FRENCH -> "Output ALL item names and titles translated into clean, natural French (e.g. Pommes de terre, Tomates, Lait, Viande de boeuf)."
+        }
+    }
+
     /**
-     * Parses a spoken Darija sentence into a structured shopping checklist.
+     * Parses a spoken Darija/Arabic/French sentence into a structured shopping checklist.
      */
-    suspend fun parseChecklistFromDarija(userSpeech: String): ChecklistAiResult? = withContext(Dispatchers.IO) {
+    suspend fun parseChecklistFromDarija(
+        userSpeech: String,
+        outputScript: AiOutputScript = AiOutputScript.ARABIC
+    ): ChecklistAiResult? = withContext(Dispatchers.IO) {
         val apiKey = getApiKey()
         if (apiKey.isBlank()) {
             Log.e(TAG, "Gemini API key is missing")
             return@withContext null
         }
 
+        val scriptRule = getScriptInstruction(outputScript)
+
         val systemPrompt = """
-            You are an expert Moroccan Darija assistant for a notebook app called "Sarf".
-            The user spoke or dictated a list of items or groceries in Moroccan Darija, Arabic, or French.
-            Extract ALL items into a clean list, separating each item even if spoken rapidly in a single long sentence.
+            You are an expert Moroccan Darija assistant for the notebook app "Sarf".
+            The user dictated a list of items or groceries in Moroccan Darija, Arabic, or French.
+            Extract ALL items into a clean list, separating each item even if spoken rapidly in a single sentence.
             If the user mentioned quantities (e.g. 2kg, نص كيلو, رابعة, بكية, قرعة, ربطة, 3 حبات, 5 لتر), include the quantity in the item label.
+            $scriptRule
             Respond ONLY with a valid JSON object matching this schema:
             {
-               "title": "a short title in Arabic/Darija e.g. تقضية or سخرة",
+               "title": "short title",
                "items": ["item 1 with quantity", "item 2 with quantity", ...]
             }
             Do not wrap in markdown quotes or codeblocks. Output pure JSON only.
@@ -88,31 +110,58 @@ object GeminiDarijaService {
 
     /**
      * Parses a spoken Darija sentence into accounting ledger rows with amounts in Dirhams.
+     * Supports:
+     * 1. Creating NEW entries.
+     * 2. Updating existing rows if the user specifies prices for already listed items (by name or row index).
      * Amounts are OPTIONAL: items without specified price will have amount = 0.0.
      */
-    suspend fun parseCalculationFromDarija(userSpeech: String): CalculationAiResult? = withContext(Dispatchers.IO) {
+    suspend fun parseCalculationFromDarija(
+        userSpeech: String,
+        outputScript: AiOutputScript = AiOutputScript.ARABIC,
+        existingRows: List<ExistingCalculationRowContext> = emptyList()
+    ): CalculationAiResult? = withContext(Dispatchers.IO) {
         val apiKey = getApiKey()
         if (apiKey.isBlank()) {
             Log.e(TAG, "Gemini API key is missing")
             return@withContext null
         }
 
+        val scriptRule = getScriptInstruction(outputScript)
+
+        val existingContextBuilder = StringBuilder()
+        if (existingRows.isNotEmpty()) {
+            existingContextBuilder.append("\nCURRENT EXISTING ROWS IN THE CALCULATION:\n")
+            existingRows.forEach { row ->
+                existingContextBuilder.append("- Row #${row.index} [ID: \"${row.id}\"]: \"${row.label}\", current amount: ${row.currentAmount} DH\n")
+            }
+            existingContextBuilder.append("""
+                UPDATE RULES:
+                - If the user specifies or updates the price for an EXISTING item (either by row number like "لارتيكل 1" / "السطر الثاني", or by matching the item name like "بطاطا دير فيها 10 دراهم"):
+                  Return that item with its "existingRowId": "<row_id>" and the updated "amount" in Dirhams!
+                - If the user mentions NEW items that are not in the existing rows, return them with "existingRowId": null.
+                - DO NOT return existing rows that were NOT mentioned or NOT updated by the user.
+            """.trimIndent())
+        }
+
         val systemPrompt = """
             You are an expert Moroccan accountant assistant for the app "Sarf".
-            The user spoke or dictated monetary entries, purchases, or expenses in Moroccan Darija, French, or Arabic.
-            AMOUNTS ARE OPTIONAL:
+            The user dictated monetary entries, purchases, or expenses in Moroccan Darija, French, or Arabic.
+            $existingContextBuilder
+
+            AMOUNTS & CURRENCY CONVERSIONS:
             - If the user mentions a price for an item, convert it to DIRHAMS (MAD):
               * "ريال" (Riyal): 1 Riyal = 0.05 Dirham. (Example: 100 ريال = 5 DH, 500 ريال = 25 DH, 1000 ريال = 50 DH, 2000 ريال = 100 DH).
               * "فرانك" (Franc): 1 Franc = 0.01 Dirham. (Example: 1000 فرانك = 10 DH).
               * "درهم" (Dirham): 1 Dirham = 1 DH.
-            - If the user DOES NOT mention an amount or price for an item (e.g. just said item names), set amount to 0.0. DO NOT omit or drop the item! Include every item mentioned.
-            Extract each entry label and its numeric amount in Dirhams (or 0.0 if not specified).
+            - If the user DOES NOT mention an amount or price for a new item, set amount to 0.0. DO NOT omit or drop the item! Include every item mentioned.
+            $scriptRule
+
             Respond ONLY with a valid JSON object matching this schema:
             {
-               "title": "short title in Arabic/Darija e.g. مصاريف or حساب",
+               "title": "short title",
                "entries": [
-                  { "label": "description", "amount": 150.0 },
-                  { "label": "item without price", "amount": 0.0 }
+                  { "label": "description", "amount": 150.0, "existingRowId": null },
+                  { "label": "updated item", "amount": 25.0, "existingRowId": "id_if_updating_existing_row_else_null" }
                ]
             }
             Do not wrap in markdown code blocks. Output pure JSON only.
@@ -133,8 +182,16 @@ object GeminiDarijaService {
                 val obj = entriesArr.getJSONObject(i)
                 val label = obj.optString("label", "بند").trim()
                 val amount = obj.optDouble("amount", 0.0)
+                val rawRowId = obj.optString("existingRowId", "").trim()
+                val existingRowId = if (rawRowId.isNotBlank() && rawRowId != "null") rawRowId else null
                 if (label.isNotBlank()) {
-                    entries.add(CalculationAiEntry(label = label, amount = maxOf(0.0, amount)))
+                    entries.add(
+                        CalculationAiEntry(
+                            label = label,
+                            amount = maxOf(0.0, amount),
+                            existingRowId = existingRowId
+                        )
+                    )
                 }
             }
             CalculationAiResult(title = title, entries = entries)
@@ -165,8 +222,8 @@ object GeminiDarijaService {
             conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-            conn.connectTimeout = 8000
-            conn.readTimeout = 10000
+            conn.connectTimeout = 7000
+            conn.readTimeout = 8000
             conn.doOutput = true
 
             val requestBody = JSONObject().apply {
@@ -181,6 +238,14 @@ object GeminiDarijaService {
                     })
                 }
                 put("contents", contents)
+
+                // High speed generation config with JSON schema enforcement and zero temperature
+                val genConfig = JSONObject().apply {
+                    put("temperature", 0.1)
+                    put("responseMimeType", "application/json")
+                    put("maxOutputTokens", 800)
+                }
+                put("generationConfig", genConfig)
             }
 
             OutputStreamWriter(conn.outputStream, StandardCharsets.UTF_8).use { os ->

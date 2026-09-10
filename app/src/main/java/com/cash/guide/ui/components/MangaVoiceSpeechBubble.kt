@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -47,18 +48,21 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cash.guide.domain.ai.AiOutputScript
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.resolveJournalFont
 
 /**
- * Comic / Manga speech bubble shape with a pointer arrow at the bottom right.
+ * Comic / Manga speech bubble shape with a pointer arrow at the bottom.
+ * If [forceRightArrow] is true, the arrow is positioned at the right (width - 26dp) regardless of RTL.
  */
 class MangaSpeechBubbleShape(
     private val cornerRadius: Dp = 12.dp,
     private val arrowWidth: Dp = 14.dp,
     private val arrowHeight: Dp = 8.dp,
-    private val arrowCenterOffset: Dp = 26.dp
+    private val arrowCenterOffset: Dp = 26.dp,
+    private val forceRightArrow: Boolean = false
 ) : Shape {
     override fun createOutline(
         size: Size,
@@ -71,10 +75,11 @@ class MangaSpeechBubbleShape(
         val centerOffset = with(density) { arrowCenterOffset.toPx() }
 
         val bodyBottom = size.height - ah
-        val arrowTipX = if (layoutDirection == LayoutDirection.Rtl) {
-            centerOffset.coerceIn(cr + aw / 2f, size.width - cr - aw / 2f)
-        } else {
+        val isRight = forceRightArrow || layoutDirection == LayoutDirection.Ltr
+        val arrowTipX = if (isRight) {
             (size.width - centerOffset).coerceIn(cr + aw / 2f, size.width - cr - aw / 2f)
+        } else {
+            centerOffset.coerceIn(cr + aw / 2f, size.width - cr - aw / 2f)
         }
         val arrowLeft = arrowTipX - aw / 2f
         val arrowRight = arrowTipX + aw / 2f
@@ -100,17 +105,24 @@ class MangaSpeechBubbleShape(
 
 /**
  * Manga-style live voice transcription bubble.
- * Stretches horizontally above the input bar, with a speech tail pointing down to the mic button.
+ * Stretches horizontally above the mic button, with a speech tail pointing down to it.
  */
 @Composable
 fun MangaVoiceSpeechBubble(
     liveTranscript: String,
     isAnalyzing: Boolean,
+    currentScript: AiOutputScript = AiOutputScript.ARABIC,
+    onScriptSelected: (AiOutputScript) -> Unit = {},
+    forceRightArrow: Boolean = false,
     onCancel: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
-    val shape = MangaSpeechBubbleShape(cornerRadius = 12.dp, arrowHeight = 8.dp)
+    val shape = MangaSpeechBubbleShape(
+        cornerRadius = 12.dp,
+        arrowHeight = 8.dp,
+        forceRightArrow = forceRightArrow
+    )
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by infiniteTransition.animateFloat(
@@ -136,13 +148,13 @@ fun MangaVoiceSpeechBubble(
             .clip(shape)
             .background(Color(0xFFFFFDF5))
             .border(1.3.dp, Color(0xFF2C3E50).copy(alpha = 0.85f), shape)
-            .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 15.dp) // extra bottom padding for arrow
+            .padding(start = 14.dp, end = 14.dp, top = 7.dp, bottom = 15.dp) // extra bottom padding for arrow
     ) {
         if (isAnalyzing) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 46.dp),
+                    .heightIn(min = 52.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -153,8 +165,8 @@ fun MangaVoiceSpeechBubble(
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "جاري التحليل واستخراج السلعة بالذكاء الاصطناعي 🪄...",
-                    fontFamily = resolveJournalFont("جاري التحليل واستخراج السلعة", true),
+                    text = "جاري التحليل واستخراج البنود بالذكاء الاصطناعي 🪄...",
+                    fontFamily = resolveJournalFont("جاري التحليل واستخراج البنود", true),
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF1B7A4B)
@@ -175,7 +187,7 @@ fun MangaVoiceSpeechBubble(
                         contentDescription = "إلغاء",
                         tint = JournalMutedInk.copy(alpha = 0.7f),
                         modifier = Modifier
-                            .size(16.dp)
+                            .size(18.dp)
                             .clickable { onCancel() }
                     )
 
@@ -206,7 +218,49 @@ fun MangaVoiceSpeechBubble(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                // Output Script Selector Chips (العربية | العرنسية Franco | Français)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 3.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "شكل الكتابة:",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = JournalMutedInk,
+                        modifier = Modifier.padding(end = 5.dp)
+                    )
+                    AiOutputScript.entries.forEach { script ->
+                        val isSelected = currentScript == script
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 3.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (isSelected) Color(0xFF1B7A4B) else Color(0xFFEAE7D8).copy(alpha = 0.5f)
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isSelected) Color(0xFF1B7A4B) else JournalMutedInk.copy(alpha = 0.35f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .clickable { onScriptSelected(script) }
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = script.label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) Color.White else JournalInk
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
 
                 // Transcription area (compact with scroll)
                 Box(

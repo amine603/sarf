@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -42,9 +43,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import android.widget.Toast
-import com.cash.guide.ui.components.AiVoiceAssistantButton
+import com.cash.guide.domain.ai.ExistingCalculationRowContext
+import com.cash.guide.ui.components.AiVoiceDockedBottomButton
 import com.cash.guide.ui.components.AiVoiceInputTarget
-import com.cash.guide.ui.components.AiVoiceRowContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -73,6 +74,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -294,13 +296,16 @@ fun CalculationEditorScreen(
                 }
             }
 
-            // Ruled Paper Content
-            JournalRuledDocument(
-                listState = listState,
+            Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
             ) {
+                // Ruled Paper Content
+                JournalRuledDocument(
+                    listState = listState,
+                    modifier = Modifier.fillMaxSize()
+                ) {
                 // Breathing space above the first row, perfectly aligned with the ruled notebook grid
                 Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
@@ -330,31 +335,20 @@ fun CalculationEditorScreen(
                 // 1 empty notebook line before Add Row to prevent accidental taps (faux clic)
                 Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-                // Add Row Button & AI Voice Dictation Button with Manga Speech Bubble
-                AiVoiceRowContainer(
-                    target = AiVoiceInputTarget.CALCULATION,
-                    onCalculationResult = { result ->
-                        viewModel.addAiEntries(result.entries, result.title)
-                        Toast.makeText(
-                            context,
-                            if (isRtl) "تمت إضافة ${result.entries.size} عمليات بالذكاء الاصطناعي 🪄" else "${result.entries.size} lignes ajoutées avec l'IA 🪄",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    },
+                // Add Row Button
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 14.dp)
                 ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        JournalAddRowButton(
-                            onAddRow = {
-                                viewModel.addNewRow()
-                                coroutineScope.launch {
-                                    listState.animateScrollToItem(state.rows.size)
-                                }
+                    JournalAddRowButton(
+                        onAddRow = {
+                            viewModel.addNewRow()
+                            coroutineScope.launch {
+                                listState.animateScrollToItem(state.rows.size)
                             }
-                        )
-                    }
+                        }
+                    )
                 }
 
                 // Exactly 2 empty notebook lines between Add Row and Total
@@ -371,8 +365,68 @@ fun CalculationEditorScreen(
                     onShowBreakdown = { showBreakdownSheet = true }
                 )
 
-                Spacer(modifier = Modifier.height(JournalRuleSpacing * 2))
+                // Extra clearance so content can scroll completely above the bottom-right AI button
+                Spacer(modifier = Modifier.height(JournalRuleSpacing * 4))
             }
+
+            // Pinned Bottom-Right AI Voice Assistant Button with Manga Speech Bubble
+            if (!state.calculator.isVisible) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    AiVoiceDockedBottomButton(
+                        target = AiVoiceInputTarget.CALCULATION,
+                        existingRows = state.rows.mapIndexed { idx, row ->
+                            ExistingCalculationRowContext(
+                                id = row.id.toString(),
+                                index = idx + 1,
+                                label = row.title.text.ifBlank { "السطر ${idx + 1}" },
+                                currentAmount = row.amount.text.toDoubleOrNull() ?: 0.0
+                            )
+                        },
+                        onCalculationResult = { result ->
+                            val updates = result.entries.filter { it.existingRowId != null }
+                            updates.forEach { entry ->
+                                val rowIdLong = entry.existingRowId?.toLongOrNull()
+                                if (rowIdLong != null) {
+                                    val amtStr = if (entry.amount <= 0.0) {
+                                        ""
+                                    } else if (entry.amount % 1.0 == 0.0) {
+                                        entry.amount.toLong().toString()
+                                    } else {
+                                        String.format(java.util.Locale.US, "%.2f", entry.amount)
+                                    }
+                                    viewModel.updateRowAmount(
+                                        rowIdLong,
+                                        TextFieldValue(amtStr, TextRange(amtStr.length))
+                                    )
+                                    val existingRow = state.rows.find { it.id == rowIdLong }
+                                    if (existingRow != null && (existingRow.title.text.isBlank() || existingRow.title.text.startsWith("السطر"))) {
+                                        viewModel.updateRowTitle(
+                                            rowIdLong,
+                                            TextFieldValue(entry.label, TextRange(entry.label.length))
+                                        )
+                                    }
+                                }
+                            }
+                            val newEntries = result.entries.filter { it.existingRowId == null }
+                            if (newEntries.isNotEmpty()) {
+                                viewModel.addAiEntries(newEntries, result.title)
+                            }
+                            val count = result.entries.size
+                            Toast.makeText(
+                                context,
+                                if (isRtl) "تمت معالجة $count عمليات بالذكاء الاصطناعي 🪄" else "$count opérations traitées avec l'IA 🪄",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    )
+                }
+            }
+        }
 
             // Keyboard Dock
             if (state.keyboardMode != JournalKeyboardMode.NONE) {

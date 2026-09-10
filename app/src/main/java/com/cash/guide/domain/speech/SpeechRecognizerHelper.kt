@@ -2,6 +2,7 @@ package com.cash.guide.domain.speech
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -25,6 +26,8 @@ class SpeechRecognizerHelper(private val context: Context) {
 
     private var speechRecognizer: SpeechRecognizer? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+    private var wasSystemMuted = false
 
     private val _state = MutableStateFlow(SpeechRecognitionState.IDLE)
     val state: StateFlow<SpeechRecognitionState> = _state.asStateFlow()
@@ -80,8 +83,31 @@ class SpeechRecognizerHelper(private val context: Context) {
         }
     }
 
+    private fun muteBeeps() {
+        if (wasSystemMuted) return
+        try {
+            audioManager?.adjustStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_MUTE, 0)
+            audioManager?.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_MUTE, 0)
+            wasSystemMuted = true
+        } catch (e: Exception) {
+            Log.w(TAG, "Cannot mute system stream beeps", e)
+        }
+    }
+
+    private fun unmuteBeeps() {
+        if (!wasSystemMuted) return
+        try {
+            audioManager?.adjustStreamVolume(AudioManager.STREAM_SYSTEM, AudioManager.ADJUST_UNMUTE, 0)
+            audioManager?.adjustStreamVolume(AudioManager.STREAM_NOTIFICATION, AudioManager.ADJUST_UNMUTE, 0)
+            wasSystemMuted = false
+        } catch (e: Exception) {
+            Log.w(TAG, "Cannot unmute system stream beeps", e)
+        }
+    }
+
     private fun startListeningSafe() {
         if (!isUserRecording) return
+        muteBeeps()
         try {
             if (speechRecognizer == null) {
                 initRecognizer()
@@ -105,9 +131,13 @@ class SpeechRecognizerHelper(private val context: Context) {
             putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", arrayOf("ar", "fr-FR", Locale.getDefault().toLanguageTag()))
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 60000L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 4000L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3500L)
+            // 5 minutes max, 15 seconds complete silence timeout to prevent Samsung beep loop
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 300000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 15000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 12000L)
+            putExtra("android.speech.extras.SPEECH_INPUT_MINIMUM_LENGTH_MILLIS", 300000L)
+            putExtra("android.speech.extras.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS", 15000L)
+            putExtra("android.speech.extras.SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS", 12000L)
         }
     }
 
@@ -230,6 +260,7 @@ class SpeechRecognizerHelper(private val context: Context) {
     fun stopListening() {
         isUserRecording = false
         mainHandler.removeCallbacksAndMessages(null)
+        unmuteBeeps()
         try {
             speechRecognizer?.stopListening()
             speechRecognizer?.destroy()

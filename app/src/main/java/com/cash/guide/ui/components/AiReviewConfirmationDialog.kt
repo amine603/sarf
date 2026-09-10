@@ -1,4 +1,4 @@
-﻿package com.cash.guide.ui.components
+package com.cash.guide.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -286,7 +286,8 @@ fun AiChecklistReviewDialog(
 
 data class EditableAiCalcEntry(
     var label: String,
-    var amountStr: String
+    var amountStr: String,
+    val existingRowId: String? = null
 )
 
 @Composable
@@ -300,7 +301,7 @@ fun AiCalculationReviewDialog(
         mutableStateListOf<EditableAiCalcEntry>().apply {
             addAll(initialEntries.map {
                 val str = if (it.amount <= 0.0) "" else if (it.amount % 1.0 == 0.0) it.amount.toLong().toString() else String.format(java.util.Locale.US, "%.2f", it.amount)
-                EditableAiCalcEntry(it.label, str)
+                EditableAiCalcEntry(it.label, str, it.existingRowId)
             })
         }
     }
@@ -386,6 +387,22 @@ fun AiCalculationReviewDialog(
                                 .padding(horizontal = 8.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            if (entry.existingRowId != null) {
+                                Surface(
+                                    color = Color(0xFFE3F2FD),
+                                    shape = RoundedCornerShape(4.dp),
+                                    modifier = Modifier.padding(end = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "تحديث 🔄",
+                                        color = Color(0xFF1565C0),
+                                        fontSize = 9.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+
                             // Label
                             BasicTextField(
                                 value = entry.label,
@@ -586,7 +603,8 @@ fun AiCalculationReviewDialog(
                                 val result = entries.filter { it.label.isNotBlank() }.map {
                                     CalculationAiEntry(
                                         label = it.label.trim(),
-                                        amount = it.amountStr.toDoubleOrNull() ?: 0.0
+                                        amount = it.amountStr.toDoubleOrNull() ?: 0.0,
+                                        existingRowId = it.existingRowId
                                     )
                                 }
                                 onConfirm(result)

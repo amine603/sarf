@@ -35,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,9 +57,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import com.cash.guide.domain.ads.AdMobManager
 import com.cash.guide.domain.ads.AiCreditManager
+import com.cash.guide.domain.ai.AiOutputScript
+import com.cash.guide.domain.ai.AiOutputScriptManager
 import com.cash.guide.domain.ai.AiVoiceOnboardingManager
 import com.cash.guide.domain.ai.CalculationAiResult
 import com.cash.guide.domain.ai.ChecklistAiResult
+import com.cash.guide.domain.ai.ExistingCalculationRowContext
 import com.cash.guide.domain.ai.GeminiDarijaService
 import com.cash.guide.domain.speech.SpeechRecognizerHelper
 import com.cash.guide.ui.notebook.JournalInk
@@ -66,11 +72,12 @@ import kotlinx.coroutines.launch
 
 /**
  * Wraps a bottom action/input row with an in-place AI voice button and a docked Manga speech bubble above.
- * This guarantees zero squishing of the input row and maintains the mic button strictly in-place.
+ * Used in ChecklistScreen to keep the input row full-width without squishing.
  */
 @Composable
 fun AiVoiceRowContainer(
     target: AiVoiceInputTarget,
+    existingRows: List<ExistingCalculationRowContext> = emptyList(),
     onChecklistResult: (ChecklistAiResult) -> Unit = {},
     onCalculationResult: (CalculationAiResult) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -83,9 +90,11 @@ fun AiVoiceRowContainer(
     val creditManager = remember { AiCreditManager.getInstance(context) }
     val adMobManager = remember { AdMobManager.getInstance(context) }
     val onboardingManager = remember { AiVoiceOnboardingManager.getInstance(context) }
+    val scriptManager = remember { AiOutputScriptManager.getInstance(context) }
 
     val credits by creditManager.credits.collectAsState()
     val hasSeenOnboarding by onboardingManager.hasSeenOnboarding.collectAsState()
+    val currentScript by scriptManager.selectedScript.collectAsState()
 
     var showOnboardingDialog by remember { mutableStateOf(false) }
     var showRewardedAdDialog by remember { mutableStateOf(false) }
@@ -104,14 +113,14 @@ fun AiVoiceRowContainer(
                     scope.launch {
                         try {
                             if (target == AiVoiceInputTarget.CHECKLIST) {
-                                val result = GeminiDarijaService.parseChecklistFromDarija(text)
+                                val result = GeminiDarijaService.parseChecklistFromDarija(text, currentScript)
                                 if (result != null && result.items.isNotEmpty()) {
                                     pendingChecklistResult = result
                                 } else {
                                     Toast.makeText(context, "تعذر استخراج العناصر، عاود جرب وتحدث بوضوح", Toast.LENGTH_SHORT).show()
                                 }
                             } else {
-                                val result = GeminiDarijaService.parseCalculationFromDarija(text)
+                                val result = GeminiDarijaService.parseCalculationFromDarija(text, currentScript, existingRows)
                                 if (result != null && result.entries.isNotEmpty()) {
                                     pendingCalculationResult = result
                                 } else {
@@ -147,7 +156,7 @@ fun AiVoiceRowContainer(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasAudioPermission = isGranted
-        if (isGranted && credits > 0) {
+        if (isGranted && (AiCreditManager.IS_TEST_UNLIMITED || credits > 0)) {
             buttonState = AiVoiceButtonState.RECORDING
             speechHelper.startListening()
         }
@@ -166,7 +175,7 @@ fun AiVoiceRowContainer(
                     showOnboardingDialog = true
                     return
                 }
-                if (credits <= 0) {
+                if (!AiCreditManager.IS_TEST_UNLIMITED && credits <= 0) {
                     showRewardedAdDialog = true
                     return
                 }
@@ -179,14 +188,11 @@ fun AiVoiceRowContainer(
             }
 
             AiVoiceButtonState.RECORDING -> {
-                // User clicked to stop and analyze!
                 buttonState = AiVoiceButtonState.ANALYZING
                 speechHelper.stopAndDeliver()
             }
 
-            AiVoiceButtonState.ANALYZING -> {
-                // Already analyzing, do nothing
-            }
+            AiVoiceButtonState.ANALYZING -> {}
         }
     }
 
@@ -202,6 +208,8 @@ fun AiVoiceRowContainer(
             MangaVoiceSpeechBubble(
                 liveTranscript = partialText,
                 isAnalyzing = buttonState == AiVoiceButtonState.ANALYZING,
+                currentScript = currentScript,
+                onScriptSelected = { scriptManager.setScript(it) },
                 onCancel = {
                     buttonState = AiVoiceButtonState.IDLE
                     speechHelper.stopListening()
@@ -228,31 +236,285 @@ fun AiVoiceRowContainer(
         }
     }
 
-    // --- DIALOGS ---
+    // Dialogs
+    RenderAiDialogs(
+        showOnboardingDialog = showOnboardingDialog,
+        onDismissOnboarding = {
+            onboardingManager.markSeen()
+            showOnboardingDialog = false
+            if (AiCreditManager.IS_TEST_UNLIMITED || credits > 0) {
+                if (!hasAudioPermission) {
+                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                } else {
+                    buttonState = AiVoiceButtonState.RECORDING
+                    speechHelper.startListening()
+                }
+            } else {
+                showRewardedAdDialog = true
+            }
+        },
+        showRewardedAdDialog = showRewardedAdDialog,
+        onDismissRewardedAd = { showRewardedAdDialog = false },
+        onRewardSuccess = {
+            creditManager.addRewardCredits(5)
+            showRewardedAdDialog = false
+            buttonState = AiVoiceButtonState.RECORDING
+            speechHelper.startListening()
+        },
+        pendingChecklistResult = pendingChecklistResult,
+        onDismissChecklistReview = { pendingChecklistResult = null },
+        onConfirmChecklist = { confirmedItems ->
+            creditManager.consumeCredit()
+            pendingChecklistResult?.let { onChecklistResult(it.copy(items = confirmedItems)) }
+            pendingChecklistResult = null
+        },
+        pendingCalculationResult = pendingCalculationResult,
+        onDismissCalculationReview = { pendingCalculationResult = null },
+        onConfirmCalculation = { confirmedEntries ->
+            creditManager.consumeCredit()
+            pendingCalculationResult?.let { onCalculationResult(it.copy(entries = confirmedEntries)) }
+            pendingCalculationResult = null
+        },
+        recordedTranscript = recordedTranscript
+    )
+}
 
-    // 1. One-Time Educational Onboarding Dialog
-    if (showOnboardingDialog) {
-        AiVoiceOnboardingDialog(
-            onDismiss = {
-                onboardingManager.markSeen()
-                showOnboardingDialog = false
-                if (credits > 0) {
-                    if (!hasAudioPermission) {
-                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    } else {
-                        buttonState = AiVoiceButtonState.RECORDING
-                        speechHelper.startListening()
+/**
+ * Pinned Bottom-Right AI voice assistant button with Manga speech bubble docked above it.
+ * Designed specifically for CalculationEditorScreen to sit permanently at the bottom right.
+ */
+@Composable
+fun AiVoiceDockedBottomButton(
+    target: AiVoiceInputTarget = AiVoiceInputTarget.CALCULATION,
+    existingRows: List<ExistingCalculationRowContext> = emptyList(),
+    onChecklistResult: (ChecklistAiResult) -> Unit = {},
+    onCalculationResult: (CalculationAiResult) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val activity = context as? Activity
+    val scope = rememberCoroutineScope()
+
+    val creditManager = remember { AiCreditManager.getInstance(context) }
+    val adMobManager = remember { AdMobManager.getInstance(context) }
+    val onboardingManager = remember { AiVoiceOnboardingManager.getInstance(context) }
+    val scriptManager = remember { AiOutputScriptManager.getInstance(context) }
+
+    val credits by creditManager.credits.collectAsState()
+    val hasSeenOnboarding by onboardingManager.hasSeenOnboarding.collectAsState()
+    val currentScript by scriptManager.selectedScript.collectAsState()
+
+    var showOnboardingDialog by remember { mutableStateOf(false) }
+    var showRewardedAdDialog by remember { mutableStateOf(false) }
+
+    var buttonState by remember { mutableStateOf(AiVoiceButtonState.IDLE) }
+    var recordedTranscript by remember { mutableStateOf("") }
+    var pendingChecklistResult by remember { mutableStateOf<ChecklistAiResult?>(null) }
+    var pendingCalculationResult by remember { mutableStateOf<CalculationAiResult?>(null) }
+
+    val speechHelper = remember {
+        SpeechRecognizerHelper(context).apply {
+            onSpeechResult = { text ->
+                if (text.isNotBlank()) {
+                    recordedTranscript = text
+                    buttonState = AiVoiceButtonState.ANALYZING
+                    scope.launch {
+                        try {
+                            if (target == AiVoiceInputTarget.CHECKLIST) {
+                                val result = GeminiDarijaService.parseChecklistFromDarija(text, currentScript)
+                                if (result != null && result.items.isNotEmpty()) {
+                                    pendingChecklistResult = result
+                                } else {
+                                    Toast.makeText(context, "تعذر استخراج العناصر، عاود جرب وتحدث بوضوح", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                val result = GeminiDarijaService.parseCalculationFromDarija(text, currentScript, existingRows)
+                                if (result != null && result.entries.isNotEmpty()) {
+                                    pendingCalculationResult = result
+                                } else {
+                                    Toast.makeText(context, "تعذر استخراج الحسابات، عاود جرب وتحدث بوضوح", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "حدث خطأ في الاتصال بالذكاء الاصطناعي", Toast.LENGTH_SHORT).show()
+                        } finally {
+                            buttonState = AiVoiceButtonState.IDLE
+                        }
                     }
                 } else {
-                    showRewardedAdDialog = true
+                    buttonState = AiVoiceButtonState.IDLE
+                    Toast.makeText(context, "لم يتم التقاط أي صوت، عاود جرب وتحدث بوضوح", Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+    }
+
+    val partialText by speechHelper.partialText.collectAsState()
+
+    var hasAudioPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
         )
     }
 
-    // 2. Rewarded Ad Dialog (when credits == 0)
-    if (showRewardedAdDialog) {
-        Dialog(onDismissRequest = { showRewardedAdDialog = false }) {
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasAudioPermission = isGranted
+        if (isGranted && (AiCreditManager.IS_TEST_UNLIMITED || credits > 0)) {
+            buttonState = AiVoiceButtonState.RECORDING
+            speechHelper.startListening()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            speechHelper.stopListening()
+        }
+    }
+
+    fun handleMicClick() {
+        when (buttonState) {
+            AiVoiceButtonState.IDLE -> {
+                if (!hasSeenOnboarding) {
+                    showOnboardingDialog = true
+                    return
+                }
+                if (!AiCreditManager.IS_TEST_UNLIMITED && credits <= 0) {
+                    showRewardedAdDialog = true
+                    return
+                }
+                if (!hasAudioPermission) {
+                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    return
+                }
+                buttonState = AiVoiceButtonState.RECORDING
+                speechHelper.startListening()
+            }
+
+            AiVoiceButtonState.RECORDING -> {
+                buttonState = AiVoiceButtonState.ANALYZING
+                speechHelper.stopAndDeliver()
+            }
+
+            AiVoiceButtonState.ANALYZING -> {}
+        }
+    }
+
+    Column(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        // 1. Manga Speech Bubble docked above the button
+        AnimatedVisibility(
+            visible = buttonState == AiVoiceButtonState.RECORDING || buttonState == AiVoiceButtonState.ANALYZING,
+            enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
+            exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut()
+        ) {
+            MangaVoiceSpeechBubble(
+                liveTranscript = partialText,
+                isAnalyzing = buttonState == AiVoiceButtonState.ANALYZING,
+                currentScript = currentScript,
+                onScriptSelected = { scriptManager.setScript(it) },
+                forceRightArrow = true, // Points directly down at bottom-right mic button
+                onCancel = {
+                    buttonState = AiVoiceButtonState.IDLE
+                    speechHelper.stopListening()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp)
+            )
+        }
+
+        // 2. The Button sitting at the physical bottom right
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 4.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                AiVoiceButton(
+                    state = buttonState,
+                    onClick = { handleMicClick() }
+                )
+            }
+        }
+    }
+
+    // Dialogs
+    RenderAiDialogs(
+        showOnboardingDialog = showOnboardingDialog,
+        onDismissOnboarding = {
+            onboardingManager.markSeen()
+            showOnboardingDialog = false
+            if (AiCreditManager.IS_TEST_UNLIMITED || credits > 0) {
+                if (!hasAudioPermission) {
+                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                } else {
+                    buttonState = AiVoiceButtonState.RECORDING
+                    speechHelper.startListening()
+                }
+            } else {
+                showRewardedAdDialog = true
+            }
+        },
+        showRewardedAdDialog = showRewardedAdDialog,
+        onDismissRewardedAd = { showRewardedAdDialog = false },
+        onRewardSuccess = {
+            creditManager.addRewardCredits(5)
+            showRewardedAdDialog = false
+            buttonState = AiVoiceButtonState.RECORDING
+            speechHelper.startListening()
+        },
+        pendingChecklistResult = pendingChecklistResult,
+        onDismissChecklistReview = { pendingChecklistResult = null },
+        onConfirmChecklist = { confirmedItems ->
+            creditManager.consumeCredit()
+            pendingChecklistResult?.let { onChecklistResult(it.copy(items = confirmedItems)) }
+            pendingChecklistResult = null
+        },
+        pendingCalculationResult = pendingCalculationResult,
+        onDismissCalculationReview = { pendingCalculationResult = null },
+        onConfirmCalculation = { confirmedEntries ->
+            creditManager.consumeCredit()
+            pendingCalculationResult?.let { onCalculationResult(it.copy(entries = confirmedEntries)) }
+            pendingCalculationResult = null
+        },
+        recordedTranscript = recordedTranscript
+    )
+}
+
+@Composable
+private fun RenderAiDialogs(
+    showOnboardingDialog: Boolean,
+    onDismissOnboarding: () -> Unit,
+    showRewardedAdDialog: Boolean,
+    onDismissRewardedAd: () -> Unit,
+    onRewardSuccess: () -> Unit,
+    pendingChecklistResult: ChecklistAiResult?,
+    onDismissChecklistReview: () -> Unit,
+    onConfirmChecklist: (List<String>) -> Unit,
+    pendingCalculationResult: CalculationAiResult?,
+    onDismissCalculationReview: () -> Unit,
+    onConfirmCalculation: (List<com.cash.guide.domain.ai.CalculationAiEntry>) -> Unit,
+    recordedTranscript: String
+) {
+    val context = LocalContext.current
+    val activity = context as? Activity
+    val adMobManager = remember { AdMobManager.getInstance(context) }
+
+    // 1. Educational Onboarding Dialog
+    if (showOnboardingDialog) {
+        AiVoiceOnboardingDialog(onDismiss = onDismissOnboarding)
+    }
+
+    // 2. Rewarded Ad Dialog (when not unlimited and credits == 0)
+    if (showRewardedAdDialog && !AiCreditManager.IS_TEST_UNLIMITED) {
+        Dialog(onDismissRequest = onDismissRewardedAd) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -271,7 +533,7 @@ fun AiVoiceRowContainer(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        IconButton(onClick = { showRewardedAdDialog = false }, modifier = Modifier.size(28.dp)) {
+                        IconButton(onClick = onDismissRewardedAd, modifier = Modifier.size(28.dp)) {
                             Icon(imageVector = Icons.Default.Close, contentDescription = "Fermer", tint = JournalMutedInk)
                         }
                     }
@@ -309,12 +571,7 @@ fun AiVoiceRowContainer(
                                     } else {
                                         adMobManager.showRewardedAd(
                                             activity = activity,
-                                            onRewardEarned = {
-                                                creditManager.addRewardCredits(5)
-                                                showRewardedAdDialog = false
-                                                buttonState = AiVoiceButtonState.RECORDING
-                                                speechHelper.startListening()
-                                            }
+                                            onRewardEarned = onRewardSuccess
                                         )
                                     }
                                 }
@@ -345,33 +602,25 @@ fun AiVoiceRowContainer(
         }
     }
 
-    // 3. Review & Confirmation Dialog for Checklist (Popped up ONLY AFTER AI finishes!)
+    // 3. Review Dialog for Checklist
     val checklistRes = pendingChecklistResult
     if (checklistRes != null) {
         AiChecklistReviewDialog(
             originalSpeech = recordedTranscript,
             initialItems = checklistRes.items,
-            onDismiss = { pendingChecklistResult = null },
-            onConfirm = { confirmedItems ->
-                creditManager.consumeCredit()
-                onChecklistResult(checklistRes.copy(items = confirmedItems))
-                pendingChecklistResult = null
-            }
+            onDismiss = onDismissChecklistReview,
+            onConfirm = onConfirmChecklist
         )
     }
 
-    // 4. Review & Confirmation Dialog for Calculations (Popped up ONLY AFTER AI finishes!)
+    // 4. Review Dialog for Calculations
     val calcRes = pendingCalculationResult
     if (calcRes != null) {
         AiCalculationReviewDialog(
             originalSpeech = recordedTranscript,
             initialEntries = calcRes.entries,
-            onDismiss = { pendingCalculationResult = null },
-            onConfirm = { confirmedEntries ->
-                creditManager.consumeCredit()
-                onCalculationResult(calcRes.copy(entries = confirmedEntries))
-                pendingCalculationResult = null
-            }
+            onDismiss = onDismissCalculationReview,
+            onConfirm = onConfirmCalculation
         )
     }
 }
@@ -382,16 +631,16 @@ fun AiVoiceRowContainer(
 @Composable
 fun AiVoiceAssistantButton(
     target: AiVoiceInputTarget,
+    existingRows: List<ExistingCalculationRowContext> = emptyList(),
     onChecklistResult: (ChecklistAiResult) -> Unit = {},
     onCalculationResult: (CalculationAiResult) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    AiVoiceRowContainer(
+    AiVoiceDockedBottomButton(
         target = target,
+        existingRows = existingRows,
         onChecklistResult = onChecklistResult,
         onCalculationResult = onCalculationResult,
         modifier = modifier
-    ) {
-        Spacer(modifier = Modifier.weight(1f))
-    }
+    )
 }

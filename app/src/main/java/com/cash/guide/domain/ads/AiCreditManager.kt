@@ -38,6 +38,7 @@ class AiCreditManager(context: Context) {
     }
 
     private fun loadCredits(): Int {
+        if (IS_TEST_UNLIMITED) return 9999
         val today = getTodayDateString()
         val lastDate = prefs.getString(KEY_LAST_RESET_DATE, "")
         return if (lastDate == today) {
@@ -51,6 +52,7 @@ class AiCreditManager(context: Context) {
      * Checks if user has at least 1 credit and consumes it. Returns true if successful.
      */
     fun consumeCredit(): Boolean {
+        if (IS_TEST_UNLIMITED) return true
         checkAndResetDailyCredits()
         val current = _credits.value
         return if (current > 0) {
@@ -74,6 +76,7 @@ class AiCreditManager(context: Context) {
     }
 
     fun getAvailableCredits(): Int {
+        if (IS_TEST_UNLIMITED) return 9999
         checkAndResetDailyCredits()
         return _credits.value
     }
@@ -85,6 +88,7 @@ class AiCreditManager(context: Context) {
 
         const val DAILY_FREE_CREDITS = 5
         const val REWARD_CREDITS_PER_AD = 5
+        const val IS_TEST_UNLIMITED = true
 
         @Volatile
         private var instance: AiCreditManager? = null
