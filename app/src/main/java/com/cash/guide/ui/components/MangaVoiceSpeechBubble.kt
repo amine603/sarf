@@ -269,10 +269,15 @@ fun MangaVoiceSpeechBubble(
                         .heightIn(min = 28.dp, max = 75.dp)
                 ) {
                     if (liveTranscript.isBlank()) {
+                        val hint = when (currentScript) {
+                            AiOutputScript.FRENCH -> "تكلم بالفرنسية أو بالدارجة... غادي يفهمك ويكتبها بالفرنسية ✍️"
+                            AiOutputScript.FRANCO -> "تكلم بالدارجة أو بالفرنسية... غادي يفهمك ويكتبها بالعرنسية ✍️"
+                            AiOutputScript.ARABIC -> "تكلم بالدارجة أو بالفرنسية... كاع داكشي لي كتقولو كيتكتب هنا فالحين ✍️"
+                        }
                         Text(
-                            text = "تكلم بالدارجة... كاع داكشي لي كتقولو غادي يبان كيتكتب هنا فالحين ✍️",
-                            fontFamily = resolveJournalFont("تكلم بالدارجة", true),
-                            fontSize = 13.sp,
+                            text = hint,
+                            fontFamily = resolveJournalFont(hint, true),
+                            fontSize = 12.5.sp,
                             color = JournalMutedInk.copy(alpha = 0.7f),
                             textAlign = TextAlign.Right,
                             modifier = Modifier.fillMaxWidth()

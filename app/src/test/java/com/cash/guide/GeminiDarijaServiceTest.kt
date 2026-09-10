@@ -82,4 +82,60 @@ class GeminiDarijaServiceTest {
         assertEquals("ترانسبور", entries.getJSONObject(2).getString("label"))
         assertEquals(0.0, entries.getJSONObject(2).getDouble("amount"), 0.001)
     }
+
+    @Test
+    fun resolveRowMatchesWithArabicRowNumbers() {
+        val existingRows = (1..6).map { idx ->
+            com.cash.guide.domain.ai.ExistingCalculationRowContext(
+                id = "row_$idx",
+                index = idx,
+                label = "السطر $idx",
+                currentAmount = 0.0
+            )
+        }
+
+        val aiEntries = listOf(
+            com.cash.guide.domain.ai.CalculationAiEntry(label = "السطر 5", amount = 15.0, existingRowId = null),
+            com.cash.guide.domain.ai.CalculationAiEntry(label = "في السطر 6", amount = 77.0, existingRowId = null),
+            com.cash.guide.domain.ai.CalculationAiEntry(label = "بند جديد", amount = 30.0, existingRowId = null)
+        )
+
+        val resolved = com.cash.guide.domain.ai.GeminiDarijaService.resolveRowMatches(aiEntries, existingRows)
+        assertEquals(3, resolved.size)
+        assertEquals("row_5", resolved[0].existingRowId)
+        assertEquals(15.0, resolved[0].amount, 0.001)
+
+        assertEquals("row_6", resolved[1].existingRowId)
+        assertEquals(77.0, resolved[1].amount, 0.001)
+
+        assertEquals(null, resolved[2].existingRowId)
+        assertEquals(30.0, resolved[2].amount, 0.001)
+    }
+
+    @Test
+    fun resolveRowMatchesWithFrenchAndFrancoRowNumbers() {
+        val existingRows = listOf(
+            com.cash.guide.domain.ai.ExistingCalculationRowContext("id_1", 1, "Pommes", 0.0),
+            com.cash.guide.domain.ai.ExistingCalculationRowContext("id_2", 2, "Lait", 0.0),
+            com.cash.guide.domain.ai.ExistingCalculationRowContext("id_5", 5, "Ligne 5", 0.0),
+            com.cash.guide.domain.ai.ExistingCalculationRowContext("id_6", 6, "Star 6", 0.0)
+        )
+
+        val aiEntries = listOf(
+            com.cash.guide.domain.ai.CalculationAiEntry(label = "Ligne 5", amount = 15.0, existingRowId = null),
+            com.cash.guide.domain.ai.CalculationAiEntry(label = "Star 6", amount = 77.0, existingRowId = null),
+            com.cash.guide.domain.ai.CalculationAiEntry(label = "Pommes", amount = 22.0, existingRowId = null)
+        )
+
+        val resolved = com.cash.guide.domain.ai.GeminiDarijaService.resolveRowMatches(aiEntries, existingRows)
+        assertEquals("id_5", resolved[0].existingRowId)
+        assertEquals(15.0, resolved[0].amount, 0.001)
+
+        assertEquals("id_6", resolved[1].existingRowId)
+        assertEquals(77.0, resolved[1].amount, 0.001)
+
+        assertEquals("id_1", resolved[2].existingRowId)
+        assertEquals("Pommes", resolved[2].label)
+        assertEquals(22.0, resolved[2].amount, 0.001)
+    }
 }

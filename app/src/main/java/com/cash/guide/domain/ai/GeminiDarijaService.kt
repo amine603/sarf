@@ -49,9 +49,53 @@ object GeminiDarijaService {
 
     private fun getScriptInstruction(script: AiOutputScript): String {
         return when (script) {
-            AiOutputScript.ARABIC -> "Output ALL item names and titles in Moroccan Arabic / Darija using Arabic script (e.g. بطاطا، مطيشة، حليب، لحم بقري)."
-            AiOutputScript.FRANCO -> "Output ALL item names and titles in Moroccan Franco-Arabe / Darija Chati using Latin letters and numbers 3 (ع), 7 (ح), 9 (ق) (e.g. Batata, Maticha, 7lib, L7em lbaqri)."
-            AiOutputScript.FRENCH -> "Output ALL item names and titles translated into clean, natural French (e.g. Pommes de terre, Tomates, Lait, Viande de boeuf)."
+            AiOutputScript.ARABIC -> """
+                Output ALL item names and titles in authentic Moroccan Darija using Arabic script (الدارجة المغربية اليومية بالحروف العربية).
+                Use natural Moroccan words: (بطاطا، مطيشة، خيزو، بصلة، دجاج، لحم بقري، كفتة، خبز، حليب، زبدة، زيت العود، بيض، تفاح، بنان، ليمون، حوت، قهوة، أتاي، سكر، فرماج، قرعة د لما...).
+                For row references use: "السطر 1"، "السطر 5"...
+                Quantities: كيلو، نص كيلو، رابعة، بكية، قرعة، ربطة.
+                Titles: "قائمة التقضية"، "حساب"، "مصروف".
+            """.trimIndent()
+            AiOutputScript.FRANCO -> """
+                Output ALL item names and titles in authentic Moroccan Darija Chati / Franco-Arabe (العرنسية المغربية القحة لي كيهضرو ويكتبو بيها المغاربة فـ WhatsApp وشات).
+                RULES FOR AUTHENTIC MOROCCAN FRANCO:
+                - Use standard Moroccan SMS/Chat numbers:
+                  * 3 = 'ع' (e.g. 3assir, rba3a, 9or3a, ne3na3, za3tar)
+                  * 7 = 'ح' (e.g. 7lib, l7em, 7out, teffa7, l7em baqri)
+                  * 9 = 'ق' (e.g. 9ahwa, 9ezbour, 9alb)
+                  * 5 or kh = 'خ' (e.g. khobz / 5obz, khizzou, khiyar)
+                  * ch = 'ش' (e.g. maticha, chocolat, chfleur)
+                - Use authentic Moroccan everyday words (NEVER formal Arabic transliteration):
+                  * Potatoes: Batata (NOT al-batata)
+                  * Tomatoes: Maticha (NOT tamatim)
+                  * Carrots: Khizzou (NOT jazar)
+                  * Onions: Bssla (NOT basal)
+                  * Chicken: Djej (NOT dajaj)
+                  * Meat: L7em or L7em baqri (NOT lahm)
+                  * Minced meat: Kefta
+                  * Bread: Khobz or 5obz
+                  * Milk: 7lib (NOT halib)
+                  * Butter: Zbda
+                  * Oil: Zit or Zit l3oud
+                  * Eggs: Lbid (NOT bayd)
+                  * Apples: Teffa7
+                  * Bananas: Banan
+                  * Oranges: Limoun (NOT burtuqal)
+                  * Fish: 7out (NOT samak)
+                  * Coffee / Tea: 9ahwa / Ataye
+                  * Sugar: Sekkar
+                  * Cheese: Formaj
+                  * Water: Lma / 9er3a d lma
+                  * Line references: Star 1, Star 5, Ligne 5, Article 1
+                - Quantities: kilo, 2 kilo, nss kilo, rba3a, bakiya, 9er3a, robta.
+                - Titles: "La liste d te9diya", "7sab", "Masrouf".
+            """.trimIndent()
+            AiOutputScript.FRENCH -> """
+                Output ALL item names and titles translated into clean, natural French.
+                Examples: Pommes de terre, Tomates, Carottes, Oignons, Poulet, Viande de boeuf, Viande hachée, Pain, Lait, Beurre, Huile d'olive, Oeufs, Pommes, Bananes, Oranges, Poisson, Café, Thé, Sucre, Fromage, Bouteille d'eau, Ligne 1, Ligne 5.
+                Quantities: 1 kg, 500 g, 2 L, 1 paquet, 1 bouteille.
+                Titles: "Liste de courses", "Calcul des dépenses", "Facture".
+            """.trimIndent()
         }
     }
 
@@ -109,7 +153,7 @@ object GeminiDarijaService {
     }
 
     /**
-     * Parses a spoken Darija sentence into accounting ledger rows with amounts in Dirhams.
+     * Parses a spoken Darija/French/Arabic sentence into accounting ledger rows with amounts in Dirhams.
      * Supports:
      * 1. Creating NEW entries.
      * 2. Updating existing rows if the user specifies prices for already listed items (by name or row index).
@@ -130,16 +174,29 @@ object GeminiDarijaService {
 
         val existingContextBuilder = StringBuilder()
         if (existingRows.isNotEmpty()) {
-            existingContextBuilder.append("\nCURRENT EXISTING ROWS IN THE CALCULATION:\n")
+            existingContextBuilder.append("\nCURRENT EXISTING ROWS IN THE NOTEBOOK (The user may update their prices):\n")
             existingRows.forEach { row ->
-                existingContextBuilder.append("- Row #${row.index} [ID: \"${row.id}\"]: \"${row.label}\", current amount: ${row.currentAmount} DH\n")
+                existingContextBuilder.append("- Row #${row.index} [ID: \"${row.id}\"]: Names=[\"السطر ${row.index}\", \"سطر ${row.index}\", \"Ligne ${row.index}\", \"Star ${row.index}\", \"Article ${row.index}\"], Label=\"${row.label}\", Current Amount=${row.currentAmount} DH\n")
             }
             existingContextBuilder.append("""
-                UPDATE RULES:
-                - If the user specifies or updates the price for an EXISTING item (either by row number like "لارتيكل 1" / "السطر الثاني", or by matching the item name like "بطاطا دير فيها 10 دراهم"):
-                  Return that item with its "existingRowId": "<row_id>" and the updated "amount" in Dirhams!
-                - If the user mentions NEW items that are not in the existing rows, return them with "existingRowId": null.
-                - DO NOT return existing rows that were NOT mentioned or NOT updated by the user.
+                
+                CRITICAL RULES FOR ROW UPDATES:
+                1. If the user mentions ANY row/line number to update, for example:
+                   - Arabic: "السطر 5 دير 15 درهم والسطر 6 دير 77 درهم" or "فالسطر الخامس..." or "نمرة 5..."
+                   - French: "dans la ligne 5 mets 15 dh et dans la ligne 6 mets 77 dh" or "ligne 5 15 dh, ligne 6 77 dh"
+                   - Franco: "f star 5 dir 15 dh o f star 6 dir 77 dh" or "star 5 15 derhem"
+                   YOU MUST:
+                   - Match Row #${'$'}{index} to its ID above!
+                   - Set "existingRowId": "<ID of that Row>"
+                   - Set "amount": <price mentioned in Dirhams>
+                   - Set "label": <the existing label of that row, or "السطر X" / "Ligne X" / "Star X" matching the requested script>
+                2. If the user updates an existing row by item name (e.g. existing row has "مطيشة" and user says "مطيشة دير فيها 10 دراهم" or "tomates 10 dh"):
+                   - Set "existingRowId": "<ID of that row>" and "amount": 10.0.
+                3. Multiple row updates:
+                   If user mentions multiple rows (e.g. "في السطر 5 دير 15 درهم وفي السطر 6 دير 77 درهم"):
+                   You MUST output an entry for EACH updated row with its own "existingRowId"!
+                4. DO NOT return existing rows that the user did NOT mention or did NOT update.
+                5. Brand new items (not matching any existing row number or label) must have "existingRowId": null.
             """.trimIndent())
         }
 
@@ -194,11 +251,127 @@ object GeminiDarijaService {
                     )
                 }
             }
-            CalculationAiResult(title = title, entries = entries)
+            val resolvedEntries = resolveRowMatches(entries, existingRows)
+            CalculationAiResult(title = title, entries = resolvedEntries)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse calculation AI response", e)
             null
         }
+    }
+
+    fun resolveRowMatches(
+        entries: List<CalculationAiEntry>,
+        existingRows: List<ExistingCalculationRowContext>
+    ): List<CalculationAiEntry> {
+        if (existingRows.isEmpty()) return entries
+
+        return entries.map { entry ->
+            if (entry.existingRowId != null && existingRows.any { it.id == entry.existingRowId }) {
+                // Valid existingRowId already resolved by LLM
+                entry
+            } else {
+                // Fallback deterministic resolution from label
+                val matchedRow = findMatchingRow(entry.label, existingRows)
+                if (matchedRow != null) {
+                    val finalLabel = if (isGenericRowLabel(entry.label) && !isGenericRowLabel(matchedRow.label)) {
+                        matchedRow.label
+                    } else {
+                        entry.label
+                    }
+                    entry.copy(
+                        label = finalLabel,
+                        existingRowId = matchedRow.id
+                    )
+                } else {
+                    entry
+                }
+            }
+        }
+    }
+
+    private fun findMatchingRow(
+        label: String,
+        existingRows: List<ExistingCalculationRowContext>
+    ): ExistingCalculationRowContext? {
+        val clean = label.trim().lowercase()
+
+        // 1. Extract row number from regex
+        val patterns = listOf(
+            Regex("""(?:السطر|سطر|نمرة|رقم|لارتيكل|ارتيكل|لا\s*لين|لالين|ligne|la\s+ligne|line|row|star|satr|article)\s*#?\s*([0-9]+)"""),
+            Regex("""^#?([0-9]+)$""")
+        )
+        for (pattern in patterns) {
+            val match = pattern.find(clean)
+            if (match != null) {
+                val num = match.groupValues[1].toIntOrNull()
+                if (num != null) {
+                    val found = existingRows.find { it.index == num }
+                    if (found != null) return found
+                }
+            }
+        }
+
+        // 2. Arabic number words
+        val arabicOrdinals = mapOf(
+            "الأول" to 1, "الاول" to 1, "الأولى" to 1,
+            "الثاني" to 2, "التاني" to 2, "الثانية" to 2,
+            "الثالث" to 3, "التالت" to 3, "الثالثة" to 3,
+            "الرابع" to 4, "الرابعة" to 4,
+            "الخامس" to 5, "الخامسة" to 5,
+            "السادس" to 6, "السادسة" to 6,
+            "السابع" to 7, "السابعة" to 7,
+            "الثامن" to 8, "التامن" to 8, "الثامنة" to 8,
+            "التاسع" to 9, "التاسعة" to 9,
+            "العاشر" to 10, "العاشرة" to 10
+        )
+        for ((word, idx) in arabicOrdinals) {
+            if (clean.contains(word)) {
+                val found = existingRows.find { it.index == idx }
+                if (found != null) return found
+            }
+        }
+
+        // 3. French number words
+        val frenchOrdinals = mapOf(
+            "premier" to 1, "premiere" to 1, "première" to 1,
+            "deuxieme" to 2, "deuxième" to 2,
+            "troisieme" to 3, "troisième" to 3,
+            "quatrieme" to 4, "quatrième" to 4,
+            "cinquieme" to 5, "cinquième" to 5,
+            "sixieme" to 6, "sixième" to 6,
+            "septieme" to 7, "septième" to 7,
+            "huitieme" to 8, "huitième" to 8,
+            "neuvieme" to 9, "neuvième" to 9,
+            "dixieme" to 10, "dixième" to 10
+        )
+        for ((word, idx) in frenchOrdinals) {
+            if (clean.contains(word)) {
+                val found = existingRows.find { it.index == idx }
+                if (found != null) return found
+            }
+        }
+
+        // 4. Exact or close match with existing item label
+        val exactMatch = existingRows.find {
+            val exLabel = it.label.trim().lowercase()
+            !isGenericRowLabel(exLabel) && (exLabel == clean || clean.contains(exLabel) || exLabel.contains(clean))
+        }
+        if (exactMatch != null) return exactMatch
+
+        return null
+    }
+
+    private fun isGenericRowLabel(label: String): Boolean {
+        val clean = label.trim().lowercase()
+        return clean.isBlank() ||
+                clean.startsWith("السطر") ||
+                clean.startsWith("سطر") ||
+                clean.startsWith("ligne") ||
+                clean.startsWith("star") ||
+                clean.startsWith("satr") ||
+                clean.startsWith("article") ||
+                clean.startsWith("row") ||
+                clean.startsWith("line")
     }
 
     private fun callGeminiApi(prompt: String, apiKey: String): String? {

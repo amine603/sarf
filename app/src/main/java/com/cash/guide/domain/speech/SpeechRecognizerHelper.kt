@@ -47,6 +47,19 @@ class SpeechRecognizerHelper(private val context: Context) {
 
     var onSpeechResult: ((String) -> Unit)? = null
 
+    var preferredScript: com.cash.guide.domain.ai.AiOutputScript = com.cash.guide.domain.ai.AiOutputScript.ARABIC
+        set(value) {
+            val changed = field != value
+            field = value
+            if (changed && isUserRecording) {
+                mainHandler.post {
+                    if (isUserRecording) {
+                        startListeningSafe()
+                    }
+                }
+            }
+        }
+
     fun reset() {
         isUserRecording = false
         stopListening()
@@ -58,7 +71,8 @@ class SpeechRecognizerHelper(private val context: Context) {
         _state.value = SpeechRecognitionState.IDLE
     }
 
-    fun startListening() {
+    fun startListening(script: com.cash.guide.domain.ai.AiOutputScript = preferredScript) {
+        this.preferredScript = script
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             _state.value = SpeechRecognitionState.ERROR
             _errorMessage.value = "التعرف على الصوت غير متاح في هذا الهاتف"
@@ -125,10 +139,23 @@ class SpeechRecognizerHelper(private val context: Context) {
     }
 
     private fun buildIntent(): Intent {
+        val primaryLang = if (preferredScript == com.cash.guide.domain.ai.AiOutputScript.FRENCH) "fr-FR" else "ar-MA"
+        val altLangs = if (preferredScript == com.cash.guide.domain.ai.AiOutputScript.FRENCH) {
+            arrayOf("ar-MA", "ar", "fr-FR", "fr", Locale.getDefault().toLanguageTag())
+        } else {
+            arrayOf("fr-FR", "fr", "ar-MA", "ar", Locale.getDefault().toLanguageTag())
+        }
+
         return Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-MA")
-            putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", arrayOf("ar", "fr-FR", Locale.getDefault().toLanguageTag()))
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, primaryLang)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, primaryLang)
+            putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", altLangs)
+            // Android 13/14 language detection and auto-switch
+            putExtra("android.speech.extra.ENABLE_LANGUAGE_SWITCH", true)
+            putExtra("android.speech.extra.ENABLE_LANGUAGE_DETECTION", true)
+            putExtra("android.speech.extra.LANGUAGE_DETECTION_ALLOWED_LANGUAGES", arrayOf("ar-MA", "fr-FR", "ar", "fr"))
+            putExtra("android.speech.extra.LANGUAGE_SWITCH_ALLOWED_LANGUAGES", arrayOf("ar-MA", "fr-FR", "ar", "fr"))
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             // 5 minutes max, 15 seconds complete silence timeout to prevent Samsung beep loop

@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -106,6 +107,7 @@ fun AiVoiceRowContainer(
 
     val speechHelper = remember {
         SpeechRecognizerHelper(context).apply {
+            preferredScript = currentScript
             onSpeechResult = { text ->
                 if (text.isNotBlank()) {
                     recordedTranscript = text
@@ -141,6 +143,10 @@ fun AiVoiceRowContainer(
         }
     }
 
+    LaunchedEffect(currentScript) {
+        speechHelper.preferredScript = currentScript
+    }
+
     val partialText by speechHelper.partialText.collectAsState()
 
     var hasAudioPermission by remember {
@@ -158,7 +164,7 @@ fun AiVoiceRowContainer(
         hasAudioPermission = isGranted
         if (isGranted && (AiCreditManager.IS_TEST_UNLIMITED || credits > 0)) {
             buttonState = AiVoiceButtonState.RECORDING
-            speechHelper.startListening()
+            speechHelper.startListening(currentScript)
         }
     }
 
@@ -184,7 +190,7 @@ fun AiVoiceRowContainer(
                     return
                 }
                 buttonState = AiVoiceButtonState.RECORDING
-                speechHelper.startListening()
+                speechHelper.startListening(currentScript)
             }
 
             AiVoiceButtonState.RECORDING -> {
@@ -209,7 +215,10 @@ fun AiVoiceRowContainer(
                 liveTranscript = partialText,
                 isAnalyzing = buttonState == AiVoiceButtonState.ANALYZING,
                 currentScript = currentScript,
-                onScriptSelected = { scriptManager.setScript(it) },
+                onScriptSelected = {
+                    scriptManager.setScript(it)
+                    speechHelper.preferredScript = it
+                },
                 onCancel = {
                     buttonState = AiVoiceButtonState.IDLE
                     speechHelper.stopListening()
@@ -314,6 +323,7 @@ fun AiVoiceDockedBottomButton(
 
     val speechHelper = remember {
         SpeechRecognizerHelper(context).apply {
+            preferredScript = currentScript
             onSpeechResult = { text ->
                 if (text.isNotBlank()) {
                     recordedTranscript = text
@@ -349,6 +359,10 @@ fun AiVoiceDockedBottomButton(
         }
     }
 
+    LaunchedEffect(currentScript) {
+        speechHelper.preferredScript = currentScript
+    }
+
     val partialText by speechHelper.partialText.collectAsState()
 
     var hasAudioPermission by remember {
@@ -366,7 +380,7 @@ fun AiVoiceDockedBottomButton(
         hasAudioPermission = isGranted
         if (isGranted && (AiCreditManager.IS_TEST_UNLIMITED || credits > 0)) {
             buttonState = AiVoiceButtonState.RECORDING
-            speechHelper.startListening()
+            speechHelper.startListening(currentScript)
         }
     }
 
@@ -392,7 +406,7 @@ fun AiVoiceDockedBottomButton(
                     return
                 }
                 buttonState = AiVoiceButtonState.RECORDING
-                speechHelper.startListening()
+                speechHelper.startListening(currentScript)
             }
 
             AiVoiceButtonState.RECORDING -> {
@@ -417,7 +431,10 @@ fun AiVoiceDockedBottomButton(
                 liveTranscript = partialText,
                 isAnalyzing = buttonState == AiVoiceButtonState.ANALYZING,
                 currentScript = currentScript,
-                onScriptSelected = { scriptManager.setScript(it) },
+                onScriptSelected = {
+                    scriptManager.setScript(it)
+                    speechHelper.preferredScript = it
+                },
                 forceRightArrow = true, // Points directly down at bottom-right mic button
                 onCancel = {
                     buttonState = AiVoiceButtonState.IDLE

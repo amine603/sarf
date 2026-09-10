@@ -404,11 +404,27 @@ fun CalculationEditorScreen(
                                         TextFieldValue(amtStr, TextRange(amtStr.length))
                                     )
                                     val existingRow = state.rows.find { it.id == rowIdLong }
-                                    if (existingRow != null && (existingRow.title.text.isBlank() || existingRow.title.text.startsWith("السطر"))) {
-                                        viewModel.updateRowTitle(
-                                            rowIdLong,
-                                            TextFieldValue(entry.label, TextRange(entry.label.length))
-                                        )
+                                    if (existingRow != null) {
+                                        val isOldGeneric = existingRow.title.text.isBlank() ||
+                                                existingRow.title.text.startsWith("السطر") ||
+                                                existingRow.title.text.startsWith("سطر") ||
+                                                existingRow.title.text.startsWith("Ligne") ||
+                                                existingRow.title.text.startsWith("ligne") ||
+                                                existingRow.title.text.startsWith("Star") ||
+                                                existingRow.title.text.startsWith("star")
+                                        val isNewGeneric = entry.label.isBlank() ||
+                                                entry.label.startsWith("السطر") ||
+                                                entry.label.startsWith("سطر") ||
+                                                entry.label.startsWith("Ligne") ||
+                                                entry.label.startsWith("ligne") ||
+                                                entry.label.startsWith("Star") ||
+                                                entry.label.startsWith("star")
+                                        if (isOldGeneric && !isNewGeneric) {
+                                            viewModel.updateRowTitle(
+                                                rowIdLong,
+                                                TextFieldValue(entry.label, TextRange(entry.label.length))
+                                            )
+                                        }
                                     }
                                 }
                             }
