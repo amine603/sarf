@@ -50,11 +50,10 @@ object GeminiDarijaService {
     private fun getScriptInstruction(script: AiOutputScript): String {
         return when (script) {
             AiOutputScript.ARABIC -> """
-                Output ALL item names and titles in authentic Moroccan Darija using Arabic script (الدارجة المغربية اليومية بالحروف العربية).
-                Use natural Moroccan words: (بطاطا، مطيشة، خيزو، بصلة، دجاج، لحم بقري، كفتة، خبز، حليب، زبدة، زيت العود، بيض، تفاح، بنان، ليمون، حوت، قهوة، أتاي، سكر، فرماج، قرعة د لما...).
-                For row references use: "السطر 1"، "السطر 5"...
-                Quantities: كيلو، نص كيلو، رابعة، بكية، قرعة، ربطة.
-                Titles: "قائمة التقضية"، "حساب"، "مصروف".
+                Output ALL item names and titles in natural Moroccan Arabic (الدارجة المغربية المفهومة بالحروف العربية).
+                - If the user spoke in French, translate the items accurately into Moroccan Arabic (e.g. "stylos" -> "ستيلويات", "cahiers" -> "دفاتر", "tomates" -> "مطيشة", "pommes de terre" -> "بطاطا", "lait" -> "حليب", "viande" -> "لحم").
+                - If the user spoke in Moroccan Darija, keep them in clean Moroccan Arabic letters.
+                Titles: "قائمة مشتريات", "حساب سلعة", "مصاريف".
             """.trimIndent()
             AiOutputScript.FRANCO -> """
                 Output ALL item names and titles in authentic Moroccan Darija Chati / Franco-Arabe (العرنسية المغربية القحة لي كيهضرو ويكتبو بيها المغاربة فـ WhatsApp وشات).
@@ -91,29 +90,32 @@ object GeminiDarijaService {
                 - Titles: "La liste d te9diya", "7sab", "Masrouf".
             """.trimIndent()
             AiOutputScript.FRENCH -> """
-                Output ALL item names and titles translated into clean, natural French.
-                Translate any Moroccan Darija terms into French:
-                - بطاطا -> Pommes de terre
-                - مطيشة -> Tomates
-                - خيزو -> Carottes
-                - بصلة -> Oignons
-                - دجاج -> Poulet
-                - لحم -> Viande
-                - كفتة -> Viande hachée
-                - حليب -> Lait
-                - زبدة -> Beurre
-                - زيت -> Huile
-                - بيض -> Oeufs
-                - تفاح -> Pommes
-                - بنان -> Bananes
-                - ليمون -> Oranges
-                - حوت -> Poisson
-                - قهوة -> Café
-                - أتاي -> Thé
-                - سكر -> Sucre
-                - فرماج -> Fromage
-                - خبز -> Pain
-                Quantities: 1 kg, 500 g, 2 L, 1 paquet, 1 bouteille.
+                Output ALL item names and titles in clean, natural French.
+                IMPORTANT:
+                - If the user spoke in French (e.g. "dix cahiers à quinze dirhams", "trois stylos à 10 dirhams"):
+                  Keep the items cleanly in French and extract the exact labels and prices accurately!
+                - If the user spoke in Moroccan Darija, translate the terms into French:
+                  * بطاطا -> Pommes de terre
+                  * مطيشة -> Tomates
+                  * خيزو -> Carottes
+                  * بصلة -> Oignons
+                  * دجاج -> Poulet
+                  * لحم -> Viande
+                  * كفتة -> Viande hachée
+                  * حليب -> Lait
+                  * زبدة -> Beurre
+                  * زيت -> Huile
+                  * بيض -> Oeufs
+                  * تفاح -> Pommes
+                  * بنان -> Bananes
+                  * ليمون -> Oranges
+                  * حوت -> Poisson
+                  * قهوة -> Café
+                  * أتاي -> Thé
+                  * سكر -> Sucre
+                  * فرماج -> Fromage
+                  * خبز -> Pain
+                Quantities: 1 kg, 500 g, 2 L, 1 paquet, 1 bouteille, etc.
                 Titles: "Liste de courses", "Calcul des dépenses", "Facture".
             """.trimIndent()
         }
@@ -156,7 +158,12 @@ object GeminiDarijaService {
             val textContent = extractContentText(responseJson) ?: return@withContext null
             val cleanJsonStr = sanitizeJsonString(textContent)
             val json = JSONObject(cleanJsonStr)
-            val title = json.optString("title", "قائمة مشتريات").trim().ifBlank { "قائمة مشتريات" }
+            val defaultTitle = when (outputScript) {
+                AiOutputScript.FRENCH -> "Liste de courses"
+                AiOutputScript.FRANCO -> "La liste d te9diya"
+                AiOutputScript.ARABIC -> "قائمة مشتريات"
+            }
+            val title = json.optString("title", defaultTitle).trim().ifBlank { defaultTitle }
             val itemsArr = json.optJSONArray("items") ?: JSONArray()
             val items = mutableListOf<String>()
             for (i in 0 until itemsArr.length()) {
@@ -220,12 +227,22 @@ object GeminiDarijaService {
             val textContent = extractContentText(responseJson) ?: return@withContext null
             val cleanJsonStr = sanitizeJsonString(textContent)
             val json = JSONObject(cleanJsonStr)
-            val title = json.optString("title", "حساب").trim().ifBlank { "حساب" }
+            val defaultTitle = when (outputScript) {
+                AiOutputScript.FRENCH -> "Calcul"
+                AiOutputScript.FRANCO -> "7sab"
+                AiOutputScript.ARABIC -> "حساب"
+            }
+            val title = json.optString("title", defaultTitle).trim().ifBlank { defaultTitle }
             val entriesArr = json.optJSONArray("entries") ?: JSONArray()
             val entries = mutableListOf<CalculationAiEntry>()
+            val defaultLabel = when (outputScript) {
+                AiOutputScript.FRENCH -> "Article"
+                AiOutputScript.FRANCO -> "Bnd"
+                AiOutputScript.ARABIC -> "بند"
+            }
             for (i in 0 until entriesArr.length()) {
                 val obj = entriesArr.getJSONObject(i)
-                val label = obj.optString("label", "بند").trim()
+                val label = obj.optString("label", defaultLabel).trim()
                 val amount = obj.optDouble("amount", 0.0)
                 if (label.isNotBlank()) {
                     entries.add(

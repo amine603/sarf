@@ -97,6 +97,13 @@ fun AiVoiceRowContainer(
     val hasSeenOnboarding by onboardingManager.hasSeenOnboarding.collectAsState()
     val currentScript by scriptManager.selectedScript.collectAsState()
 
+    val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales.get(0)
+    val appLang = currentLocale?.language ?: "ar"
+
+    LaunchedEffect(appLang) {
+        scriptManager.syncWithAppLanguage(appLang)
+    }
+
     var showOnboardingDialog by remember { mutableStateOf(false) }
     var showRewardedAdDialog by remember { mutableStateOf(false) }
 
@@ -143,7 +150,7 @@ fun AiVoiceRowContainer(
     }
 
     LaunchedEffect(currentScript) {
-        speechHelper.preferredScript = currentScript
+        speechHelper.updateScript(currentScript)
     }
 
     val partialText by speechHelper.partialText.collectAsState()
@@ -222,7 +229,7 @@ fun AiVoiceRowContainer(
                 currentScript = currentScript,
                 onScriptSelected = {
                     scriptManager.setScript(it)
-                    speechHelper.preferredScript = it
+                    speechHelper.updateScript(it)
                 },
                 onCancel = {
                     buttonState = AiVoiceButtonState.IDLE
@@ -261,7 +268,7 @@ fun AiVoiceRowContainer(
                     permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 } else {
                     buttonState = AiVoiceButtonState.RECORDING
-                    speechHelper.startListening()
+                    speechHelper.startListening(currentScript)
                 }
             } else {
                 showRewardedAdDialog = true
@@ -273,7 +280,7 @@ fun AiVoiceRowContainer(
             creditManager.addRewardCredits(5)
             showRewardedAdDialog = false
             buttonState = AiVoiceButtonState.RECORDING
-            speechHelper.startListening()
+            speechHelper.startListening(currentScript)
         },
         pendingChecklistResult = pendingChecklistResult,
         onDismissChecklistReview = { pendingChecklistResult = null },
@@ -317,6 +324,13 @@ fun AiVoiceDockedBottomButton(
     val credits by creditManager.credits.collectAsState()
     val hasSeenOnboarding by onboardingManager.hasSeenOnboarding.collectAsState()
     val currentScript by scriptManager.selectedScript.collectAsState()
+
+    val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales.get(0)
+    val appLang = currentLocale?.language ?: "ar"
+
+    LaunchedEffect(appLang) {
+        scriptManager.syncWithAppLanguage(appLang)
+    }
 
     var showOnboardingDialog by remember { mutableStateOf(false) }
     var showRewardedAdDialog by remember { mutableStateOf(false) }
@@ -364,7 +378,7 @@ fun AiVoiceDockedBottomButton(
     }
 
     LaunchedEffect(currentScript) {
-        speechHelper.preferredScript = currentScript
+        speechHelper.updateScript(currentScript)
     }
 
     val partialText by speechHelper.partialText.collectAsState()
@@ -443,7 +457,7 @@ fun AiVoiceDockedBottomButton(
                 currentScript = currentScript,
                 onScriptSelected = {
                     scriptManager.setScript(it)
-                    speechHelper.preferredScript = it
+                    speechHelper.updateScript(it)
                 },
                 forceRightArrow = true, // Points directly down at bottom-right mic button
                 onCancel = {
@@ -483,7 +497,7 @@ fun AiVoiceDockedBottomButton(
                     permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 } else {
                     buttonState = AiVoiceButtonState.RECORDING
-                    speechHelper.startListening()
+                    speechHelper.startListening(currentScript)
                 }
             } else {
                 showRewardedAdDialog = true
@@ -495,7 +509,7 @@ fun AiVoiceDockedBottomButton(
             creditManager.addRewardCredits(5)
             showRewardedAdDialog = false
             buttonState = AiVoiceButtonState.RECORDING
-            speechHelper.startListening()
+            speechHelper.startListening(currentScript)
         },
         pendingChecklistResult = pendingChecklistResult,
         onDismissChecklistReview = { pendingChecklistResult = null },
