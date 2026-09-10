@@ -15,11 +15,18 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -152,6 +159,51 @@ fun resolveJournalFont(text: String = "", isRtl: Boolean = false): FontFamily {
         CreamFrothFamily
     } else {
         PatrickHandFamily
+    }
+}
+
+/**
+ * Formats digits and quantities inside a text string with FontWeight.Bold
+ * so numbers (e.g. 1 kg, 2 gousses, 10 DH, 2 كيلو) stand out clearly.
+ */
+fun highlightNumbersInText(text: String, baseColor: Color = JournalInk): AnnotatedString {
+    if (text.isEmpty()) return AnnotatedString("")
+    val regex = Regex("""\d+([.,]\d+)?""")
+    if (!regex.containsMatchIn(text)) {
+        return AnnotatedString(text)
+    }
+    return buildAnnotatedString {
+        var lastIndex = 0
+        for (match in regex.findAll(text)) {
+            val start = match.range.first
+            val end = match.range.last + 1
+            if (start > lastIndex) {
+                append(text.substring(lastIndex, start))
+            }
+            withStyle(
+                SpanStyle(
+                    fontWeight = FontWeight.Bold,
+                    color = baseColor
+                )
+            ) {
+                append(text.substring(start, end))
+            }
+            lastIndex = end
+        }
+        if (lastIndex < text.length) {
+            append(text.substring(lastIndex))
+        }
+    }
+}
+
+/**
+ * VisualTransformation that renders numeric digits in bold inside BasicTextField
+ * without altering cursor position or string contents.
+ */
+object NumberBoldVisualTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val highlighted = highlightNumbersInText(text.text)
+        return TransformedText(highlighted, OffsetMapping.Identity)
     }
 }
 

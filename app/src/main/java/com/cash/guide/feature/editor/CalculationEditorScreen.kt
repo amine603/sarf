@@ -344,9 +344,6 @@ fun CalculationEditorScreen(
                     JournalAddRowButton(
                         onAddRow = {
                             viewModel.addNewRow()
-                            coroutineScope.launch {
-                                listState.animateScrollToItem(state.rows.size)
-                            }
                         }
                     )
                 }

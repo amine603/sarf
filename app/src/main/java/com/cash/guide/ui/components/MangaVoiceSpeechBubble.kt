@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import com.cash.guide.domain.ai.AiOutputScript
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
+import com.cash.guide.ui.notebook.highlightNumbersInText
 import com.cash.guide.ui.notebook.isArabicScript
 import com.cash.guide.ui.notebook.resolveJournalFont
 import java.util.Locale
@@ -387,28 +388,22 @@ fun MangaVoiceSpeechBubble(
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
-                        val isTranscriptArabic = isArabicScript(liveTranscript)
+                        val isTranscriptArabic = isArabicScript(liveTranscript) || currentScript == AiOutputScript.ARABIC
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .verticalScroll(scrollState)
                         ) {
                             Text(
-                                text = liveTranscript,
+                                text = highlightNumbersInText(liveTranscript, JournalInk),
                                 fontFamily = resolveJournalFont(liveTranscript, isTranscriptArabic),
                                 fontSize = 14.5.sp,
                                 lineHeight = 20.sp,
-                                fontWeight = FontWeight.Medium,
+                                fontWeight = FontWeight.Normal,
                                 color = JournalInk,
-                                textAlign = if (isRtl) {
-                                    if (isTranscriptArabic) TextAlign.Right else TextAlign.Left
-                                } else {
-                                    // When the app is in French/English, keep text at the logical start (left)
-                                    // while preserving correct RTL BiDi reading flow for numbers and Arabic
-                                    TextAlign.Start
-                                },
+                                textAlign = if (isTranscriptArabic) TextAlign.Right else TextAlign.Left,
                                 style = TextStyle(
-                                    textDirection = if (isTranscriptArabic) TextDirection.ContentOrRtl else TextDirection.ContentOrLtr
+                                    textDirection = if (isTranscriptArabic) TextDirection.Rtl else TextDirection.Ltr
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             )

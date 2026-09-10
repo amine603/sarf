@@ -437,13 +437,17 @@ fun JournalEntryRow(
                         style = TextStyle(platformStyle = NoFontPadding)
                     )
                 } else {
+                    val isTextArabic = isArabicScript(titleValue.text)
                     Text(
-                        text = titleValue.text,
+                        text = highlightNumbersInText(titleValue.text, JournalInk),
                         fontFamily = resolveJournalFont(titleValue.text, isRtl),
-                        fontSize = if (isArabicScript(titleValue.text) || isRtl) 14.5.sp else 15.sp,
+                        fontSize = if (isTextArabic || isRtl) 14.5.sp else 15.sp,
                         fontWeight = FontWeight.Medium,
                         color = JournalInk,
-                        style = TextStyle(platformStyle = NoFontPadding),
+                        style = TextStyle(
+                            platformStyle = NoFontPadding,
+                            textDirection = if (isTextArabic) TextDirection.Rtl else TextDirection.ContentOrLtr
+                        ),
                         onTextLayout = { titleLayoutResult = it }
                     )
                 }

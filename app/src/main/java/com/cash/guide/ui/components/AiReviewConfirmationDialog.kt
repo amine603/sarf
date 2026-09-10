@@ -47,7 +47,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -56,6 +59,9 @@ import com.cash.guide.domain.ai.CalculationAiEntry
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalPaper
+import com.cash.guide.ui.notebook.NumberBoldVisualTransformation
+import com.cash.guide.ui.notebook.highlightNumbersInText
+import com.cash.guide.ui.notebook.isArabicScript
 
 @Composable
 fun AiChecklistReviewDialog(
@@ -142,11 +148,14 @@ fun AiChecklistReviewDialog(
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF48FB1).copy(alpha = 0.4f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        val isQuoteArabic = isArabicScript(originalSpeech)
                         Text(
-                            text = "💬 \"$originalSpeech\"",
+                            text = highlightNumbersInText("💬 \"$originalSpeech\"", JournalInk),
                             fontSize = 12.sp,
                             color = JournalInk,
                             lineHeight = 16.sp,
+                            textAlign = if (isQuoteArabic) TextAlign.Right else TextAlign.Left,
+                            style = TextStyle(textDirection = if (isQuoteArabic) TextDirection.Rtl else TextDirection.Ltr),
                             modifier = Modifier.padding(8.dp)
                         )
                     }
@@ -169,44 +178,49 @@ fun AiChecklistReviewDialog(
                         .heightIn(max = 260.dp)
                 ) {
                     itemsIndexed(items) { index, item ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 3.dp)
-                                .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
-                                .border(1.dp, Color(0xFFE0D7CD), RoundedCornerShape(10.dp))
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "${index + 1}.",
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1B7A4B),
-                                fontSize = 13.sp,
-                                modifier = Modifier.width(22.dp)
-                            )
-                            BasicTextField(
-                                value = item,
-                                onValueChange = { newText -> items[index] = newText },
-                                textStyle = TextStyle(
-                                    color = JournalInk,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    textDirection = TextDirection.ContentOrRtl
-                                ),
-                                cursorBrush = SolidColor(Color(0xFF1B7A4B)),
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(
-                                onClick = { items.removeAt(index) },
-                                modifier = Modifier.size(26.dp)
+                        val isItemArabic = isArabicScript(item)
+                        CompositionLocalProvider(LocalLayoutDirection provides (if (isItemArabic) LayoutDirection.Rtl else LayoutDirection.Ltr)) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 3.dp)
+                                    .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
+                                    .border(1.dp, Color(0xFFE0D7CD), RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "حذف",
-                                    tint = Color(0xFFD32F2F),
-                                    modifier = Modifier.size(17.dp)
+                                Text(
+                                    text = "${index + 1}.",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1B7A4B),
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.width(22.dp)
                                 )
+                                BasicTextField(
+                                    value = item,
+                                    onValueChange = { newText -> items[index] = newText },
+                                    textStyle = TextStyle(
+                                        color = JournalInk,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        textAlign = if (isItemArabic) TextAlign.Right else TextAlign.Left,
+                                        textDirection = if (isItemArabic) TextDirection.Rtl else TextDirection.Ltr
+                                    ),
+                                    visualTransformation = NumberBoldVisualTransformation,
+                                    cursorBrush = SolidColor(Color(0xFF1B7A4B)),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = { items.removeAt(index) },
+                                    modifier = Modifier.size(26.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "حذف",
+                                        tint = Color(0xFFD32F2F),
+                                        modifier = Modifier.size(17.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -440,11 +454,14 @@ fun AiCalculationReviewDialog(
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF48FB1).copy(alpha = 0.4f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        val isQuoteArabic = isArabicScript(originalSpeech)
                         Text(
-                            text = "💬 \"$originalSpeech\"",
+                            text = highlightNumbersInText("💬 \"$originalSpeech\"", JournalInk),
                             fontSize = 12.sp,
                             color = JournalInk,
                             lineHeight = 16.sp,
+                            textAlign = if (isQuoteArabic) TextAlign.Right else TextAlign.Left,
+                            style = TextStyle(textDirection = if (isQuoteArabic) TextDirection.Rtl else TextDirection.Ltr),
                             modifier = Modifier.padding(8.dp)
                         )
                     }
@@ -467,6 +484,7 @@ fun AiCalculationReviewDialog(
                         .heightIn(max = 240.dp)
                 ) {
                     itemsIndexed(entries) { index, entry ->
+                        val isEntryArabic = isArabicScript(entry.label)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -501,9 +519,11 @@ fun AiCalculationReviewDialog(
                                 textStyle = TextStyle(
                                     color = JournalInk,
                                     fontSize = 13.5.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    textDirection = TextDirection.ContentOrRtl
+                                    fontWeight = FontWeight.Normal,
+                                    textAlign = if (isEntryArabic) TextAlign.Right else TextAlign.Left,
+                                    textDirection = if (isEntryArabic) TextDirection.Rtl else TextDirection.Ltr
                                 ),
+                                visualTransformation = NumberBoldVisualTransformation,
                                 cursorBrush = SolidColor(Color(0xFF1B7A4B)),
                                 modifier = Modifier.weight(1.5f)
                             )
