@@ -42,7 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import android.widget.Toast
-import com.cash.guide.ui.components.AiVoiceInputDialog
+import com.cash.guide.ui.components.AiVoiceAssistantButton
 import com.cash.guide.ui.components.AiVoiceInputTarget
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -140,7 +140,6 @@ fun CalculationEditorScreen(
     val isRtl = layoutDirection == LayoutDirection.Rtl
     var showExportSheet by remember { mutableStateOf(false) }
     var showBreakdownSheet by rememberSaveable { mutableStateOf(false) }
-    var showAiVoiceDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(calculationId, initialGroupId, initialType, initialCurrency, initialTitle, templateId) {
         val currencyEnum = initialCurrency?.let { runCatching { MoneyUnit.valueOf(it) }.getOrNull() }
@@ -350,23 +349,17 @@ fun CalculationEditorScreen(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    Surface(
-                        shape = CircleShape,
-                        color = Color(0xFF1B7A4B),
-                        shadowElevation = 2.dp,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clickable { showAiVoiceDialog = true }
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.Mic,
-                                contentDescription = "AI Voice Dictation",
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
-                            )
+                    AiVoiceAssistantButton(
+                        target = AiVoiceInputTarget.CALCULATION,
+                        onCalculationResult = { result ->
+                            viewModel.addAiEntries(result.entries, result.title)
+                            Toast.makeText(
+                                context,
+                                if (isRtl) "تمت إضافة ${result.entries.size} عمليات بالذكاء الاصطناعي 🪄" else "${result.entries.size} lignes ajoutées avec l'IA 🪄",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
-                    }
+                    )
                 }
 
                 // Exactly 2 empty notebook lines between Add Row and Total
@@ -493,22 +486,6 @@ fun CalculationEditorScreen(
             MoneyBreakdownSheet(
                 totalCentimes = state.totalCentimes,
                 onDismiss = { showBreakdownSheet = false }
-            )
-        }
-
-        // AI Voice Input Dialog
-        if (showAiVoiceDialog) {
-            AiVoiceInputDialog(
-                target = AiVoiceInputTarget.CALCULATION,
-                onDismiss = { showAiVoiceDialog = false },
-                onCalculationResult = { result ->
-                    viewModel.addAiEntries(result.entries, result.title)
-                    Toast.makeText(
-                        context,
-                        if (isRtl) "تمت إضافة ${result.entries.size} عمليات بالذكاء الاصطناعي 🪄" else "${result.entries.size} lignes ajoutées avec l'IA 🪄",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
             )
         }
     }

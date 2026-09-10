@@ -40,7 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import android.widget.Toast
-import com.cash.guide.ui.components.AiVoiceInputDialog
+import com.cash.guide.ui.components.AiVoiceAssistantButton
 import com.cash.guide.ui.components.AiVoiceInputTarget
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -717,23 +717,17 @@ fun ChecklistScreen(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Surface(
-                    shape = CircleShape,
-                    color = ColorEmerald,
-                    shadowElevation = 2.dp,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clickable { showAiVoiceDialog = true }
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Mic,
-                            contentDescription = "AI Voice Assistant",
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp)
-                        )
+                AiVoiceAssistantButton(
+                    target = AiVoiceInputTarget.CHECKLIST,
+                    onChecklistResult = { result ->
+                        viewModel.addMultipleItems(result.items)
+                        Toast.makeText(
+                            context,
+                            if (isRtl) "تمت إضافة ${result.items.size} عناصر بالذكاء الاصطناعي 🪄" else "${result.items.size} éléments ajoutés avec l'IA 🪄",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
-                }
+                )
             }
 
             if (state.activeInputTarget != ChecklistInputTarget.NONE) {
@@ -807,21 +801,6 @@ fun ChecklistScreen(
                         color = JournalMutedInk
                     )
                 }
-            }
-        )
-    }
-
-    if (showAiVoiceDialog) {
-        AiVoiceInputDialog(
-            target = AiVoiceInputTarget.CHECKLIST,
-            onDismiss = { showAiVoiceDialog = false },
-            onChecklistResult = { result ->
-                viewModel.addMultipleItems(result.items)
-                Toast.makeText(
-                    context,
-                    if (isRtl) "تمت إضافة ${result.items.size} عناصر بالذكاء الاصطناعي 🪄" else "${result.items.size} éléments ajoutés avec l'IA 🪄",
-                    Toast.LENGTH_SHORT
-                ).show()
             }
         )
     }
