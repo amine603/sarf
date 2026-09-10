@@ -58,4 +58,28 @@ class GeminiDarijaServiceTest {
         assertEquals("كرا", entries.getJSONObject(1).getString("label"))
         assertEquals(25.0, entries.getJSONObject(1).getDouble("amount"), 0.001)
     }
+
+    @Test
+    fun parseCalculationJsonWithOptionalAmounts() {
+        val rawJson = """
+            {
+               "title": "تقضية",
+               "entries": [
+                  { "label": "خضرة", "amount": 0.0 },
+                  { "label": "لحم", "amount": 120.0 },
+                  { "label": "ترانسبور", "amount": 0.0 }
+               ]
+            }
+        """.trimIndent()
+
+        val json = JSONObject(rawJson)
+        val entries = json.getJSONArray("entries")
+        assertEquals(3, entries.length())
+        assertEquals("خضرة", entries.getJSONObject(0).getString("label"))
+        assertEquals(0.0, entries.getJSONObject(0).getDouble("amount"), 0.001)
+        assertEquals("لحم", entries.getJSONObject(1).getString("label"))
+        assertEquals(120.0, entries.getJSONObject(1).getDouble("amount"), 0.001)
+        assertEquals("ترانسبور", entries.getJSONObject(2).getString("label"))
+        assertEquals(0.0, entries.getJSONObject(2).getDouble("amount"), 0.001)
+    }
 }

@@ -51,9 +51,9 @@ object GeminiDarijaService {
 
         val systemPrompt = """
             You are an expert Moroccan Darija assistant for a notebook app called "Sarf".
-            The user spoke or typed items in Moroccan Darija, Arabic, or French.
-            Extract the items into a clean list.
-            If the user mentioned quantities (e.g. 2kg, نص كيلو, رابعة, بكية, قرعة, ربطة, 3 حبات), include the quantity in each item label.
+            The user spoke or dictated a list of items or groceries in Moroccan Darija, Arabic, or French.
+            Extract ALL items into a clean list, separating each item even if spoken rapidly in a single long sentence.
+            If the user mentioned quantities (e.g. 2kg, نص كيلو, رابعة, بكية, قرعة, ربطة, 3 حبات, 5 لتر), include the quantity in the item label.
             Respond ONLY with a valid JSON object matching this schema:
             {
                "title": "a short title in Arabic/Darija e.g. تقضية or سخرة",
@@ -88,6 +88,7 @@ object GeminiDarijaService {
 
     /**
      * Parses a spoken Darija sentence into accounting ledger rows with amounts in Dirhams.
+     * Amounts are OPTIONAL: items without specified price will have amount = 0.0.
      */
     suspend fun parseCalculationFromDarija(userSpeech: String): CalculationAiResult? = withContext(Dispatchers.IO) {
         val apiKey = getApiKey()
@@ -98,18 +99,20 @@ object GeminiDarijaService {
 
         val systemPrompt = """
             You are an expert Moroccan accountant assistant for the app "Sarf".
-            The user spoke or dictated monetary entries in Moroccan Darija, French, or Arabic.
-            Convert all amounts to DIRHAMS (MAD):
-            - "ريال" (Riyal): 1 Riyal = 0.05 Dirham. (Example: 100 ريال = 5 DH, 500 ريال = 25 DH, 1000 ريال = 50 DH, 2000 ريال = 100 DH).
-            - "فرانك" (Franc): 1 Franc = 0.01 Dirham. (Example: 1000 فرانك = 10 DH).
-            - "درهم" (Dirham): 1 Dirham = 1 DH.
-            Extract each entry label and its final numeric amount in Dirhams.
+            The user spoke or dictated monetary entries, purchases, or expenses in Moroccan Darija, French, or Arabic.
+            AMOUNTS ARE OPTIONAL:
+            - If the user mentions a price for an item, convert it to DIRHAMS (MAD):
+              * "ريال" (Riyal): 1 Riyal = 0.05 Dirham. (Example: 100 ريال = 5 DH, 500 ريال = 25 DH, 1000 ريال = 50 DH, 2000 ريال = 100 DH).
+              * "فرانك" (Franc): 1 Franc = 0.01 Dirham. (Example: 1000 فرانك = 10 DH).
+              * "درهم" (Dirham): 1 Dirham = 1 DH.
+            - If the user DOES NOT mention an amount or price for an item (e.g. just said item names), set amount to 0.0. DO NOT omit or drop the item! Include every item mentioned.
+            Extract each entry label and its numeric amount in Dirhams (or 0.0 if not specified).
             Respond ONLY with a valid JSON object matching this schema:
             {
                "title": "short title in Arabic/Darija e.g. مصاريف or حساب",
                "entries": [
                   { "label": "description", "amount": 150.0 },
-                  ...
+                  { "label": "item without price", "amount": 0.0 }
                ]
             }
             Do not wrap in markdown code blocks. Output pure JSON only.
@@ -130,8 +133,8 @@ object GeminiDarijaService {
                 val obj = entriesArr.getJSONObject(i)
                 val label = obj.optString("label", "بند").trim()
                 val amount = obj.optDouble("amount", 0.0)
-                if (label.isNotBlank() && amount > 0.0) {
-                    entries.add(CalculationAiEntry(label = label, amount = amount))
+                if (label.isNotBlank()) {
+                    entries.add(CalculationAiEntry(label = label, amount = maxOf(0.0, amount)))
                 }
             }
             CalculationAiResult(title = title, entries = entries)

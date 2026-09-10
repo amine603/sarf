@@ -1,4 +1,4 @@
-package com.cash.guide.ui.components
+﻿package com.cash.guide.ui.components
 
 import android.Manifest
 import android.app.Activity
@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -60,10 +61,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import com.cash.guide.domain.ads.AdMobManager
 import com.cash.guide.domain.ads.AiCreditManager
+import com.cash.guide.domain.ai.AiVoiceOnboardingManager
 import com.cash.guide.domain.ai.CalculationAiResult
 import com.cash.guide.domain.ai.ChecklistAiResult
 import com.cash.guide.domain.ai.GeminiDarijaService
-import com.cash.guide.domain.speech.SpeechRecognitionState
 import com.cash.guide.domain.speech.SpeechRecognizerHelper
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
@@ -73,6 +74,16 @@ import kotlinx.coroutines.launch
 enum class AiVoiceInputTarget {
     CHECKLIST,
     CALCULATION
+}
+
+private enum class VoiceFlowStep {
+    ONBOARDING,
+    REWARDED_AD,
+    LISTENING,
+    ANALYZING,
+    REVIEW_CHECKLIST,
+    REVIEW_CALCULATION,
+    ERROR
 }
 
 @Composable
@@ -88,42 +99,56 @@ fun AiVoiceInputDialog(
 
     val creditManager = remember { AiCreditManager.getInstance(context) }
     val adMobManager = remember { AdMobManager.getInstance(context) }
-    val credits by creditManager.credits.collectAsState()
+    val onboardingManager = remember { AiVoiceOnboardingManager.getInstance(context) }
 
-    var isProcessingGemini by remember { mutableStateOf(false) }
-    var geminiErrorMessage by remember { mutableStateOf<String?>(null) }
+    val credits by creditManager.credits.collectAsState()
+    val hasSeenOnboarding by onboardingManager.hasSeenOnboarding.collectAsState()
+
+    var flowStep by remember {
+        mutableStateOf(
+            when {
+                !hasSeenOnboarding -> VoiceFlowStep.ONBOARDING
+                credits <= 0 -> VoiceFlowStep.REWARDED_AD
+                else -> VoiceFlowStep.LISTENING
+            }
+        )
+    }
+
+    var recordedTranscript by remember { mutableStateOf("") }
+    var extractedChecklistResult by remember { mutableStateOf<ChecklistAiResult?>(null) }
+    var extractedCalculationResult by remember { mutableStateOf<CalculationAiResult?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val speechHelper = remember {
         SpeechRecognizerHelper(context).apply {
             onSpeechResult = { text ->
-                if (text.isNotBlank()) {
-                    isProcessingGemini = true
-                    geminiErrorMessage = null
+                if (text.isNotBlank() && flowStep == VoiceFlowStep.LISTENING) {
+                    recordedTranscript = text
+                    flowStep = VoiceFlowStep.ANALYZING
                     scope.launch {
                         try {
                             if (target == AiVoiceInputTarget.CHECKLIST) {
                                 val result = GeminiDarijaService.parseChecklistFromDarija(text)
                                 if (result != null && result.items.isNotEmpty()) {
-                                    creditManager.consumeCredit()
-                                    onChecklistResult(result)
-                                    onDismiss()
+                                    extractedChecklistResult = result
+                                    flowStep = VoiceFlowStep.REVIEW_CHECKLIST
                                 } else {
-                                    geminiErrorMessage = "تعذر استخراج العناصر، يرجى التحدث بوضوح أكثر"
+                                    errorMessage = "تعذر استخراج العناصر من الأوديو، عاود جرب وتحدث بوضوح"
+                                    flowStep = VoiceFlowStep.ERROR
                                 }
                             } else {
                                 val result = GeminiDarijaService.parseCalculationFromDarija(text)
                                 if (result != null && result.entries.isNotEmpty()) {
-                                    creditManager.consumeCredit()
-                                    onCalculationResult(result)
-                                    onDismiss()
+                                    extractedCalculationResult = result
+                                    flowStep = VoiceFlowStep.REVIEW_CALCULATION
                                 } else {
-                                    geminiErrorMessage = "تعذر استخراج الحسابات، يرجى ذكر المبالغ بوضوح"
+                                    errorMessage = "تعذر استخراج الحسابات من الأوديو، عاود جرب وتحدث بوضوح"
+                                    flowStep = VoiceFlowStep.ERROR
                                 }
                             }
                         } catch (e: Exception) {
-                            geminiErrorMessage = "حدث خطأ في الاتصال بالذكاء الاصطناعي"
-                        } finally {
-                            isProcessingGemini = false
+                            errorMessage = "حدث خطأ في الاتصال بالذكاء الاصطناعي"
+                            flowStep = VoiceFlowStep.ERROR
                         }
                     }
                 }
@@ -131,7 +156,6 @@ fun AiVoiceInputDialog(
         }
     }
 
-    val speechState by speechHelper.state.collectAsState()
     val partialText by speechHelper.partialText.collectAsState()
     val speechError by speechHelper.errorMessage.collectAsState()
 
@@ -149,7 +173,22 @@ fun AiVoiceInputDialog(
     ) { isGranted ->
         hasAudioPermission = isGranted
         if (isGranted && credits > 0) {
+            speechHelper.reset()
             speechHelper.startListening()
+        }
+    }
+
+    // Start listening automatically when entering LISTENING state
+    LaunchedEffect(flowStep, hasAudioPermission, credits) {
+        if (flowStep == VoiceFlowStep.LISTENING) {
+            if (!hasAudioPermission) {
+                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            } else if (credits > 0) {
+                speechHelper.reset()
+                speechHelper.startListening()
+            } else {
+                flowStep = VoiceFlowStep.REWARDED_AD
+            }
         }
     }
 
@@ -160,259 +199,430 @@ fun AiVoiceInputDialog(
     }
 
     // Mic Pulse Animation
-    val infiniteTransition = rememberInfiniteTransition(label = "mic_pulse")
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse_trans")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = 1.25f,
+        targetValue = 1.3f,
         animationSpec = infiniteRepeatable(
-            animation = tween(700, easing = FastOutSlowInEasing),
+            animation = tween(650, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "mic_scale"
+        label = "pulse_scale"
     )
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = JournalPaper),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Header: Title & Close & Credits Badge
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+    // Render corresponding screen based on flowStep
+    when (flowStep) {
+        VoiceFlowStep.ONBOARDING -> {
+            AiVoiceOnboardingDialog(
+                onDismiss = {
+                    onboardingManager.markSeen()
+                    if (credits > 0) {
+                        flowStep = VoiceFlowStep.LISTENING
+                    } else {
+                        flowStep = VoiceFlowStep.REWARDED_AD
+                    }
+                }
+            )
+        }
+
+        VoiceFlowStep.REWARDED_AD -> {
+            Dialog(onDismissRequest = onDismiss) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = JournalPaper),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    // Credits Badge
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (credits > 0) Color(0xFFE8F5E9) else Color(0xFFFFEBEE),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            if (credits > 0) Color(0xFF81C784) else Color(0xFFE57373)
-                        )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = if (credits > 0) "⚡ $credits محاولات متبقية" else "⚡ 0 محاولات",
-                            color = if (credits > 0) Color(0xFF1B5E20) else Color(0xFFC62828),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Fermer",
-                            tint = JournalMutedInk
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = if (target == AiVoiceInputTarget.CHECKLIST) "إملاء قائمة التسوق بالذكاء الاصطناعي 🎙️" else "إملاء الحسابات بالذكاء الاصطناعي 🎙️",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalInk,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                val exampleText = if (target == AiVoiceInputTarget.CHECKLIST) {
-                    "مثال: \"خاصني 2 كيلو مطيشة، وبكية أتاي السبع، و 3 خبزات وبيض\""
-                } else {
-                    "مثال: \"قيد 150 درهم سلعة، و 500 ريال كرا، و 40 درهم ترانسبور\""
-                }
-                Text(
-                    text = exampleText,
-                    fontSize = 12.5.sp,
-                    color = JournalMutedInk,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 18.sp
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // If user has 0 credits -> Show Rewarded Ad CTA
-                if (credits <= 0) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFFFFF8E1),
-                        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFFFB300))
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
                         ) {
-                            Text(
-                                text = "سلاو ليك المحاولات اليومية (5/5) ⏳",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = Color(0xFFF57F17),
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = "تفرج فإشهار فيديو قصير (15-30 ثانية) وربح 5 محاولات إضافية فوراً!",
-                                fontSize = 13.sp,
-                                color = JournalInk,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(14.dp))
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = Color(0xFF1B7A4B),
-                                modifier = Modifier
-                                    .clickable {
-                                        if (activity != null) {
-                                            adMobManager.showRewardedAd(
-                                                activity = activity,
-                                                onRewardEarned = {
-                                                    creditManager.addRewardCredits(5)
-                                                }
-                                            )
-                                        }
+                            IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                                Icon(imageVector = Icons.Default.Close, contentDescription = "Fermer", tint = JournalMutedInk)
+                            }
+                        }
+
+                        Text(
+                            text = "سلاو ليك المحاولات اليومية (5/5) ⏳",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color(0xFFF57F17),
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Text(
+                            text = "تفرج فإشهار فيديو قصير (15-30 ثانية) وربح 5 محاولات إضافية فوراً لتسجيل السلعة والحسابات!",
+                            fontSize = 13.5.sp,
+                            color = JournalInk,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 20.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xFF1B7A4B),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (activity != null) {
+                                        adMobManager.showRewardedAd(
+                                            activity = activity,
+                                            onRewardEarned = {
+                                                creditManager.addRewardCredits(5)
+                                                flowStep = VoiceFlowStep.LISTENING
+                                            }
+                                        )
                                     }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.PlayArrow,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "مشاهدة إعلان وربح 5 محاولات 🎁",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
                                 }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PlayArrow,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "مشاهدة إعلان وربح 5 محاولات 🎁",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.5.sp
+                                )
                             }
                         }
                     }
-                } else {
-                    // Big Microphone button
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(100.dp)
-                    ) {
-                        val isListening = speechState == SpeechRecognitionState.LISTENING
+                }
+            }
+        }
 
-                        if (isListening) {
-                            Box(
-                                modifier = Modifier
-                                    .size(95.dp)
-                                    .scale(pulseScale)
-                                    .clip(CircleShape)
-                                    .background(Color(0x331B7A4B))
-                            )
+        VoiceFlowStep.LISTENING -> {
+            Dialog(onDismissRequest = onDismiss) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = JournalPaper),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(22.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Header with Credits Badge
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFFE8F5E9),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF81C784))
+                            ) {
+                                Text(
+                                    text = "⚡ $credits محاولات متبقية",
+                                    color = Color(0xFF1B5E20),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
+
+                            IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                                Icon(imageVector = Icons.Default.Close, contentDescription = "Fermer", tint = JournalMutedInk)
+                            }
                         }
 
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        // Mic Pulse
                         Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape)
-                                .background(if (isListening) Color(0xFFD32F2F) else Color(0xFF1B7A4B))
-                                .clickable {
-                                    if (!hasAudioPermission) {
-                                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                    } else {
-                                        if (isListening) {
-                                            speechHelper.stopListening()
-                                        } else {
-                                            speechHelper.startListening()
-                                        }
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.size(110.dp)
                         ) {
-                            if (isProcessingGemini) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    strokeWidth = 3.dp,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .scale(pulseScale)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFD32F2F).copy(alpha = 0.2f))
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(76.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFD32F2F))
+                                    .clickable {
+                                        speechHelper.stopAndDeliver()
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Mic,
                                     contentDescription = "Microphone",
                                     tint = Color.White,
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(38.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "كنسمع ليك دابا... تكلم بالدارجة 🎙️",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD32F2F),
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = if (target == AiVoiceInputTarget.CHECKLIST) "هضر بكل راحة، سمي كاع السلعة لي خاصاك دفعة واحدة" else "هضر بكل راحة، سمي المصاريف أو السلعة بالأثمنة أو بلا أثمنة",
+                            fontSize = 12.5.sp,
+                            color = JournalMutedInk,
+                            textAlign = TextAlign.Center
+                        )
+
+                        // Live transcript
+                        if (partialText.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF48FB1).copy(alpha = 0.12f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF48FB1).copy(alpha = 0.4f))
+                            ) {
+                                Text(
+                                    text = "💬 \"$partialText\"",
+                                    fontSize = 13.5.sp,
+                                    color = JournalInk,
+                                    fontWeight = FontWeight.Medium,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(10.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Action Buttons: Finish & Review or Cancel
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color(0xFFE0E0E0),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onDismiss() }
+                            ) {
+                                Text(
+                                    text = "إلغاء",
+                                    color = JournalInk,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.5.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(vertical = 12.dp)
+                                )
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color(0xFF1B7A4B),
+                                modifier = Modifier
+                                    .weight(2f)
+                                    .clickable {
+                                        speechHelper.stopAndDeliver()
+                                    }
+                            ) {
+                                Text(
+                                    text = "سالي ومراجعة ✨",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(vertical = 12.dp)
                                 )
                             }
                         }
                     }
+                }
+            }
+        }
 
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Status Text
-                    val statusMessage = when {
-                        isProcessingGemini -> "جاري التحليل بالذكاء الاصطناعي (Gemini)... 🤖"
-                        speechState == SpeechRecognitionState.LISTENING -> "كنسمع ليك دابا... تكلم بالدارجة 🎙️"
-                        speechState == SpeechRecognitionState.PROCESSING -> "جاري معالجة الصوت..."
-                        else -> "اضغط على الميكروفون وتحدث بالدارجة"
-                    }
-
-                    Text(
-                        text = statusMessage,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (speechState == SpeechRecognitionState.LISTENING) Color(0xFFD32F2F) else JournalInk,
-                        textAlign = TextAlign.Center
-                    )
-
-                    // Spoken text display in ruled ink style
-                    if (partialText.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFF48FB1).copy(alpha = 0.15f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF48FB1).copy(alpha = 0.5f))
-                        ) {
-                            Text(
-                                text = "💬 \"$partialText\"",
-                                fontSize = 14.sp,
-                                color = JournalInk,
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(10.dp)
-                            )
-                        }
-                    }
-
-                    // Error display if any
-                    val err = geminiErrorMessage ?: speechError
-                    if (err != null) {
-                        Spacer(modifier = Modifier.height(10.dp))
+        VoiceFlowStep.ANALYZING -> {
+            Dialog(onDismissRequest = {}) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = JournalPaper),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color(0xFF1B7A4B),
+                            strokeWidth = 3.5.dp,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(18.dp))
                         Text(
-                            text = "⚠️ $err",
+                            text = "جاري التحليل بالذكاء الاصطناعي... 🤖",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = JournalInk,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Gemini 2.5 Flash كيستخرج العناصر وكيقادهم...",
                             fontSize = 12.5.sp,
+                            color = JournalMutedInk,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+
+        VoiceFlowStep.REVIEW_CHECKLIST -> {
+            val res = extractedChecklistResult
+            if (res != null) {
+                AiChecklistReviewDialog(
+                    originalSpeech = recordedTranscript,
+                    initialItems = res.items,
+                    onDismiss = onDismiss,
+                    onConfirm = { confirmedItems ->
+                        creditManager.consumeCredit()
+                        onChecklistResult(res.copy(items = confirmedItems))
+                        onDismiss()
+                    }
+                )
+            }
+        }
+
+        VoiceFlowStep.REVIEW_CALCULATION -> {
+            val res = extractedCalculationResult
+            if (res != null) {
+                AiCalculationReviewDialog(
+                    originalSpeech = recordedTranscript,
+                    initialEntries = res.entries,
+                    onDismiss = onDismiss,
+                    onConfirm = { confirmedEntries ->
+                        creditManager.consumeCredit()
+                        onCalculationResult(res.copy(entries = confirmedEntries))
+                        onDismiss()
+                    }
+                )
+            }
+        }
+
+        VoiceFlowStep.ERROR -> {
+            Dialog(onDismissRequest = onDismiss) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = JournalPaper),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(22.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "⚠️ لم نتمكن من المعالجة",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
                             color = Color(0xFFC62828),
                             textAlign = TextAlign.Center
                         )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = errorMessage ?: speechError ?: "يرجى المحاولة مرة أخرى والتحدث بوضوح",
+                            fontSize = 13.sp,
+                            color = JournalInk,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFFE0E0E0),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onDismiss() }
+                            ) {
+                                Text(
+                                    text = "إلغاء",
+                                    color = JournalInk,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.5.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(vertical = 11.dp)
+                                )
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFF1B7A4B),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        errorMessage = null
+                                        flowStep = VoiceFlowStep.LISTENING
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(vertical = 11.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "إعادة المحاولة",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.5.sp
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -277,7 +277,9 @@ class CalculationEditorViewModel(
         _uiState.update { current ->
             val existingRows = current.rows.filter { it.title.text.isNotBlank() || it.amount.text.isNotBlank() }
             val newRows = entries.map { entry ->
-                val amountStr = if (entry.amount % 1.0 == 0.0) {
+                val amountStr = if (entry.amount <= 0.0) {
+                    ""
+                } else if (entry.amount % 1.0 == 0.0) {
                     entry.amount.toLong().toString()
                 } else {
                     String.format(java.util.Locale.US, "%.2f", entry.amount)

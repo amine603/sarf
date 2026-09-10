@@ -1,4 +1,4 @@
-package com.cash.guide.domain.speech
+﻿package com.cash.guide.domain.speech
 
 import android.content.Context
 import android.content.Intent
@@ -26,13 +26,27 @@ class SpeechRecognizerHelper(private val context: Context) {
     private val _state = MutableStateFlow(SpeechRecognitionState.IDLE)
     val state: StateFlow<SpeechRecognitionState> = _state.asStateFlow()
 
+    private val _accumulatedText = MutableStateFlow("")
+    val accumulatedText: StateFlow<String> = _accumulatedText.asStateFlow()
+
     private val _partialText = MutableStateFlow("")
     val partialText: StateFlow<String> = _partialText.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    private var latestPartial: String = ""
+
     var onSpeechResult: ((String) -> Unit)? = null
+
+    fun reset() {
+        stopListening()
+        _accumulatedText.value = ""
+        _partialText.value = ""
+        latestPartial = ""
+        _errorMessage.value = null
+        _state.value = SpeechRecognitionState.IDLE
+    }
 
     fun startListening() {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
@@ -47,7 +61,6 @@ class SpeechRecognizerHelper(private val context: Context) {
             setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {
                     _state.value = SpeechRecognitionState.LISTENING
-                    _partialText.value = ""
                     _errorMessage.value = null
                 }
 
@@ -60,18 +73,27 @@ class SpeechRecognizerHelper(private val context: Context) {
                 override fun onBufferReceived(buffer: ByteArray?) {}
 
                 override fun onEndOfSpeech() {
-                    _state.value = SpeechRecognitionState.PROCESSING
+                    // Let processing complete or await onResults
                 }
 
                 override fun onError(error: Int) {
+                    val currentText = getBestTranscript()
+                    Log.w(TAG, "SpeechRecognizer error: $error, hasText=${currentText.isNotBlank()}")
+                    
+                    // If we already have accumulated text and it timed out or no match on trailing silence, deliver what we have!
+                    if ((error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT || error == SpeechRecognizer.ERROR_NO_MATCH) && currentText.isNotBlank()) {
+                        _state.value = SpeechRecognitionState.IDLE
+                        onSpeechResult?.invoke(currentText)
+                        return
+                    }
+
                     val msg = when (error) {
                         SpeechRecognizer.ERROR_NO_MATCH -> "لم يتم التعرف على الصوت، حاول مرة أخرى"
                         SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "انتهى الوقت، اضغط وتحدث مجدداً"
                         SpeechRecognizer.ERROR_AUDIO -> "خطأ في الميكروفون"
                         SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "تحقق من اتصال الإنترنت"
-                        else -> "حدث خطأ، يرجى إعادة المحاولة"
+                        else -> "حدث خطأ في التسجيل، يرجى إعادة المحاولة"
                     }
-                    Log.w(TAG, "SpeechRecognizer error: $error ($msg)")
                     _state.value = SpeechRecognitionState.ERROR
                     _errorMessage.value = msg
                 }
@@ -79,11 +101,23 @@ class SpeechRecognizerHelper(private val context: Context) {
                 override fun onResults(results: Bundle?) {
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     val spokenText = matches?.firstOrNull() ?: ""
-                    Log.d(TAG, "Speech recognition result: $spokenText")
-                    _state.value = SpeechRecognitionState.IDLE
-                    _partialText.value = spokenText
+                    Log.d(TAG, "Speech recognition onResults: $spokenText")
+                    
                     if (spokenText.isNotBlank()) {
-                        onSpeechResult?.invoke(spokenText)
+                        val updated = if (_accumulatedText.value.isBlank()) {
+                            spokenText
+                        } else {
+                            "${_accumulatedText.value} $spokenText"
+                        }
+                        _accumulatedText.value = updated
+                        _partialText.value = updated
+                        latestPartial = ""
+                    }
+                    
+                    _state.value = SpeechRecognitionState.IDLE
+                    val finalTranscript = getBestTranscript()
+                    if (finalTranscript.isNotBlank()) {
+                        onSpeechResult?.invoke(finalTranscript)
                     }
                 }
 
@@ -91,7 +125,13 @@ class SpeechRecognizerHelper(private val context: Context) {
                     val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     val text = matches?.firstOrNull() ?: ""
                     if (text.isNotBlank()) {
-                        _partialText.value = text
+                        latestPartial = text
+                        val combined = if (_accumulatedText.value.isBlank()) {
+                            text
+                        } else {
+                            "${_accumulatedText.value} $text"
+                        }
+                        _partialText.value = combined
                     }
                 }
 
@@ -105,6 +145,10 @@ class SpeechRecognizerHelper(private val context: Context) {
             putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", arrayOf("ar", "fr-FR", Locale.getDefault().toLanguageTag()))
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+            // Generous silence lengths to allow continuous dictation without cutting off mid-sentence
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 30000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 4000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3500L)
         }
 
         try {
@@ -113,6 +157,14 @@ class SpeechRecognizerHelper(private val context: Context) {
             Log.e(TAG, "Failed to start speech recognition", e)
             _state.value = SpeechRecognitionState.ERROR
             _errorMessage.value = "تعذر تشغيل الميكروفون"
+        }
+    }
+
+    fun stopAndDeliver() {
+        val transcript = getBestTranscript()
+        stopListening()
+        if (transcript.isNotBlank()) {
+            onSpeechResult?.invoke(transcript)
         }
     }
 
@@ -127,6 +179,16 @@ class SpeechRecognizerHelper(private val context: Context) {
             if (_state.value != SpeechRecognitionState.PROCESSING) {
                 _state.value = SpeechRecognitionState.IDLE
             }
+        }
+    }
+
+    fun getBestTranscript(): String {
+        val acc = _accumulatedText.value.trim()
+        val partial = latestPartial.trim()
+        return when {
+            acc.isNotBlank() && partial.isNotBlank() && !acc.endsWith(partial) -> "$acc $partial".trim()
+            acc.isNotBlank() -> acc
+            else -> partial
         }
     }
 
