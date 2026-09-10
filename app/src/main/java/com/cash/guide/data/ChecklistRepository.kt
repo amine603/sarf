@@ -110,8 +110,6 @@ class ChecklistRepository(
             createdAtEpochMs = now,
             updatedAtEpochMs = now
         )
-        checklistDao.insertChecklist(checklist)
-
         val itemEntities = items.mapIndexed { index, pair ->
             ChecklistItemEntity(
                 id = UUID.randomUUID().toString(),
@@ -122,9 +120,7 @@ class ChecklistRepository(
                 createdAtEpochMs = now + index
             )
         }
-        if (itemEntities.isNotEmpty()) {
-            checklistDao.insertItems(itemEntities)
-        }
+        checklistDao.insertChecklistWithItems(checklist, itemEntities)
         return checklistId
     }
 }

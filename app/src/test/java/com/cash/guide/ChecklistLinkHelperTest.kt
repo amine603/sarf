@@ -39,7 +39,7 @@ class ChecklistLinkHelperTest {
         )
 
         val link = ChecklistLinkHelper.createDeepLink("تقضية الجمعة", items)
-        assertTrue("Link should start with HTTPS base", link.startsWith("https://amine603.github.io/sarf/checklist?d="))
+        assertTrue("Link should start with HTTPS base", link.startsWith("https://amine603.github.io/sarf/checklist/?d="))
 
         val parsed = ChecklistLinkHelper.parseDeepLink(link)
         assertNotNull(parsed)
@@ -69,5 +69,34 @@ class ChecklistLinkHelperTest {
         assertEquals(2, parsed.items.size)
         assertEquals("Pain" to false, parsed.items[0])
         assertEquals("Lait" to false, parsed.items[1])
+    }
+
+    @Test
+    fun parsePercentEncodedAndPaddedLink() {
+        // Sample JSON: {"t":"سوق الأحد","i":["نعناع","سكر"],"c":[0,1]}
+        val rawJson = """{"t":"سوق الأحد","i":["نعناع","سكر"],"c":[0,1]}"""
+        val b64 = java.util.Base64.getUrlEncoder().encodeToString(rawJson.toByteArray(Charsets.UTF_8))
+        // Simulate browser encoding '=' as '%3D'
+        val percentEncoded = b64.replace("=", "%3D")
+        val link = "https://amine603.github.io/sarf/checklist?d=$percentEncoded"
+        
+        val parsed = ChecklistLinkHelper.parseDeepLink(link)
+        assertNotNull(parsed)
+        assertEquals("سوق الأحد", parsed!!.title)
+        assertEquals(2, parsed.items.size)
+        assertEquals("نعناع" to false, parsed.items[0])
+        assertEquals("سكر" to true, parsed.items[1])
+    }
+
+    @Test
+    fun parseCustomSchemeWithDataParam() {
+        val rawJson = """{"t":"مرجان","i":["زيت"],"c":[0]}"""
+        val b64 = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(rawJson.toByteArray(Charsets.UTF_8))
+        val link = "sarf://checklist?d=$b64"
+        val parsed = ChecklistLinkHelper.parseDeepLink(link)
+        assertNotNull(parsed)
+        assertEquals("مرجان", parsed!!.title)
+        assertEquals(1, parsed.items.size)
+        assertEquals("زيت" to false, parsed.items[0])
     }
 }

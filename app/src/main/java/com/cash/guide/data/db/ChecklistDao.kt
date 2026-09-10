@@ -50,6 +50,14 @@ interface ChecklistDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItems(items: List<ChecklistItemEntity>)
 
+    @Transaction
+    suspend fun insertChecklistWithItems(checklist: ChecklistEntity, items: List<ChecklistItemEntity>) {
+        insertChecklist(checklist)
+        if (items.isNotEmpty()) {
+            insertItems(items)
+        }
+    }
+
     @Update
     suspend fun updateItem(item: ChecklistItemEntity)
 
