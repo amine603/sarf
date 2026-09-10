@@ -234,14 +234,12 @@ fun HomeScreen(
                 }
             )
 
-            // Line 6: Caisse & Rendu de monnaie (Quick Access Action)
-            Spacer(modifier = Modifier.height(6.dp))
+            // Line 6: Caisse & Rendu de monnaie (Quick Access Action - 29dp)
             NotebookCashRegisterActionButton(
                 onClick = onOpenCashRegister
             )
 
-            // Line 7: Checklist (Quick Access Action)
-            Spacer(modifier = Modifier.height(6.dp))
+            // Line 7: Checklist (Quick Access Action - 29dp)
             NotebookChecklistActionButton(
                 onClick = onOpenChecklist
             )
@@ -398,9 +396,8 @@ fun HomeScreen(
                 }
             }
 
-            // If filtering by UNPAID, show the total debt banner
+            // If filtering by UNPAID, show the total debt banner (29dp)
             if (state.selectedPaymentFilter == PaymentFilter.UNPAID) {
-                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

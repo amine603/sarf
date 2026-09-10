@@ -94,6 +94,42 @@ fun Modifier.baselineOnPaperRule(): Modifier = journalBaselineOnRule()
 fun Modifier.editableTextOnPaperRules(): Modifier = journalBaselineOnRule()
 
 /**
+ * Aligns single-line or multi-line text (up to 2 lines) directly onto the 29dp notebook rules.
+ * - Line 1 FirstBaseline sits on Rule 1 (lineHeight = 29dp).
+ * - Line 2 LastBaseline sits on Rule 2 (lineHeight * 2 = 58dp).
+ * The measured total height is exactly lineHeight * lineCount (29dp or 58dp).
+ */
+fun Modifier.journalTextOnRules(
+    lineHeight: Dp = JournalRuleSpacing,
+    opticalOffsetFromBottom: Dp = 0.dp
+): Modifier = this
+    .layout { measurable, constraints ->
+        val placeable = measurable.measure(
+            constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity)
+        )
+        val firstBaseline = placeable[FirstBaseline]
+        val lastBaseline = placeable[LastBaseline]
+        val singleRowHeight = lineHeight.roundToPx()
+
+        val isMultiLine = firstBaseline != AlignmentLine.Unspecified &&
+                lastBaseline != AlignmentLine.Unspecified &&
+                lastBaseline > firstBaseline + (singleRowHeight * 0.45f)
+        val lineCount = if (isMultiLine) 2 else 1
+        val totalRowHeight = singleRowHeight * lineCount
+
+        val targetBaseline = singleRowHeight - opticalOffsetFromBottom.roundToPx()
+        val yOffset = if (firstBaseline != AlignmentLine.Unspecified) {
+            targetBaseline - firstBaseline
+        } else {
+            singleRowHeight - placeable.height
+        }
+
+        layout(placeable.width, totalRowHeight) {
+            placeable.placeRelative(0, yOffset)
+        }
+    }
+
+/**
  * Dedicated component for text with an organic highlighter marker stroke:
  * 1. Measures text at its natural glyph height (with font padding excluded).
  * 2. Positions the measured FirstBaseline directly on the paper rule (rowHeight).

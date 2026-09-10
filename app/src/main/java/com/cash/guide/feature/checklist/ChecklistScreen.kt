@@ -87,6 +87,7 @@ import com.cash.guide.ui.notebook.JournalWritingInk
 import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.journalBaselineOnRule
+import com.cash.guide.ui.notebook.journalTextOnRules
 import com.cash.guide.ui.notebook.resolveJournalFont
 
 private val ColorEmerald = Color(0xFF1B7A4B)
@@ -351,7 +352,7 @@ fun ChecklistScreen(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                // If there are completed items, show a clean, spacious "Supprimer les cochés" action at the top
+                // Always have 1 notebook rule at top: either "Supprimer les cochés" or an empty spacer rule
                 if (completedCount > 0) {
                     Row(
                         modifier = Modifier
@@ -373,6 +374,8 @@ fun ChecklistScreen(
                                 .clickable { viewModel.deleteCompletedItems() }
                         )
                     }
+                } else {
+                    Spacer(modifier = Modifier.height(JournalRuleSpacing))
                 }
 
                 if (items.isEmpty()) {
@@ -397,7 +400,6 @@ fun ChecklistScreen(
                 items.forEachIndexed { index, item ->
                     val rowNumber = index + 1
                     val dotColor = rowDotColors[index % rowDotColors.size]
-                    var lineCount by remember(item.id, item.text) { mutableIntStateOf(1) }
                     var cachedLayout by remember(item.id, item.text) { mutableStateOf<TextLayoutResult?>(null) }
 
                     Row(
@@ -407,27 +409,22 @@ fun ChecklistScreen(
                             .padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.Top
                     ) {
-                        // Left: Number (sitting on Rule 1)
-                        Box(
+                        // Left: Number (sitting directly on Rule 1)
+                        Text(
+                            text = "$rowNumber",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 16.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = dotColor,
+                            style = TextStyle(platformStyle = NoFontPadding),
                             modifier = Modifier
-                                .height(JournalRuleSpacing)
-                                .widthIn(min = 16.dp),
-                            contentAlignment = Alignment.BottomStart
-                        ) {
-                            Text(
-                                text = "$rowNumber",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 16.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = dotColor,
-                                style = TextStyle(platformStyle = NoFontPadding),
-                                modifier = Modifier.journalBaselineOnRule()
-                            )
-                        }
+                                .widthIn(min = 16.dp)
+                                .journalBaselineOnRule()
+                        )
 
                         Spacer(modifier = Modifier.width(10.dp))
 
-                        // Center: Item text (takes all available width, wraps up to 2 lines)
+                        // Center: Item text (takes all available width, wraps up to 2 lines, sits directly on ruled lines)
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -485,6 +482,7 @@ fun ChecklistScreen(
                                             }
                                         }
                                     }
+                                    .journalTextOnRules()
                             )
                         }
 
@@ -505,13 +503,11 @@ fun ChecklistScreen(
                                         onClickLabel = if (item.isChecked) "Décocher" else "Cocher",
                                         onClick = { viewModel.toggleItem(item.id, !item.isChecked) }
                                     )
-                                    .journalBaselineOnRule(opticalOffsetFromBottom = 0.dp),
+                                    .journalBaselineOnRule(opticalOffsetFromBottom = 2.dp),
                                 contentAlignment = Alignment.BottomCenter
                             ) {
                                 Canvas(
-                                    modifier = Modifier
-                                        .size(19.dp)
-                                        .offset(y = 1.dp)
+                                    modifier = Modifier.size(19.dp)
                                 ) {
                                     val strokeWidth = 1.35.dp.toPx()
                                     val corner = 3.dp.toPx()
@@ -564,15 +560,14 @@ fun ChecklistScreen(
                                         onClickLabel = "Supprimer l'élément",
                                         onClick = { viewModel.deleteItem(item.id) }
                                     )
-                                    .journalBaselineOnRule(opticalOffsetFromBottom = 0.dp),
+                                    .journalBaselineOnRule(opticalOffsetFromBottom = 2.dp),
                                 contentAlignment = Alignment.BottomCenter
                             ) {
                                 HisabiSketchIcon(
                                     symbol = HisabiSymbol.Trash,
                                     contentDescription = "Supprimer",
                                     tint = JournalActionDelete.copy(alpha = 0.70f),
-                                    size = 17.dp,
-                                    modifier = Modifier.offset(y = 1.dp)
+                                    size = 17.dp
                                 )
                             }
                         }

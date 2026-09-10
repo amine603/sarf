@@ -1769,7 +1769,7 @@ fun NotebookPrimaryActionButton(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(JournalRuleSpacing)
+                .height(26.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(HighlighterPink.copy(alpha = 0.55f))
                 .clickable(
@@ -1836,7 +1836,7 @@ fun NotebookCashRegisterActionButton(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(JournalRuleSpacing)
+                .height(26.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(JournalPaper)
                 .border(
@@ -1919,7 +1919,7 @@ fun NotebookChecklistActionButton(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(JournalRuleSpacing)
+                .height(26.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(JournalPaper)
                 .border(

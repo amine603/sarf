@@ -198,8 +198,8 @@ fun ChecklistsOverviewScreen(
                     .fillMaxWidth(),
                 clearFocusOnTap = true
             ) {
-                // Top spacer
-                Spacer(modifier = Modifier.height(JournalRuleSpacing * 0.5f))
+                // Top spacer: 1 exact notebook rule (29dp)
+                Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
                 // Empty State
                 if (checklists.isEmpty()) {
@@ -366,16 +366,10 @@ fun ChecklistsOverviewScreen(
                 Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
                 // Bottom Action: "+ Nouvelle checklist"
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp)
-                ) {
-                    NotebookPrimaryActionButton(
-                        text = if (isRtl) "قائمة جديدة" else "Nouvelle checklist",
-                        onClick = { viewModel.openCreateDialog() }
-                    )
-                }
+                NotebookPrimaryActionButton(
+                    text = if (isRtl) "قائمة جديدة" else "Nouvelle checklist",
+                    onClick = { viewModel.openCreateDialog() }
+                )
 
                 // Extra breathing room at bottom
                 Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
