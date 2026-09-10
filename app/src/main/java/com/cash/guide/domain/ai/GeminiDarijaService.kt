@@ -33,7 +33,7 @@ object GeminiDarijaService {
     private const val TAG = "GeminiDarijaService"
     private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
-    var currentModel: String = "gemini-2.5-flash"
+    var currentModel: String = "gemini-flash-lite-latest"
 
     private fun getApiKey(): String {
         return BuildConfig.GEMINI_API_KEY
@@ -145,7 +145,12 @@ object GeminiDarijaService {
     }
 
     private fun callGeminiApi(prompt: String, apiKey: String): String? {
-        val modelsToTry = listOf(currentModel, "gemini-1.5-flash", "gemini-2.5-flash-lite")
+        val modelsToTry = listOf(
+            currentModel,
+            "gemini-3.5-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-flash-latest"
+        ).distinct()
         for (model in modelsToTry) {
             val result = executeRequest(model, prompt, apiKey)
             if (result != null) return result
@@ -160,8 +165,8 @@ object GeminiDarijaService {
             conn = url.openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-            conn.connectTimeout = 12000
-            conn.readTimeout = 15000
+            conn.connectTimeout = 8000
+            conn.readTimeout = 10000
             conn.doOutput = true
 
             val requestBody = JSONObject().apply {

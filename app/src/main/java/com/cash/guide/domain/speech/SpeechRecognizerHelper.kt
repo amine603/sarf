@@ -1,4 +1,4 @@
-﻿package com.cash.guide.domain.speech
+package com.cash.guide.domain.speech
 
 import android.content.Context
 import android.content.Intent
@@ -64,141 +64,161 @@ class SpeechRecognizerHelper(private val context: Context) {
 
         reset()
         isUserRecording = true
-        startListeningInternal()
+        _state.value = SpeechRecognitionState.LISTENING
+        initRecognizer()
+        startListeningSafe()
     }
 
-    private fun startListeningInternal() {
-        if (!isUserRecording) return
-
+    private fun initRecognizer() {
         try {
             speechRecognizer?.destroy()
         } catch (e: Exception) {
-            Log.w(TAG, "Error destroying previous recognizer instance", e)
+            Log.w(TAG, "Error destroying speech recognizer", e)
         }
-
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
-            setRecognitionListener(object : RecognitionListener {
-                override fun onReadyForSpeech(params: Bundle?) {
-                    if (isUserRecording) {
-                        _state.value = SpeechRecognitionState.LISTENING
-                        _errorMessage.value = null
-                    }
-                }
-
-                override fun onBeginningOfSpeech() {
-                    if (isUserRecording) {
-                        _state.value = SpeechRecognitionState.LISTENING
-                        consecutiveSilenceCount = 0
-                    }
-                }
-
-                override fun onRmsChanged(rmsdB: Float) {}
-                override fun onBufferReceived(buffer: ByteArray?) {}
-                override fun onEndOfSpeech() {}
-
-                override fun onError(error: Int) {
-                    Log.w(TAG, "SpeechRecognizer error: $error, isUserRecording=$isUserRecording")
-                    if (!isUserRecording) return
-
-                    if (error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT || error == SpeechRecognizer.ERROR_NO_MATCH) {
-                        consecutiveSilenceCount++
-                        // If user stays completely silent for multiple intervals and has text, we can stop
-                        if (consecutiveSilenceCount >= 5 && getBestTranscript().isNotBlank()) {
-                            stopAndDeliver()
-                            return
-                        }
-                        // Otherwise, automatically restart listening so user can pause to think!
-                        mainHandler.postDelayed({
-                            if (isUserRecording) {
-                                startListeningInternal()
-                            }
-                        }, 200)
-                        return
-                    }
-
-                    val msg = when (error) {
-                        SpeechRecognizer.ERROR_AUDIO -> "خطأ في الميكروفون"
-                        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "تحقق من اتصال الإنترنت"
-                        else -> "حدث خطأ في التسجيل"
-                    }
-                    _state.value = SpeechRecognitionState.ERROR
-                    _errorMessage.value = msg
-                    isUserRecording = false
-                }
-
-                override fun onResults(results: Bundle?) {
-                    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    val spokenText = matches?.firstOrNull()?.trim() ?: ""
-                    Log.d(TAG, "Speech recognition onResults chunk: '$spokenText', isUserRecording=$isUserRecording")
-
-                    if (spokenText.isNotBlank()) {
-                        consecutiveSilenceCount = 0
-                        val current = _accumulatedText.value.trim()
-                        val updated = if (current.isBlank()) {
-                            spokenText
-                        } else if (!current.endsWith(spokenText)) {
-                            "$current $spokenText"
-                        } else {
-                            current
-                        }
-                        _accumulatedText.value = updated
-                        _partialText.value = updated
-                        latestPartial = ""
-                    }
-
-                    // If user is still recording, seamlessly continue listening for the next phrase!
-                    if (isUserRecording) {
-                        mainHandler.postDelayed({
-                            if (isUserRecording) {
-                                startListeningInternal()
-                            }
-                        }, 150)
-                    }
-                }
-
-                override fun onPartialResults(partialResults: Bundle?) {
-                    if (!isUserRecording) return
-                    val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    val text = matches?.firstOrNull()?.trim() ?: ""
-                    if (text.isNotBlank()) {
-                        latestPartial = text
-                        val current = _accumulatedText.value.trim()
-                        val combined = if (current.isBlank()) {
-                            text
-                        } else {
-                            "$current $text"
-                        }
-                        _partialText.value = combined
-                    }
-                }
-
-                override fun onEvent(eventType: Int, params: Bundle?) {}
-            })
+            setRecognitionListener(createListener())
         }
+    }
 
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+    private fun startListeningSafe() {
+        if (!isUserRecording) return
+        try {
+            if (speechRecognizer == null) {
+                initRecognizer()
+            }
+            speechRecognizer?.startListening(buildIntent())
+        } catch (e: Exception) {
+            Log.w(TAG, "Exception starting listening, re-initializing", e)
+            initRecognizer()
+            try {
+                speechRecognizer?.startListening(buildIntent())
+            } catch (e2: Exception) {
+                Log.e(TAG, "Failed again to start listening", e2)
+            }
+        }
+    }
+
+    private fun buildIntent(): Intent {
+        return Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-MA")
             putExtra("android.speech.extra.EXTRA_ADDITIONAL_LANGUAGES", arrayOf("ar", "fr-FR", Locale.getDefault().toLanguageTag()))
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 30000L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3500L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 60000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 4000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 3500L)
+        }
+    }
+
+    private fun createListener() = object : RecognitionListener {
+        override fun onReadyForSpeech(params: Bundle?) {
+            if (isUserRecording) {
+                _state.value = SpeechRecognitionState.LISTENING
+                _errorMessage.value = null
+            }
         }
 
-        try {
-            speechRecognizer?.startListening(intent)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start speech recognition", e)
-            _state.value = SpeechRecognitionState.ERROR
-            _errorMessage.value = "تعذر تشغيل الميكروفون"
-            isUserRecording = false
+        override fun onBeginningOfSpeech() {
+            if (isUserRecording) {
+                _state.value = SpeechRecognitionState.LISTENING
+                consecutiveSilenceCount = 0
+            }
         }
+
+        override fun onRmsChanged(rmsdB: Float) {}
+        override fun onBufferReceived(buffer: ByteArray?) {}
+        override fun onEndOfSpeech() {}
+
+        override fun onError(error: Int) {
+            Log.w(TAG, "SpeechRecognizer error: $error, isUserRecording=$isUserRecording")
+            if (!isUserRecording) return
+
+            // Errors 6 (TIMEOUT), 7 (NO_MATCH), 8 (BUSY), 11 (SERVER_DISCONNECTED)
+            // are temporary during continuous recording and should NOT cancel the user's session!
+            if (error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT || 
+                error == SpeechRecognizer.ERROR_NO_MATCH ||
+                error == 11 || 
+                error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY) {
+                
+                if (error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT || error == SpeechRecognizer.ERROR_NO_MATCH) {
+                    consecutiveSilenceCount++
+                }
+
+                mainHandler.postDelayed({
+                    if (isUserRecording) {
+                        startListeningSafe()
+                    }
+                }, 300)
+                return
+            }
+
+            if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
+                _state.value = SpeechRecognitionState.ERROR
+                _errorMessage.value = "يجب السماح بصلاحية الميكروفون"
+                isUserRecording = false
+                return
+            }
+
+            // For any other transient errors, keep recording alive
+            mainHandler.postDelayed({
+                if (isUserRecording) {
+                    startListeningSafe()
+                }
+            }, 400)
+        }
+
+        override fun onResults(results: Bundle?) {
+            val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            val spokenText = matches?.firstOrNull()?.trim() ?: ""
+            Log.d(TAG, "Speech recognition onResults chunk: '$spokenText', isUserRecording=$isUserRecording")
+
+            if (spokenText.isNotBlank()) {
+                consecutiveSilenceCount = 0
+                val current = _accumulatedText.value.trim()
+                val updated = if (current.isBlank()) {
+                    spokenText
+                } else if (!current.contains(spokenText)) {
+                    "$current $spokenText"
+                } else {
+                    current
+                }
+                _accumulatedText.value = updated
+                _partialText.value = updated
+                latestPartial = ""
+            }
+
+            if (isUserRecording) {
+                mainHandler.postDelayed({
+                    if (isUserRecording) {
+                        startListeningSafe()
+                    }
+                }, 250)
+            }
+        }
+
+        override fun onPartialResults(partialResults: Bundle?) {
+            if (!isUserRecording) return
+            val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            val text = matches?.firstOrNull()?.trim() ?: ""
+            if (text.isNotBlank()) {
+                latestPartial = text
+                val current = _accumulatedText.value.trim()
+                val combined = if (current.isBlank()) {
+                    text
+                } else {
+                    "$current $text"
+                }
+                _partialText.value = combined
+            }
+        }
+
+        override fun onEvent(eventType: Int, params: Bundle?) {}
     }
 
     fun stopAndDeliver() {
         isUserRecording = false
+        mainHandler.removeCallbacksAndMessages(null)
         val transcript = getBestTranscript()
         stopListening()
         _state.value = SpeechRecognitionState.IDLE

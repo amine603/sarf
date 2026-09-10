@@ -1,4 +1,4 @@
-﻿package com.cash.guide.ui.components
+package com.cash.guide.ui.components
 
 import android.Manifest
 import android.app.Activity
@@ -188,57 +188,27 @@ fun AiVoiceAssistantButton(
         }
     }
 
-    Column(
-        horizontalAlignment = Alignment.End,
+    AiVoiceButton(
+        state = buttonState,
+        onClick = { handleMicClick() },
         modifier = modifier
-    ) {
-        // Floating live banner right above button when recording
-        AnimatedVisibility(
-            visible = buttonState == AiVoiceButtonState.RECORDING,
-            enter = fadeIn() + slideInVertically { it / 2 },
-            exit = fadeOut() + slideOutVertically { it / 2 }
-        ) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = Color(0xFFFFF3E0),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFB74D)),
-                shadowElevation = 3.dp,
-                modifier = Modifier
-                    .padding(bottom = 6.dp)
-                    .clickable { handleMicClick() }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFE53935))
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    val statusLabel = if (partialText.isNotBlank()) {
-                        "💬 $partialText"
-                    } else {
-                        "🎙️ كنسمع ليك... برك على الزر ملي تسالي"
-                    }
-                    Text(
-                        text = statusLabel,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = JournalInk,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
+    )
 
-        // The In-Place Animated Mic Button (Emerald -> Red Equalizer Wave -> Spinner)
-        AiVoiceButton(
-            state = buttonState,
-            onClick = { handleMicClick() }
+    // Live Voice Recording Window (Real-time transcription & equalizer)
+    if (buttonState == AiVoiceButtonState.RECORDING || buttonState == AiVoiceButtonState.ANALYZING) {
+        AiLiveRecordingSheet(
+            liveTranscript = partialText,
+            isAnalyzing = buttonState == AiVoiceButtonState.ANALYZING,
+            onFinishRecording = {
+                if (buttonState == AiVoiceButtonState.RECORDING) {
+                    buttonState = AiVoiceButtonState.ANALYZING
+                    speechHelper.stopAndDeliver()
+                }
+            },
+            onCancel = {
+                buttonState = AiVoiceButtonState.IDLE
+                speechHelper.stopListening()
+            }
         )
     }
 
@@ -315,15 +285,20 @@ fun AiVoiceAssistantButton(
                             .fillMaxWidth()
                             .clickable {
                                 if (activity != null) {
-                                    adMobManager.showRewardedAd(
-                                        activity = activity,
-                                        onRewardEarned = {
-                                            creditManager.addRewardCredits(5)
-                                            showRewardedAdDialog = false
-                                            buttonState = AiVoiceButtonState.RECORDING
-                                            speechHelper.startListening()
-                                        }
-                                    )
+                                    if (!adMobManager.isReady.value) {
+                                        Toast.makeText(context, "جاري تجهيز الإعلان، يرجى المحاولة بعد لحظات...", Toast.LENGTH_SHORT).show()
+                                        adMobManager.loadRewardedAd()
+                                    } else {
+                                        adMobManager.showRewardedAd(
+                                            activity = activity,
+                                            onRewardEarned = {
+                                                creditManager.addRewardCredits(5)
+                                                showRewardedAdDialog = false
+                                                buttonState = AiVoiceButtonState.RECORDING
+                                                speechHelper.startListening()
+                                            }
+                                        )
+                                    }
                                 }
                             }
                     ) {
