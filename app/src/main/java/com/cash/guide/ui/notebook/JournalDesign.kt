@@ -23,6 +23,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
@@ -168,7 +169,7 @@ fun resolveJournalFont(text: String = "", isRtl: Boolean = false): FontFamily {
  */
 fun highlightNumbersInText(text: String, baseColor: Color = JournalInk): AnnotatedString {
     if (text.isEmpty()) return AnnotatedString("")
-    val regex = Regex("""\d+([.,]\d+)?""")
+    val regex = Regex("""[\d\u0660-\u0669]+([.,][\d\u0660-\u0669]+)?""")
     if (!regex.containsMatchIn(text)) {
         return AnnotatedString(text)
     }
@@ -180,9 +181,12 @@ fun highlightNumbersInText(text: String, baseColor: Color = JournalInk): Annotat
             if (start > lastIndex) {
                 append(text.substring(lastIndex, start))
             }
+            val hasAsciiDigits = match.value.any { it in '0'..'9' }
             withStyle(
                 SpanStyle(
+                    fontFamily = if (hasAsciiDigits) PatrickHandFamily else CreamFrothFamily,
                     fontWeight = FontWeight.Bold,
+                    fontSynthesis = FontSynthesis.Weight,
                     color = baseColor
                 )
             ) {
