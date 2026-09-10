@@ -371,6 +371,16 @@ fun CalculationEditorScreen(
 
             // Pinned Bottom-Right AI Voice Assistant Button with Manga Speech Bubble
             if (!state.calculator.isVisible) {
+                val existingRowContexts = remember(state.rows) {
+                    state.rows.filter { it.isPopulated }.mapIndexed { index, row ->
+                        ExistingCalculationRowContext(
+                            id = row.id.toString(),
+                            index = index + 1,
+                            label = row.title.text.trim(),
+                            currentAmount = row.amount.text.toDoubleOrNull() ?: 0.0
+                        )
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -379,6 +389,7 @@ fun CalculationEditorScreen(
                 ) {
                     AiVoiceDockedBottomButton(
                         target = AiVoiceInputTarget.CALCULATION,
+                        existingRows = existingRowContexts,
                         onCalculationResult = { result ->
                             if (result.entries.isNotEmpty()) {
                                 viewModel.addAiEntries(result.entries, result.title)
@@ -386,7 +397,7 @@ fun CalculationEditorScreen(
                             val count = result.entries.size
                             Toast.makeText(
                                 context,
-                                if (isRtl) "تمت إضافة $count بنود بالذكاء الاصطناعي 🪄" else "$count éléments ajoutés avec l'IA 🪄",
+                                if (isRtl) "تمت معالجة $count بنود بالذكاء الاصطناعي 🪄" else "$count éléments traités avec l'IA 🪄",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }

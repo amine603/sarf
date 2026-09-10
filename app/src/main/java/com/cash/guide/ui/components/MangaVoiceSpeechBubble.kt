@@ -43,8 +43,11 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -163,12 +166,12 @@ fun MangaVoiceSpeechBubble(
     }
 
     val statusTitle = when {
-        isFrench -> "À votre écoute... Parlez librement"
-        isEnglish -> "Listening now... Speak freely"
-        else -> "كنسمع ليك دابا... هضر براحتك"
+        isFrench -> "À votre écoute..."
+        isEnglish -> "Listening now..."
+        else -> "كنسمع ليك دابا..."
     }
 
-    val statusSub = when {
+    val statusHint = when {
         isFrench -> "(Appuyez sur le bouton rouge pour terminer)"
         isEnglish -> "(Tap red button when finished)"
         else -> "(برك على الزر الأحمر ملي تسالي)"
@@ -221,63 +224,36 @@ fun MangaVoiceSpeechBubble(
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Top micro-bar: Pulsing record dot + Header + Cancel 'X'
+                // Top micro-bar: Pulsing record dot + Header + Countdown timer badge + Cancel 'X'
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Status and recording indicator (at logical start)
+                    // Left area: Pulsing recording dot + Status title (constrained to never push out timer)
                     Row(
+                        modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        if (!isRtl) {
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFE53935).copy(alpha = pulseAlpha))
-                            )
-                            Text(
-                                text = statusTitle,
-                                fontFamily = resolveJournalFont(statusTitle, false),
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalInk
-                            )
-                            Text(
-                                text = statusSub,
-                                fontFamily = resolveJournalFont(statusSub, false),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = Color(0xFFD32F2F)
-                            )
-                        } else {
-                            Text(
-                                text = statusSub,
-                                fontFamily = resolveJournalFont(statusSub, true),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = Color(0xFFD32F2F)
-                            )
-                            Text(
-                                text = statusTitle,
-                                fontFamily = resolveJournalFont(statusTitle, true),
-                                fontSize = 12.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalInk
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFE53935).copy(alpha = pulseAlpha))
-                            )
-                        }
+                        Box(
+                            modifier = Modifier
+                                .size(7.5.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFE53935).copy(alpha = pulseAlpha))
+                        )
+                        Text(
+                            text = statusTitle,
+                            fontFamily = resolveJournalFont(statusTitle, isArabic),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalInk,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
 
-                    // Right/End area: Countdown timer badge + Close icon
+                    // Right area: Countdown timer badge + Close icon (guaranteed visible)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -289,12 +265,12 @@ fun MangaVoiceSpeechBubble(
 
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .background(if (isUrgent) Color(0xFFFFEBEE) else Color(0xFFF0F4F8))
                                 .border(
                                     1.dp,
                                     if (isUrgent) Color(0xFFE53935).copy(alpha = 0.6f) else Color(0xFFCFD8DC),
-                                    RoundedCornerShape(10.dp)
+                                    RoundedCornerShape(8.dp)
                                 )
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
@@ -309,8 +285,8 @@ fun MangaVoiceSpeechBubble(
                                 Text(
                                     text = timerText,
                                     fontSize = 11.sp,
-                                    fontWeight = if (isUrgent) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isUrgent) Color(0xFFD32F2F) else Color(0xFF455A64)
+                                    fontWeight = if (isUrgent) FontWeight.Bold else FontWeight.SemiBold,
+                                    color = if (isUrgent) Color(0xFFD32F2F) else Color(0xFF37474F)
                                 )
                             }
                         }
@@ -424,7 +400,16 @@ fun MangaVoiceSpeechBubble(
                                 lineHeight = 20.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = JournalInk,
-                                textAlign = if (isTranscriptArabic) TextAlign.Right else TextAlign.Left,
+                                textAlign = if (isRtl) {
+                                    if (isTranscriptArabic) TextAlign.Right else TextAlign.Left
+                                } else {
+                                    // When the app is in French/English, keep text at the logical start (left)
+                                    // while preserving correct RTL BiDi reading flow for numbers and Arabic
+                                    TextAlign.Start
+                                },
+                                style = TextStyle(
+                                    textDirection = if (isTranscriptArabic) TextDirection.ContentOrRtl else TextDirection.ContentOrLtr
+                                ),
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

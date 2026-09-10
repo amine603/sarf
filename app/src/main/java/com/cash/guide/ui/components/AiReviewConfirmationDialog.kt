@@ -47,6 +47,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -190,7 +191,8 @@ fun AiChecklistReviewDialog(
                                 textStyle = TextStyle(
                                     color = JournalInk,
                                     fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    textDirection = TextDirection.ContentOrRtl
                                 ),
                                 cursorBrush = SolidColor(Color(0xFF1B7A4B)),
                                 modifier = Modifier.weight(1f)
@@ -499,7 +501,8 @@ fun AiCalculationReviewDialog(
                                 textStyle = TextStyle(
                                     color = JournalInk,
                                     fontSize = 13.5.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    textDirection = TextDirection.ContentOrRtl
                                 ),
                                 cursorBrush = SolidColor(Color(0xFF1B7A4B)),
                                 modifier = Modifier.weight(1.5f)

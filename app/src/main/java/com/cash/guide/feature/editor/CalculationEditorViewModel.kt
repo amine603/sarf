@@ -275,8 +275,10 @@ class CalculationEditorViewModel(
     fun addAiEntries(entries: List<com.cash.guide.domain.ai.CalculationAiEntry>, suggestedTitle: String = "") {
         if (entries.isEmpty()) return
         _uiState.update { current ->
-            val existingRows = current.rows.filter { it.title.text.isNotBlank() || it.amount.text.isNotBlank() }
-            val newRows = entries.map { entry ->
+            val updatedRows = current.rows.toMutableList()
+            val brandNewRows = mutableListOf<EditorRowUiState>()
+
+            for (entry in entries) {
                 val amountStr = if (entry.amount <= 0.0) {
                     ""
                 } else if (entry.amount % 1.0 == 0.0) {
@@ -284,14 +286,35 @@ class CalculationEditorViewModel(
                 } else {
                     String.format(java.util.Locale.US, "%.2f", entry.amount)
                 }
-                EditorRowUiState(
-                    id = nextRowId++,
-                    title = TextFieldValue(entry.label, TextRange(entry.label.length)),
-                    amount = TextFieldValue(amountStr, TextRange(amountStr.length)),
-                    rawExpression = amountStr
-                )
+
+                val targetIdLong = entry.existingRowId?.toLongOrNull()
+                val existingIdx = if (targetIdLong != null) updatedRows.indexOfFirst { it.id == targetIdLong } else -1
+
+                if (existingIdx != -1) {
+                    // Update existing row in place
+                    val old = updatedRows[existingIdx]
+                    val newTitle = if (entry.label.isNotBlank()) entry.label else old.title.text
+                    updatedRows[existingIdx] = old.copy(
+                        title = TextFieldValue(newTitle, TextRange(newTitle.length)),
+                        amount = TextFieldValue(amountStr, TextRange(amountStr.length)),
+                        rawExpression = amountStr
+                    )
+                } else {
+                    // New row to append
+                    brandNewRows.add(
+                        EditorRowUiState(
+                            id = nextRowId++,
+                            title = TextFieldValue(entry.label, TextRange(entry.label.length)),
+                            amount = TextFieldValue(amountStr, TextRange(amountStr.length)),
+                            rawExpression = amountStr
+                        )
+                    )
+                }
             }
-            val combined = (existingRows + newRows).ifEmpty { listOf(EditorRowUiState(id = nextRowId++)) }
+
+            val combined = (updatedRows.filter { it.isPopulated } + brandNewRows).ifEmpty {
+                listOf(EditorRowUiState(id = nextRowId++))
+            }
             val updatedTitle = if (current.title.text.isBlank() && suggestedTitle.isNotBlank()) {
                 TextFieldValue(suggestedTitle, TextRange(suggestedTitle.length))
             } else {

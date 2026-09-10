@@ -138,4 +138,34 @@ class GeminiDarijaServiceTest {
         assertEquals("Pommes", resolved[2].label)
         assertEquals(22.0, resolved[2].amount, 0.001)
     }
+
+    @Test
+    fun parseCalculationJsonWithExistingRowId() {
+        val rawJson = """
+            {
+               "title": "تحديث حساب",
+               "entries": [
+                  { "label": "السطر 5", "amount": 15.0, "existingRowId": "row_5" },
+                  { "label": "السطر 6", "amount": 77.0, "existingRowId": "row_6" },
+                  { "label": "بطاطا", "amount": 20.0, "existingRowId": null }
+               ]
+            }
+        """.trimIndent()
+
+        val json = JSONObject(rawJson)
+        val entries = json.getJSONArray("entries")
+        assertEquals(3, entries.length())
+
+        val obj0 = entries.getJSONObject(0)
+        assertEquals("row_5", obj0.optString("existingRowId"))
+        assertEquals(15.0, obj0.getDouble("amount"), 0.001)
+
+        val obj1 = entries.getJSONObject(1)
+        assertEquals("row_6", obj1.optString("existingRowId"))
+        assertEquals(77.0, obj1.getDouble("amount"), 0.001)
+
+        val obj2 = entries.getJSONObject(2)
+        val id2 = if (obj2.has("existingRowId") && !obj2.isNull("existingRowId")) obj2.optString("existingRowId") else null
+        assertEquals(null, id2)
+    }
 }

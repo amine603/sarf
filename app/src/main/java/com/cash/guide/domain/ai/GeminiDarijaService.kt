@@ -141,8 +141,15 @@ object GeminiDarijaService {
             The user dictated a list of items or groceries in Moroccan Darija, Arabic, or French.
             Extract ALL items into a clean list, separating each item even if spoken rapidly in a single sentence.
             If the user mentioned quantities (e.g. 2kg, نص كيلو, رابعة, بكية, قرعة, ربطة, 3 حبات, 5 لتر), include the quantity in the item label.
-            SMART DUPLICATE & QUANTITY MERGING:
-            - If the user mentioned the same item multiple times or added quantity to an item previously mentioned (e.g. "2 كيلو بطاطا... وزيد كيلو د بطاطا" or "2 cahiers... et encore 3 cahiers"), MERGE them into a single clean entry with the combined total quantity (e.g. "3 كيلو بطاطا" or "5 cahiers"). Do not output duplicate items.
+
+            NUMBERS AS DIGITS ONLY:
+            - ALWAYS write all quantities, counts, and numbers using numeric digits (e.g. 1, 2, 3, 5, 10, 15, 20).
+            - NEVER write quantities as words in Arabic, French, or Franco (NEVER use "جوج", "زوج", "خمسة", "عشرة", "deux", "cinq", "trois", "jouj", "khamsa", etc. ALWAYS use "2", "5", "10", "3").
+            - Format example: "2 كيلو تفاح", "5 cahiers", "3 stylos", "10 khobzat".
+
+            HOLISTIC CONTEXT ANALYSIS & SMART DUPLICATE MERGING:
+            - Analyze the user's entire speech globally as a unified context.
+            - If the user mentioned the same item multiple times or added quantity to an item previously mentioned (e.g. "2 كيلو بطاطا... وزيد كيلو د بطاطا" or "2 cahiers... et encore 3 cahiers"), COMBINE them into a single clean entry with the combined total quantity (e.g. "3 كيلو بطاطا" or "5 cahiers"). Do not output duplicate items.
             $scriptRule
             Respond ONLY with a valid JSON object matching this schema:
             {
@@ -198,10 +205,32 @@ object GeminiDarijaService {
 
         val scriptRule = getScriptInstruction(outputScript)
 
+        val existingRowsPrompt = if (existingRows.isNotEmpty()) {
+            val rowsDesc = existingRows.joinToString("\n") { row ->
+                "- Line ${row.index} (id: \"${row.id}\"): \"${row.label}\", current amount: ${row.currentAmount} DH"
+            }
+            """
+
+            CURRENT EXISTING ROWS IN THE CALCULATION LEDGER:
+            The user currently has these lines in their ledger:
+            $rowsDesc
+
+            EXISTING ROW UPDATES & CORRECTIONS:
+            - If the user refers to an existing line by its row number (e.g. "في السطر 5", "star 5", "ligne 5", "article 1") or mentions modifying a previously entered item's price (e.g. "في السطر 5 دير 15 درهم والسطر 6 دير 77 درهم"):
+              UPDATE that row! Set "existingRowId" to the id of that row (e.g. "${existingRows.first().id}"), and set the updated amount and label.
+            - If the item is new and not an update to an existing row, set "existingRowId": null.
+            """.trimIndent()
+        } else ""
+
         val systemPrompt = """
-            You are an expert Moroccan accountant assistant for the app "Sarf".
+            You are an expert Moroccan accountant assistant for the notebook app "Sarf".
             The user dictated monetary entries, purchases, or expenses in Moroccan Darija, French, or Arabic.
             Extract ALL items into a clean calculation list with amounts in Dirhams (MAD).
+
+            NUMBERS AS DIGITS ONLY:
+            - ALWAYS write all quantities, counts, and numbers using numeric digits (e.g. 1, 2, 3, 5, 10, 15, 20).
+            - NEVER write quantities as words in Arabic, French, or Franco (NEVER use "جوج", "زوج", "خمسة", "عشرة", "deux", "cinq", "trois", "jouj", "khamsa", etc. ALWAYS use "2", "5", "10", "3").
+            - Format example: "2 كيلو تفاح", "5 cahiers", "3 stylos", "10 khobzat".
 
             AMOUNTS & CURRENCY CONVERSIONS:
             - If the user mentions a price for an item, convert it to DIRHAMS (MAD):
@@ -209,15 +238,20 @@ object GeminiDarijaService {
               * "فرانك" (Franc): 1 Franc = 0.01 Dirham. (Example: 1000 فرانك = 10 DH).
               * "درهم" (Dirham): 1 Dirham = 1 DH.
             - If the user DOES NOT mention an amount or price for an item, set amount to 0.0. Include every item mentioned.
-            SMART DUPLICATE & QUANTITY MERGING:
-            - If the user mentioned the same item multiple times or added to a previously mentioned purchase (e.g. "2 كيلو بطاطا بـ 10 دراهم... وزيد كيلو آخر د بطاطا بـ 5 دراهم"), MERGE them into a single entry with the combined total quantity and total amount (e.g. "3 كيلو بطاطا" with amount 15.0). Do not output duplicate rows for the exact same item.
+
+            HOLISTIC CONTEXT ANALYSIS & SMART DUPLICATE MERGING:
+            - Analyze the user's entire speech globally as a unified context.
+            - If the user mentioned the same item multiple times or added to a previously mentioned purchase (e.g. "2 كيلو بطاطا بـ 10 دراهم... وزيد كيلو آخر د بطاطا بـ 5 دراهم"), COMBINE them into a single entry with the combined total quantity and total amount (e.g. "3 كيلو بطاطا" with amount 15.0).
+            - If the user corrected a price in the speech (e.g. "بطاطا بـ 10 دراهم... لا بلاتي ديرليها 8 دراهم"), use the corrected final price (8.0).
+            - Never output duplicate rows for the exact same item.
+            $existingRowsPrompt
             $scriptRule
 
             Respond ONLY with a valid JSON object matching this schema:
             {
                "title": "short title",
                "entries": [
-                  { "label": "description", "amount": 150.0 }
+                  { "label": "description", "amount": 150.0, "existingRowId": null }
                ]
             }
             Do not wrap in markdown code blocks. Output pure JSON only.
@@ -248,17 +282,21 @@ object GeminiDarijaService {
                 val obj = entriesArr.getJSONObject(i)
                 val label = obj.optString("label", defaultLabel).trim()
                 val amount = obj.optDouble("amount", 0.0)
+                val rawExistingId = if (obj.has("existingRowId") && !obj.isNull("existingRowId")) {
+                    obj.optString("existingRowId").trim().takeIf { it.isNotBlank() && it != "null" }
+                } else null
                 if (label.isNotBlank()) {
                     entries.add(
                         CalculationAiEntry(
                             label = label,
                             amount = maxOf(0.0, amount),
-                            existingRowId = null
+                            existingRowId = rawExistingId
                         )
                     )
                 }
             }
-            CalculationAiResult(title = title, entries = entries)
+            val resolvedEntries = resolveRowMatches(entries, existingRows)
+            CalculationAiResult(title = title, entries = resolvedEntries)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse calculation AI response", e)
             null
