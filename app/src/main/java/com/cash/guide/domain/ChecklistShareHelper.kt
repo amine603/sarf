@@ -309,8 +309,8 @@ object ChecklistShareHelper {
         } else {
             items.forEachIndexed { index, item ->
                 val lineY = headerH + (index + 1) * ruleSpacing
-                val baselineY = lineY - 14f
-                val checkboxY = lineY - checkboxSize - 12f
+                val baselineY = lineY - 8f
+                val checkboxY = lineY - checkboxSize - 6f
 
                 val dotColor = rowDotColors[index % rowDotColors.size]
                 itemNumPaint.color = dotColor
