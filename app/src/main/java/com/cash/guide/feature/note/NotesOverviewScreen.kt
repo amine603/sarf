@@ -94,13 +94,17 @@ fun getNoteDotColor(colorTag: String, fallbackIndex: Int = 0): Color {
         "BLUE" -> Color(0xFF3B82F6)
         "GREEN" -> Color(0xFF5E9C47)
         "PURPLE" -> Color(0xFF8E44AD)
+        "ORANGE" -> Color(0xFFF97316)
+        "TEAL" -> Color(0xFF0D9488)
         else -> {
             val palette = listOf(
                 Color(0xFFD85A8A), // Pink/Rose
                 Color(0xFFE5A823), // Warm Yellow
                 Color(0xFF3B82F6), // Blue
                 Color(0xFF5E9C47), // Green
-                Color(0xFF8E44AD)  // Purple
+                Color(0xFF8E44AD), // Purple
+                Color(0xFFF97316), // Orange
+                Color(0xFF0D9488)  // Teal
             )
             palette[fallbackIndex % palette.size]
         }
@@ -114,13 +118,17 @@ fun getNoteHighlightPillColor(colorTag: String, fallbackIndex: Int = 0): Color {
         "BLUE" -> HighlighterBlue.copy(alpha = 0.40f)
         "GREEN" -> Color(0xFFC8E6C9).copy(alpha = 0.65f)
         "PURPLE" -> Color(0xFFE1BEE7).copy(alpha = 0.55f)
+        "ORANGE" -> Color(0xFFFFE0B2).copy(alpha = 0.65f)
+        "TEAL" -> Color(0xFFB2DFDB).copy(alpha = 0.60f)
         else -> {
             val palette = listOf(
                 HighlighterPink.copy(alpha = 0.40f),
                 HighlighterYellow.copy(alpha = 0.45f),
                 HighlighterBlue.copy(alpha = 0.40f),
                 Color(0xFFC8E6C9).copy(alpha = 0.65f),
-                Color(0xFFE1BEE7).copy(alpha = 0.55f)
+                Color(0xFFE1BEE7).copy(alpha = 0.55f),
+                Color(0xFFFFE0B2).copy(alpha = 0.65f),
+                Color(0xFFB2DFDB).copy(alpha = 0.60f)
             )
             palette[fallbackIndex % palette.size]
         }
@@ -745,7 +753,9 @@ private fun NoteRowItem(
                                     "YELLOW" to Color(0xFFE5A823),
                                     "BLUE" to Color(0xFF3B82F6),
                                     "GREEN" to Color(0xFF5E9C47),
-                                    "PURPLE" to Color(0xFF8E44AD)
+                                    "PURPLE" to Color(0xFF8E44AD),
+                                    "ORANGE" to Color(0xFFF97316),
+                                    "TEAL" to Color(0xFF0D9488)
                                 )
                                 colors.forEach { (name, col) ->
                                     Box(
