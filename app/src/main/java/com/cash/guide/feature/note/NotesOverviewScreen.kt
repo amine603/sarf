@@ -1,7 +1,6 @@
 package com.cash.guide.feature.note
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -24,8 +23,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,12 +39,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -61,6 +59,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
+import com.cash.guide.data.db.NoteEntity
 import com.cash.guide.ui.notebook.HighlighterBlue
 import com.cash.guide.ui.notebook.HighlighterPink
 import com.cash.guide.ui.notebook.HighlighterYellow
@@ -87,6 +86,47 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+/** Color helpers for notes accent dots & highlights */
+fun getNoteDotColor(colorTag: String, fallbackIndex: Int = 0): Color {
+    return when (colorTag.uppercase()) {
+        "PINK" -> Color(0xFFD85A8A)
+        "YELLOW" -> Color(0xFFE5A823)
+        "BLUE" -> Color(0xFF3B82F6)
+        "GREEN" -> Color(0xFF5E9C47)
+        "PURPLE" -> Color(0xFF8E44AD)
+        else -> {
+            val palette = listOf(
+                Color(0xFFD85A8A), // Pink/Rose
+                Color(0xFFE5A823), // Warm Yellow
+                Color(0xFF3B82F6), // Blue
+                Color(0xFF5E9C47), // Green
+                Color(0xFF8E44AD)  // Purple
+            )
+            palette[fallbackIndex % palette.size]
+        }
+    }
+}
+
+fun getNoteHighlightPillColor(colorTag: String, fallbackIndex: Int = 0): Color {
+    return when (colorTag.uppercase()) {
+        "PINK" -> HighlighterPink.copy(alpha = 0.40f)
+        "YELLOW" -> HighlighterYellow.copy(alpha = 0.45f)
+        "BLUE" -> HighlighterBlue.copy(alpha = 0.40f)
+        "GREEN" -> Color(0xFFC8E6C9).copy(alpha = 0.65f)
+        "PURPLE" -> Color(0xFFE1BEE7).copy(alpha = 0.55f)
+        else -> {
+            val palette = listOf(
+                HighlighterPink.copy(alpha = 0.40f),
+                HighlighterYellow.copy(alpha = 0.45f),
+                HighlighterBlue.copy(alpha = 0.40f),
+                Color(0xFFC8E6C9).copy(alpha = 0.65f),
+                Color(0xFFE1BEE7).copy(alpha = 0.55f)
+            )
+            palette[fallbackIndex % palette.size]
+        }
+    }
+}
+
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun NotesOverviewScreen(
@@ -104,18 +144,15 @@ fun NotesOverviewScreen(
 
     var showMonthPicker by remember { mutableStateOf(false) }
 
-    val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
-
-    // Palette for left crescent moon accent: Soft Red, Blue, Olive, Amber, Violet, Rose
-    val cardAccentColors = remember {
-        listOf(
-            Color(0xFFE26D6D), // Soft Red / Coral
-            Color(0xFF4A89DC), // Soft Blue
-            Color(0xFF6B9E48), // Olive Sage
-            Color(0xFFE59834), // Warm Amber
-            Color(0xFF8E5EA2), // Soft Violet
-            Color(0xFFE26D8B)  // Soft Rose
-        )
+    val shortDateFormatter = remember {
+        SimpleDateFormat("d MMM", Locale.getDefault())
+    }
+    val currentMonthHeaderFormatter = remember {
+        SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+    }
+    val currentMonthDisplay = remember {
+        val raw = currentMonthHeaderFormatter.format(Date())
+        raw.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
     }
 
     // Search focus state
@@ -146,7 +183,7 @@ fun NotesOverviewScreen(
             .background(JournalPaper)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header Top Bar: Back button on start, centered Title in Pink Pill (16dp rounded), symmetrical spacer
+            // Header Top Bar: Back button, Pink Highlight "Notes & idées" pill on left, Month/Year on right
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -157,50 +194,68 @@ fun NotesOverviewScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .height(52.dp)
                         .padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Back Button
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .clickable(role = Role.Button, onClick = onNavigateBack),
-                        contentAlignment = Alignment.Center
+                    // Left: Back button + "Notes & idées" soft pink pill
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Back,
-                            contentDescription = "Retour",
-                            tint = JournalInk,
-                            size = 20.dp
-                        )
+                        // Back Button
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .clickable(role = Role.Button, onClick = onNavigateBack),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            HisabiSketchIcon(
+                                symbol = HisabiSymbol.Back,
+                                contentDescription = "Retour",
+                                tint = JournalInk,
+                                size = 20.dp
+                            )
+                        }
+
+                        // Pink Highlighter Pill for Title: "Notes & idées"
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(HighlighterPink.copy(alpha = 0.45f))
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val titleText = if (isRtl) "ملاحظات وأفكار" else "Notes & idées"
+                            Text(
+                                text = titleText,
+                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                fontSize = 17.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalWritingInk,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        }
                     }
 
-                    // Centered Title in Watercolor Pink Pill
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 6.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(HighlighterPink.copy(alpha = 0.35f))
-                            .padding(horizontal = 14.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val titleText = if (isRtl) "ملاحظاتي وأفكاري" else "Mes Notes & Idées"
-                        Text(
-                            text = titleText,
-                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                            fontSize = if (isRtl) 17.sp else 17.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalWritingInk,
-                            textAlign = TextAlign.Center,
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
+                    // Right: Current / Selected Month (e.g. "Septembre 2026")
+                    val headerMonthText = if (uiState.selectedMonthKey != null) {
+                        uiState.availableMonths.firstOrNull { it.first == uiState.selectedMonthKey }?.second
+                            ?: uiState.selectedMonthKey!!
+                    } else {
+                        currentMonthDisplay
                     }
 
-                    // Symmetrical Spacer to guarantee dead-center title alignment
-                    Spacer(modifier = Modifier.size(42.dp))
+                    Text(
+                        text = headerMonthText,
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 15.sp,
+                        color = JournalWritingInk.copy(alpha = 0.80f),
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
                 }
             }
 
@@ -211,10 +266,7 @@ fun NotesOverviewScreen(
                     .fillMaxWidth(),
                 clearFocusOnTap = true
             ) {
-                // Rule 1: 1-rule blank space (29dp) between header and search bar
-                Spacer(modifier = Modifier.height(JournalRuleSpacing))
-
-                // Rule 2: Search Bar + Calendar Icon directly resting on the blue line (29dp)
+                // Rule 1: Search Bar + Calendar Icon directly resting on the ruled blue line (29dp)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -229,7 +281,7 @@ fun NotesOverviewScreen(
                             .weight(1f)
                             .height(JournalRuleSpacing)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF6B7067).copy(alpha = 0.16f))
+                            .background(Color(0xFF6B7067).copy(alpha = 0.14f))
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
@@ -237,22 +289,22 @@ fun NotesOverviewScreen(
                                 searchFocusRequester.requestFocus()
                                 keyboardController?.show()
                             }
-                            .padding(horizontal = 9.dp),
+                            .padding(horizontal = 10.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(7.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             HisabiSketchIcon(
                                 symbol = HisabiSymbol.Search,
                                 contentDescription = null,
-                                tint = JournalInk.copy(alpha = 0.70f),
-                                size = 16.dp
+                                tint = JournalInk.copy(alpha = 0.65f),
+                                size = 15.dp
                             )
 
-                            val searchPlaceholder = if (isRtl) "بحث في الملاحظات..." else "Rechercher une note..."
+                            val searchPlaceholder = if (isRtl) "بحث في الملاحظات..." else "Rechercher dans vos notes..."
                             BasicTextField(
                                 value = uiState.searchQuery,
                                 onValueChange = { viewModel.updateSearchQuery(it) },
@@ -271,7 +323,7 @@ fun NotesOverviewScreen(
                                 ),
                                 textStyle = TextStyle(
                                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                    fontSize = if (isRtl) 15.sp else 16.sp,
+                                    fontSize = if (isRtl) 15.sp else 15.5.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = JournalInk,
                                     platformStyle = NoFontPadding
@@ -283,7 +335,7 @@ fun NotesOverviewScreen(
                                             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                                             fontSize = if (isRtl) 13.5.sp else 14.5.sp,
                                             fontWeight = FontWeight.Normal,
-                                            color = JournalWritingInk.copy(alpha = 0.60f),
+                                            color = JournalWritingInk.copy(alpha = 0.55f),
                                             style = TextStyle(platformStyle = NoFontPadding)
                                         )
                                     }
@@ -314,8 +366,8 @@ fun NotesOverviewScreen(
                         }
                     }
 
-                    // Calendar icon button sitting directly on the blue line (29dp height, larger icon)
-                    Spacer(modifier = Modifier.width(14.dp))
+                    // Calendar icon button (29dp)
+                    Spacer(modifier = Modifier.width(12.dp))
                     Box(
                         modifier = Modifier
                             .size(JournalRuleSpacing)
@@ -329,37 +381,47 @@ fun NotesOverviewScreen(
                                     showMonthPicker = true
                                 }
                             ),
-                        contentAlignment = Alignment.BottomCenter
+                        contentAlignment = Alignment.Center
                     ) {
                         HisabiSketchIcon(
                             symbol = HisabiSymbol.Calendar,
                             contentDescription = stringResource(R.string.home_pick_date),
                             tint = if (uiState.selectedMonthKey != null) JournalInk else JournalInk.copy(alpha = 0.85f),
-                            size = 25.dp
+                            size = 23.dp
                         )
                     }
                 }
 
-                // Rule 3: Info Row (3 notes sitting directly on the blue line) (29dp)
+                // Rule 2: 1-rule spacing (29dp)
+                Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+                // Rule 3: Section Badge "Notes récentes" with soft yellow highlight (29dp)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(JournalRuleSpacing)
                         .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = if (isRtl) "${uiState.totalCount} ملاحظات" else "${uiState.totalCount} notes",
-                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = JournalMutedInk,
-                        style = TextStyle(platformStyle = NoFontPadding),
-                        modifier = Modifier.journalBaselineOnRule()
-                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(HighlighterYellow.copy(alpha = 0.45f))
+                            .padding(horizontal = 10.dp, vertical = 2.dp)
+                    ) {
+                        val sectionText = if (isRtl) "أحدث الملاحظات" else "Notes récentes"
+                        Text(
+                            text = sectionText,
+                            fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalWritingInk,
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+                    }
 
                     if (uiState.selectedMonthKey != null) {
+                        Spacer(modifier = Modifier.width(10.dp))
                         val activeMonthDisplay = uiState.availableMonths
                             .firstOrNull { it.first == uiState.selectedMonthKey }?.second ?: uiState.selectedMonthKey!!
                         Row(
@@ -382,7 +444,7 @@ fun NotesOverviewScreen(
                     }
                 }
 
-                // 1-rule space (1 star) below 3 notes before cards start
+                // Rule 4: 1-rule breathing spacer before groups (29dp)
                 Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
                 // Empty State
@@ -419,149 +481,66 @@ fun NotesOverviewScreen(
                         )
                     }
                 } else {
+                    // Month groups with vertical guide line connecting notes
                     val allNotes = remember(uiState.monthGroups) {
                         uiState.monthGroups.flatMap { it.notes }
                     }
 
                     uiState.monthGroups.forEach { monthGroup ->
-                        // Month Header Divider if multiple months exist and no month filter active (29dp)
-                        if (uiState.monthGroups.size > 1 && uiState.selectedMonthKey == null) {
-                            Row(
+                        // Month Tag Pill (e.g. "Septembre 2026")
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(JournalRuleSpacing)
+                                .padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(JournalRuleSpacing)
-                                    .padding(horizontal = 14.dp),
-                                verticalAlignment = Alignment.Bottom
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0xFFE8EDD5))
+                                    .padding(horizontal = 8.dp, vertical = 2.dp)
                             ) {
                                 Text(
                                     text = monthGroup.displayTitle,
                                     fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                    fontSize = if (isRtl) 15.sp else 15.5.sp,
+                                    fontSize = 13.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = JournalWritingInk.copy(alpha = 0.85f),
-                                    style = TextStyle(platformStyle = NoFontPadding),
-                                    modifier = Modifier.journalBaselineOnRule()
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(JournalRuleSpacing)
-                                        .drawBehind {
-                                            val y = size.height
-                                            drawLine(
-                                                color = JournalRule.copy(alpha = 0.40f),
-                                                start = androidx.compose.ui.geometry.Offset(0f, y),
-                                                end = androidx.compose.ui.geometry.Offset(size.width, y),
-                                                strokeWidth = 1.dp.toPx()
-                                            )
-                                        }
+                                    color = JournalWritingInk,
+                                    style = TextStyle(platformStyle = NoFontPadding)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(JournalRuleSpacing))
                         }
 
-                        // Blue Highlighter Cards (16dp rounded like title card, 72dp height, slender crescent)
-                        monthGroup.notes.forEach { note ->
+                        // Notes in this month group connected by a vertical guide
+                        monthGroup.notes.forEachIndexed { noteIndex, note ->
                             val globalIndex = allNotes.indexOf(note).coerceAtLeast(0)
-                            val accentColor = cardAccentColors[globalIndex % cardAccentColors.size]
-                            val dateStr = dateFormatter.format(Date(note.updatedAtEpochMs))
-                            val displayTitle = note.title.ifBlank { if (isRtl) "ملاحظة بدون عنوان" else "Note sans titre" }
+                            val dotColor = getNoteDotColor(note.colorTag, globalIndex)
+                            val shortDateStr = shortDateFormatter.format(Date(note.updatedAtEpochMs))
+                            val isLastInGroup = noteIndex == monthGroup.notes.lastIndex
 
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(72.dp) // 58dp + ~1/4 box top and bottom
-                                    .padding(horizontal = 14.dp)
-                                    .shadow(
-                                        elevation = 1.dp,
-                                        shape = RoundedCornerShape(16.dp),
-                                        ambientColor = Color(0x10000000),
-                                        spotColor = Color(0x06000000)
-                                    )
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .clickable(role = Role.Button) { onOpenNote(note.id) },
-                                shape = RoundedCornerShape(16.dp),
-                                colors = CardDefaults.cardColors(containerColor = HighlighterBlue.copy(alpha = 0.35f)),
-                                border = BorderStroke(0.9.dp, Color(0xFF8BBED6).copy(alpha = 0.60f))
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .drawBehind {
-                                            // Slender crescent moon on left edge: horns point to the right
-                                            val hornX = 26.dp.toPx()
-                                            val hollowX = 7.dp.toPx()
-                                            val crescentPath = Path().apply {
-                                                moveTo(0f, 0f)
-                                                lineTo(hornX, 0f)
-                                                cubicTo(
-                                                    hollowX, size.height * 0.25f,
-                                                    hollowX, size.height * 0.75f,
-                                                    hornX, size.height
-                                                )
-                                                lineTo(0f, size.height)
-                                                close()
-                                            }
-                                            drawPath(path = crescentPath, color = accentColor)
-                                        }
-                                        .padding(start = 36.dp, end = 20.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxSize(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        // Title + Date in vertical center
-                                        Column(
-                                            modifier = Modifier.weight(1f),
-                                            verticalArrangement = Arrangement.Center
-                                        ) {
-                                            Text(
-                                                text = displayTitle,
-                                                fontFamily = resolveJournalFont(displayTitle, isRtl),
-                                                fontSize = if (isArabicScript(displayTitle)) 16.5.sp else 17.5.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = JournalWritingInk,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                textAlign = TextAlign.Start,
-                                                style = TextStyle(platformStyle = NoFontPadding)
-                                            )
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                text = dateStr,
-                                                fontFamily = PatrickHandFamily,
-                                                fontSize = 12.sp,
-                                                color = JournalWritingInk.copy(alpha = 0.65f),
-                                                style = TextStyle(platformStyle = NoFontPadding)
-                                            )
-                                        }
-
-                                        Spacer(modifier = Modifier.width(10.dp))
-
-                                        // Right Entry Arrow vertically centered
-                                        Text(
-                                            text = "→",
-                                            fontFamily = PatrickHandFamily,
-                                            fontSize = 24.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = JournalWritingInk.copy(alpha = 0.65f)
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Closer spacing between cards (~14dp)
-                            Spacer(modifier = Modifier.height(14.dp))
+                            NoteRowItem(
+                                note = note,
+                                dotColor = dotColor,
+                                shortDateStr = shortDateStr,
+                                isLastInGroup = isLastInGroup,
+                                isRtl = isRtl,
+                                onOpenNote = { onOpenNote(note.id) },
+                                onTogglePin = { viewModel.togglePin(note.id, !note.isPinned) },
+                                onSetColor = { colorTag -> viewModel.setColorTag(note.id, colorTag) },
+                                onDelete = { viewModel.deleteNote(note.id) }
+                            )
                         }
+
+                        // 1-rule spacer after each group
+                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
                     }
                 }
 
-                // 1-rule spacer before primary action button
+                // 1-rule spacer before action button
                 Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-                // Primary Action Button: "+ Nouvelle note" / "+ ملاحظة جديدة" (29dp)
+                // Primary Action Button: "+ Nouvelle note" (29dp)
                 NotebookPrimaryActionButton(
                     text = if (isRtl) "ملاحظة جديدة" else "Nouvelle note",
                     onClick = {
@@ -572,12 +551,12 @@ fun NotesOverviewScreen(
                     }
                 )
 
-                // Bottom extra breathing room
+                // Bottom extra space
                 Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
             }
         }
 
-        // Month Picker Dialog Popup matching Homepage
+        // Month Picker Dialog
         if (showMonthPicker) {
             val cal = remember { Calendar.getInstance() }
             val initialYear = remember(uiState.selectedMonthKey) {
@@ -595,6 +574,251 @@ fun NotesOverviewScreen(
                     val key = String.format(Locale.US, "%04d-%02d", year, month)
                     viewModel.selectMonth(key)
                 }
+            )
+        }
+    }
+}
+
+/**
+ * Single Note Item rendered across exactly 2 notebook lines (58dp):
+ * Line 1: Guide line with color dot + Title + 📌 (if pinned) + Date + Menu (⋮)
+ * Line 2: Guide line continuing down + Content preview
+ * Directly on ruled paper with zero card container!
+ */
+@Composable
+private fun NoteRowItem(
+    note: NoteEntity,
+    dotColor: Color,
+    shortDateStr: String,
+    isLastInGroup: Boolean,
+    isRtl: Boolean,
+    onOpenNote: () -> Unit,
+    onTogglePin: () -> Unit,
+    onSetColor: (String) -> Unit,
+    onDelete: () -> Unit
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    val displayTitle = note.title.ifBlank { if (isRtl) "ملاحظة بدون عنوان" else "Note sans titre" }
+    val previewContent = note.content.lines().firstOrNull { it.isNotBlank() } ?: ""
+
+    val guideLineColor = HighlighterPink.copy(alpha = 0.55f)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing * 2) // exactly 58dp = 2 rule boxes!
+            .clickable(role = Role.Button, onClick = onOpenNote)
+    ) {
+        // Line 1 (29dp): Guide line + dot + Title + Pin + Date + Menu (⋮)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing)
+                .padding(start = 14.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Guide line segment + Dot column
+            Box(
+                modifier = Modifier
+                    .width(24.dp)
+                    .height(JournalRuleSpacing)
+                    .drawBehind {
+                        val centerX = size.width / 2f
+                        val centerY = size.height / 2f
+
+                        // Draw top half of vertical guide line
+                        drawLine(
+                            color = guideLineColor,
+                            start = Offset(centerX, 0f),
+                            end = Offset(centerX, centerY),
+                            strokeWidth = 1.6.dp.toPx()
+                        )
+
+                        // If not last, draw bottom half of vertical guide line
+                        if (!isLastInGroup) {
+                            drawLine(
+                                color = guideLineColor,
+                                start = Offset(centerX, centerY),
+                                end = Offset(centerX, size.height),
+                                strokeWidth = 1.6.dp.toPx()
+                            )
+                        }
+
+                        // Draw filled circle (dot)
+                        drawCircle(
+                            color = dotColor,
+                            radius = 4.5.dp.toPx(),
+                            center = Offset(centerX, centerY)
+                        )
+                    }
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Title + Pin
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = displayTitle,
+                    fontFamily = resolveJournalFont(displayTitle, isRtl),
+                    fontSize = if (isArabicScript(displayTitle)) 16.sp else 16.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalWritingInk,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(platformStyle = NoFontPadding)
+                )
+
+                if (note.isPinned) {
+                    Text(
+                        text = "📌",
+                        fontSize = 12.5.sp,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Short Date (e.g. "10 sept.")
+            Text(
+                text = shortDateStr,
+                fontFamily = PatrickHandFamily,
+                fontSize = 13.sp,
+                color = JournalMutedInk.copy(alpha = 0.70f),
+                style = TextStyle(platformStyle = NoFontPadding)
+            )
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            // 3-dots Menu Button (⋮)
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button) { menuExpanded = true },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "⋮",
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalMutedInk.copy(alpha = 0.85f)
+                )
+
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                    modifier = Modifier.background(JournalPaper)
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = if (note.isPinned) {
+                                    if (isRtl) "إلغاء التثبيت 📌" else "Désépingler 📌"
+                                } else {
+                                    if (isRtl) "تثبيت الملاحظة 📌" else "Épingler 📌"
+                                },
+                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                color = JournalWritingInk
+                            )
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onTogglePin()
+                        }
+                    )
+
+                    // Color tag picker row
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                val colors = listOf(
+                                    "PINK" to Color(0xFFD85A8A),
+                                    "YELLOW" to Color(0xFFE5A823),
+                                    "BLUE" to Color(0xFF3B82F6),
+                                    "GREEN" to Color(0xFF5E9C47),
+                                    "PURPLE" to Color(0xFF8E44AD)
+                                )
+                                colors.forEach { (name, col) ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clip(CircleShape)
+                                            .background(col)
+                                            .clickable {
+                                                menuExpanded = false
+                                                onSetColor(name)
+                                            }
+                                    )
+                                }
+                            }
+                        },
+                        onClick = { }
+                    )
+
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = if (isRtl) "حذف الملاحظة 🗑" else "Supprimer 🗑",
+                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                color = Color(0xFFE53935)
+                            )
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onDelete()
+                        }
+                    )
+                }
+            }
+        }
+
+        // Line 2 (29dp): Guide line continuing + Content preview
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(JournalRuleSpacing)
+                .padding(start = 14.dp, end = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Guide line segment
+            Box(
+                modifier = Modifier
+                    .width(24.dp)
+                    .height(JournalRuleSpacing)
+                    .drawBehind {
+                        if (!isLastInGroup) {
+                            val centerX = size.width / 2f
+                            drawLine(
+                                color = guideLineColor,
+                                start = Offset(centerX, 0f),
+                                end = Offset(centerX, size.height),
+                                strokeWidth = 1.6.dp.toPx()
+                            )
+                        }
+                    }
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Preview Text sitting on line 2
+            Text(
+                text = previewContent.ifBlank { if (isRtl) "لا يوجد محتوى..." else "Aucun contenu..." },
+                fontFamily = resolveJournalFont(previewContent, isRtl),
+                fontSize = if (isArabicScript(previewContent)) 13.5.sp else 14.sp,
+                color = JournalMutedInk.copy(alpha = 0.65f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.weight(1f)
             )
         }
     }

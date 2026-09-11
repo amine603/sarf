@@ -34,6 +34,10 @@ class NoteRepository(
         return noteId
     }
 
+    suspend fun insertNote(note: NoteEntity) {
+        noteDao.insertNote(note)
+    }
+
     suspend fun updateNote(
         id: String,
         title: String,

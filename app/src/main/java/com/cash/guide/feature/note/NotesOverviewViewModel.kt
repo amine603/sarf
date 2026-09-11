@@ -39,6 +39,24 @@ class NotesOverviewViewModel(
     private val _selectedMonthKey = MutableStateFlow<String?>(null)
     val selectedMonthKey: StateFlow<String?> = _selectedMonthKey
 
+    init {
+        viewModelScope.launch {
+            if (noteRepository.getNote("sample_projet_app") == null) {
+                noteRepository.insertNote(
+                    NoteEntity(
+                        id = "sample_projet_app",
+                        title = "Projet application",
+                        content = "- Garder le style carnet\n- Pas de grosses cartes\n- Search simple et visible\n- Partage en image plus tard\n- Sections avec highlights très doux\n\nIdée : ajouter un petit calcul rapide dans les notes (comme dans Hssabi) pour les budgets, voyages, etc.\n\nPenser aussi au mode sombre !",
+                        colorTag = "YELLOW",
+                        isPinned = true,
+                        createdAtEpochMs = System.currentTimeMillis() - 86400000L * 3,
+                        updatedAtEpochMs = System.currentTimeMillis() - 86400000L * 3
+                    )
+                )
+            }
+        }
+    }
+
     val uiState: StateFlow<NotesOverviewUiState> = combine(
         noteRepository.observeAll(),
         _searchQuery,
@@ -86,7 +104,11 @@ class NotesOverviewViewModel(
         }
 
         val groups = groupedMap.map { (key, notesInMonth) ->
-            val firstNoteDate = Date(notesInMonth.first().createdAtEpochMs)
+            val sortedNotes = notesInMonth.sortedWith(
+                compareByDescending<NoteEntity> { it.isPinned }
+                    .thenByDescending { it.updatedAtEpochMs.coerceAtLeast(it.createdAtEpochMs) }
+            )
+            val firstNoteDate = Date(sortedNotes.first().createdAtEpochMs)
             val rawTitle = monthDisplayFormatter.format(firstNoteDate)
             val displayTitle = rawTitle.replaceFirstChar {
                 if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
@@ -94,9 +116,9 @@ class NotesOverviewViewModel(
             NoteMonthGroup(
                 monthYearKey = key,
                 displayTitle = displayTitle,
-                notes = notesInMonth
+                notes = sortedNotes
             )
-        }
+        }.sortedByDescending { it.monthYearKey }
 
         NotesOverviewUiState(
             searchQuery = query,
@@ -129,6 +151,12 @@ class NotesOverviewViewModel(
     fun togglePin(id: String, isPinned: Boolean) {
         viewModelScope.launch {
             noteRepository.togglePin(id, isPinned)
+        }
+    }
+
+    fun setColorTag(id: String, colorTag: String) {
+        viewModelScope.launch {
+            noteRepository.setColorTag(id, colorTag)
         }
     }
 
