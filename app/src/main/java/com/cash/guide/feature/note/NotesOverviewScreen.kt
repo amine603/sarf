@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.R
+import com.cash.guide.ui.notebook.HighlighterBlue
 import com.cash.guide.ui.notebook.HighlighterPink
 import com.cash.guide.ui.notebook.HighlighterYellow
 import com.cash.guide.ui.notebook.HisabiSketchIcon
@@ -381,6 +382,9 @@ fun NotesOverviewScreen(
                     }
                 }
 
+                // 1-rule space (1 star) below 3 notes before cards start
+                Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
                 // Empty State
                 if (uiState.monthGroups.isEmpty() && !uiState.isLoading) {
                     Column(
@@ -457,7 +461,7 @@ fun NotesOverviewScreen(
                             Spacer(modifier = Modifier.height(JournalRuleSpacing))
                         }
 
-                        // Full-Pill Creamy Cards (Height = 58dp = 2 rule boxes, R = 29dp, right-pointing crescent on left)
+                        // Blue Highlighter Cards (16dp rounded like title card, 72dp height, slender crescent)
                         monthGroup.notes.forEach { note ->
                             val globalIndex = allNotes.indexOf(note).coerceAtLeast(0)
                             val accentColor = cardAccentColors[globalIndex % cardAccentColors.size]
@@ -467,27 +471,27 @@ fun NotesOverviewScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(JournalRuleSpacing * 2) // exactly 58dp = 2 rule boxes!
+                                    .height(72.dp) // 58dp + ~1/4 box top and bottom
                                     .padding(horizontal = 14.dp)
                                     .shadow(
-                                        elevation = 1.5.dp,
-                                        shape = RoundedCornerShape(29.dp),
-                                        ambientColor = Color(0x12000000),
-                                        spotColor = Color(0x08000000)
+                                        elevation = 1.dp,
+                                        shape = RoundedCornerShape(16.dp),
+                                        ambientColor = Color(0x10000000),
+                                        spotColor = Color(0x06000000)
                                     )
-                                    .clip(RoundedCornerShape(29.dp))
+                                    .clip(RoundedCornerShape(16.dp))
                                     .clickable(role = Role.Button) { onOpenNote(note.id) },
-                                shape = RoundedCornerShape(29.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFCFAF4)),
-                                border = BorderStroke(0.9.dp, Color(0xFFD6CEBF))
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = HighlighterBlue.copy(alpha = 0.35f)),
+                                border = BorderStroke(0.9.dp, Color(0xFF8BBED6).copy(alpha = 0.60f))
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .drawBehind {
-                                            // Crescent moon on left: horns point to the right as in user sketch
-                                            val hornX = 46.dp.toPx()
-                                            val hollowX = 10.dp.toPx()
+                                            // Slender crescent moon on left edge: horns point to the right
+                                            val hornX = 26.dp.toPx()
+                                            val hollowX = 7.dp.toPx()
                                             val crescentPath = Path().apply {
                                                 moveTo(0f, 0f)
                                                 lineTo(hornX, 0f)
@@ -501,7 +505,7 @@ fun NotesOverviewScreen(
                                             }
                                             drawPath(path = crescentPath, color = accentColor)
                                         }
-                                        .padding(start = 52.dp, end = 20.dp)
+                                        .padding(start = 36.dp, end = 20.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxSize(),
@@ -528,28 +532,28 @@ fun NotesOverviewScreen(
                                             Text(
                                                 text = dateStr,
                                                 fontFamily = PatrickHandFamily,
-                                                fontSize = 11.5.sp,
-                                                color = JournalMutedInk.copy(alpha = 0.65f),
+                                                fontSize = 12.sp,
+                                                color = JournalWritingInk.copy(alpha = 0.65f),
                                                 style = TextStyle(platformStyle = NoFontPadding)
                                             )
                                         }
 
                                         Spacer(modifier = Modifier.width(10.dp))
 
-                                        // Right Entry Arrow vertically centered in the right semicircular cap
+                                        // Right Entry Arrow vertically centered
                                         Text(
                                             text = "→",
                                             fontFamily = PatrickHandFamily,
                                             fontSize = 24.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = JournalMutedInk.copy(alpha = 0.65f)
+                                            color = JournalWritingInk.copy(alpha = 0.65f)
                                         )
                                     }
                                 }
                             }
 
-                            // 1 empty box (29dp) between cards so every card aligns to the blue rules!
-                            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+                            // Closer spacing between cards (~14dp)
+                            Spacer(modifier = Modifier.height(14.dp))
                         }
                     }
                 }
