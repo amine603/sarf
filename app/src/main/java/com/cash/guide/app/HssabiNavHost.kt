@@ -17,6 +17,8 @@ import com.cash.guide.feature.settings.SettingsScreen
 import com.cash.guide.feature.settings.SettingsViewModel
 import com.cash.guide.feature.cashregister.CashRegisterScreen
 import com.cash.guide.feature.cashregister.CashRegisterViewModel
+import com.cash.guide.feature.calculs.CalculsScreen
+import com.cash.guide.feature.calculs.CalculsViewModel
 
 import com.cash.guide.feature.groups.GroupsScreen
 import com.cash.guide.feature.groups.GroupsViewModel
@@ -81,6 +83,7 @@ fun HssabiNavHost(
                     navController.navigate("month_calculations/$year/$month")
                 },
                 onOpenStyleShowcase = { navController.navigate(AppDestination.StyleShowcase.route) },
+                onOpenCalculs = { navController.navigate(AppDestination.Calculs.route) },
                 onOpenCashRegister = { navController.navigate(AppDestination.CashRegister.route) },
                 onOpenChecklist = { navController.navigate(AppDestination.Checklist.route) },
                 onOpenNotes = { navController.navigate(AppDestination.Notes.route) }
@@ -140,6 +143,30 @@ fun HssabiNavHost(
         composable(AppDestination.Settings.route) {
             SettingsScreen(
                 viewModel = settingsViewModel
+            )
+        }
+
+        composable(AppDestination.Calculs.route) { backStackEntry ->
+            val calculsViewModel: CalculsViewModel = viewModel(
+                viewModelStoreOwner = backStackEntry
+            ) {
+                CalculsViewModel(calculationRepository, settingsRepository)
+            }
+            CalculsScreen(
+                viewModel = calculsViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onOpenCalculation = { id -> navController.navigate("calculation/$id") },
+                onOpenCashRegister = { navController.navigate(AppDestination.CashRegister.route) },
+                onNewCalculationWithParams = { title, calcType, currency, templateId ->
+                    navController.navigate(
+                        AppDestination.NewCalculation.createRoute(
+                            type = calcType,
+                            currency = currency.name,
+                            title = title,
+                            templateId = templateId
+                        )
+                    )
+                }
             )
         }
 

@@ -11,6 +11,10 @@
     <string name="home_greeting">Bonjour %1$s 😊</string>
     <string name="home_search_placeholder">Rechercher un calcul</string>
     <string name="home_new_calculation">Nouveau calcul</string>
+    <string name="home_action_calculs">Calculs</string>
+    <string name="calculs_action_new_calculation_subtitle">Ajouter des lignes · total automatique</string>
+    <string name="calculs_action_change_title">Rendu de monnaie</string>
+    <string name="calculs_action_change_subtitle">Montant reçu · monnaie à rendre</string>
     <string name="home_recent_title">Calculs récents</string>
     <string name="home_favorites_title">Vos favoris</string>
     <string name="home_favorites_empty_hint">Épinglez vos calculs importants ici (⋮)</string>

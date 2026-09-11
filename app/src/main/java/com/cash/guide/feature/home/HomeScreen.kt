@@ -89,6 +89,7 @@ import com.cash.guide.ui.notebook.HighlighterYellow
 import com.cash.guide.ui.notebook.HighlighterBlue
 import com.cash.guide.ui.notebook.NotebookDateGroupBlock
 import com.cash.guide.ui.notebook.NotebookPrimaryActionButton
+import com.cash.guide.ui.notebook.NotebookCalculsActionButton
 import com.cash.guide.ui.notebook.NotebookCashRegisterActionButton
 import com.cash.guide.ui.notebook.NotebookChecklistActionButton
 import com.cash.guide.ui.notebook.NotebookNotesActionButton
@@ -121,6 +122,7 @@ fun HomeScreen(
     onOpenHistory: () -> Unit,
     onOpenMonthCalculations: (year: Int, month: Int) -> Unit = { _, _ -> },
     onOpenStyleShowcase: () -> Unit = {},
+    onOpenCalculs: () -> Unit = {},
     onOpenCashRegister: () -> Unit = {},
     onOpenChecklist: () -> Unit = {},
     onOpenNotes: () -> Unit = {},
@@ -225,21 +227,10 @@ fun HomeScreen(
             // Line 4: 1 rule spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Line 5: Full-width pink "+ Nouveau calcul" primary button (29dp)
-            NotebookPrimaryActionButton(
-                text = stringResource(R.string.home_new_calculation),
-                onClick = {
-                    if (onNewCalculationWithParams != null) {
-                        showNewCalcSetupSheet = true
-                    } else {
-                        onNewCalculation()
-                    }
-                }
-            )
-
-            // Line 6: Caisse & Rendu de monnaie (Quick Access Action - 29dp)
-            NotebookCashRegisterActionButton(
-                onClick = onOpenCashRegister
+            // Line 5: Calculs (Quick Access Action - 29dp)
+            NotebookCalculsActionButton(
+                onClick = onOpenCalculs,
+                title = stringResource(R.string.home_action_calculs)
             )
 
             // Line 7: Checklist (Quick Access Action - 29dp)
