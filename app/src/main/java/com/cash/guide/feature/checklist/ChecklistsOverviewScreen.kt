@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -37,6 +38,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -254,7 +256,7 @@ fun ChecklistsOverviewScreen(
                                 )
                                 .padding(horizontal = 14.dp)
                         ) {
-                            // Line 1: Number + Title on start, Status ("En cours" / "Terminé") + Trash icon on end
+                            // Line 1: Number + Title on start, Dotted connector line in middle, Status ("En cours" / "Terminé") + Trash icon on end
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -263,14 +265,14 @@ fun ChecklistsOverviewScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(
-                                    modifier = Modifier.weight(1f, fill = false),
+                                    modifier = Modifier.widthIn(max = 200.dp),
                                     verticalAlignment = Alignment.Bottom,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
                                         text = "\u200E${index + 1}.",
                                         fontFamily = PatrickHandFamily,
-                                        fontSize = 16.5.sp,
+                                        fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = dotColor,
                                         style = TextStyle(platformStyle = NoFontPadding),
@@ -279,7 +281,7 @@ fun ChecklistsOverviewScreen(
                                     Text(
                                         text = item.checklist.title.ifBlank { "Checklist" },
                                         fontFamily = resolveJournalFont(item.checklist.title, isRtl),
-                                        fontSize = 16.5.sp,
+                                        fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = JournalWritingInk,
                                         maxLines = 1,
@@ -289,7 +291,24 @@ fun ChecklistsOverviewScreen(
                                     )
                                 }
 
-                                Spacer(modifier = Modifier.width(8.dp))
+                                // Subtle connecting dotted line directly on the blue notebook line between Title and Status
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(JournalRuleSpacing)
+                                        .padding(horizontal = 6.dp)
+                                        .drawBehind {
+                                            val strokeW = 0.85.dp.toPx()
+                                            val y = size.height
+                                            drawLine(
+                                                color = JournalWritingInk.copy(alpha = 0.28f),
+                                                start = Offset(0f, y),
+                                                end = Offset(size.width, y),
+                                                strokeWidth = strokeW,
+                                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.5.dp.toPx()))
+                                            )
+                                        }
+                                )
 
                                 // Status badge + Trash icon button on far end
                                 Row(
@@ -306,7 +325,7 @@ fun ChecklistsOverviewScreen(
                                     Text(
                                         text = statusText,
                                         fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                        fontSize = 13.5.sp,
+                                        fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = statusColor,
                                         style = TextStyle(platformStyle = NoFontPadding),

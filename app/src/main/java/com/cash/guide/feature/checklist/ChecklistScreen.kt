@@ -453,7 +453,7 @@ fun ChecklistScreen(
                         Text(
                             text = "$rowNumber",
                             fontFamily = PatrickHandFamily,
-                            fontSize = 16.5.sp,
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = dotColor,
                             style = TextStyle(platformStyle = NoFontPadding),
@@ -478,7 +478,7 @@ fun ChecklistScreen(
                             Text(
                                 text = item.text,
                                 fontFamily = resolveJournalFont(item.text, isRtl),
-                                fontSize = 16.sp,
+                                fontSize = if (isRtl) 17.sp else 17.5.sp,
                                 lineHeight = 29.sp,
                                 fontWeight = if (item.isChecked) FontWeight.Normal else FontWeight.Medium,
                                 color = if (item.isChecked) JournalMutedInk.copy(alpha = 0.55f) else JournalInk,

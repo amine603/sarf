@@ -90,6 +90,25 @@ object ChecklistShareHelper {
         items: List<ChecklistItemEntity>
     ) = shareAsTextAndLink(context, title, items)
 
+    private fun isArabicScript(text: String): Boolean {
+        return text.any { c ->
+            c in '\u0600'..'\u06FF' ||
+            c in '\u0750'..'\u077F' ||
+            c in '\u08A0'..'\u08FF' ||
+            c in '\uFB50'..'\uFDFF' ||
+            c in '\uFE70'..'\uFEFF'
+        }
+    }
+
+    private fun truncateToWidth(paint: Paint, text: String, maxWidth: Float): String {
+        if (paint.measureText(text) <= maxWidth) return text
+        var truncated = text
+        while (truncated.isNotEmpty() && paint.measureText("$truncated...") > maxWidth) {
+            truncated = truncated.dropLast(1)
+        }
+        return if (truncated.isEmpty()) "" else "$truncated..."
+    }
+
     private fun renderChecklistBitmap(
         context: Context,
         title: String,
@@ -97,27 +116,42 @@ object ChecklistShareHelper {
         isRtl: Boolean
     ): Bitmap {
         val width = 1080
-        val ruleSpacing = 74f
-        val marginX = 60f
+        val ruleSpacing = 76f
+        val marginX = 64f
 
-        // Fonts
+        // 1. Script & RTL detection based on actual checklist content
+        val hasArabic = isArabicScript(title) || items.any { isArabicScript(it.text) }
+        val hasLatin = title.any { (it in 'a'..'z') || (it in 'A'..'Z') } || items.any { it.text.any { c -> (c in 'a'..'z') || (c in 'A'..'Z') } }
+        val effectiveRtl = when {
+            hasArabic && !hasLatin -> true
+            hasLatin && !hasArabic -> false
+            hasArabic -> true
+            else -> isRtl
+        }
+
+        // 2. Bundled Fonts
+        val creamFrothFont = runCatching {
+            ResourcesCompat.getFont(context, R.font.cream_froth_regular)
+                ?: ResourcesCompat.getFont(context, R.font.cream_froth)
+        }.getOrNull()
+        val creamFrothBold = runCatching {
+            ResourcesCompat.getFont(context, R.font.cream_froth_bold)
+        }.getOrNull()
         val majazFont = runCatching {
             ResourcesCompat.getFont(context, R.font.majaz_regular)
         }.getOrNull() ?: Typeface.DEFAULT
         val patrickHandFont = runCatching {
             ResourcesCompat.getFont(context, R.font.patrick_hand_regular)
         }.getOrNull() ?: Typeface.DEFAULT
-        val manropeBold = runCatching {
-            ResourcesCompat.getFont(context, R.font.manrope_bold)
-        }.getOrNull() ?: Typeface.DEFAULT_BOLD
 
-        val primaryFont = if (isRtl) majazFont else patrickHandFont
+        val primaryFont = if (effectiveRtl) (creamFrothFont ?: majazFont) else patrickHandFont
+        val boldFont = if (effectiveRtl) (creamFrothBold ?: creamFrothFont ?: majazFont) else patrickHandFont
 
-        // Colors
+        // 3. Colors
         val paperColor = Color.rgb(0xFB, 0xF6, 0xE8)          // Cream Paper
         val inkColor = Color.rgb(0x24, 0x24, 0x21)            // Journal Ink
         val mutedInkColor = Color.rgb(0x75, 0x75, 0x70)       // Muted Ink
-        val lineRuleColor = Color.argb(45, 0x1E, 0x5C, 0xA8)  // Ruled Notebook Blue
+        val lineRuleColor = Color.argb(48, 0x1E, 0x5C, 0xA8)  // Ruled Notebook Blue
         val checkGreenColor = Color.rgb(0x1B, 0x7A, 0x4B)     // Emerald Ink
         val rowDotColors = listOf(
             Color.rgb(0x3B, 0x82, 0xB6),
@@ -128,186 +162,272 @@ object ChecklistShareHelper {
             Color.rgb(0xCC, 0x67, 0x3B)
         )
 
-        // Calculate dynamic height
-        val topPaddingRules = 3
-        val headerRules = 2
-        val itemRules = maxOf(items.size, 4)
-        val footerRules = 3
-        val totalRules = topPaddingRules + headerRules + itemRules + footerRules + 2
+        // 4. Exact Ruled Grid Structure:
+        // Rule 1: Top spacing (empty)
+        // Rule 2: App Branding & Date
+        // Rule 3: Spacer
+        // Rule 4: Title (with watercolor pink wash pill, text baseline sitting on Rule 4)
+        // Rule 5: Progress / Subtitle (sitting on Rule 5)
+        // Rule 6: Separator line (drawn directly along Rule 6 line)
+        // Rule 7: Spacer before items
+        // Rules 8 .. (7 + displayItemCount): Items (each sits on its rule)
+        // Rule (8 + displayItemCount): Spacer
+        // Rule (9 + displayItemCount): Footer Watermark ("Sarf • كناش الحسابات المغربي")
+        // Rule (10 + displayItemCount): Bottom padding rule
+        val displayItemCount = maxOf(items.size, 1)
+        val totalRules = 10 + displayItemCount
         val height = (totalRules * ruleSpacing).toInt()
 
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(paperColor)
 
-        // Draw horizontal blue ruled lines
-        val linePaint = Paint().apply {
+        // 5. Draw horizontal blue ruled lines across the whole page
+        val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = lineRuleColor
             strokeWidth = 2f
             style = Paint.Style.STROKE
-            isAntiAlias = true
+        }
+        for (r in 1 until totalRules) {
+            val y = r * ruleSpacing
+            canvas.drawLine(0f, y, width.toFloat(), y, linePaint)
         }
 
-        var curY = ruleSpacing
-        while (curY < height) {
-            canvas.drawLine(0f, curY, width.toFloat(), curY, linePaint)
-            curY += ruleSpacing
-        }
+        // 6. Header: App Branding & Date (Rule 2)
+        val rule2Y = 2 * ruleSpacing
+        val rule2Baseline = rule2Y - 12f
+        val brandText = if (effectiveRtl) "صرف • كناش الحسابات" else "Sarf • Carnet"
+        val dateSdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val dateStr = dateSdf.format(Date())
 
-        // Header Title in Pink Pill
-        var baselineY = (topPaddingRules + 1) * ruleSpacing - 18f
-        val headerTitle = if (title.isBlank()) "Checklist" else title
-
-        val titlePaint = Paint().apply {
-            typeface = primaryFont
+        val brandPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = boldFont
+            textSize = 34f
             color = inkColor
-            isAntiAlias = true
-            textSize = 50f
-            textAlign = Paint.Align.CENTER
+            textAlign = if (effectiveRtl) Paint.Align.RIGHT else Paint.Align.LEFT
         }
-
-        val titleWidth = titlePaint.measureText(headerTitle)
-        val pillRect = RectF(
-            (width - titleWidth) / 2f - 30f,
-            baselineY - 44f,
-            (width + titleWidth) / 2f + 30f,
-            baselineY + 14f
-        )
-        val pillPaint = Paint().apply {
-            color = Color.argb(90, 0xF4, 0x8F, 0xB1) // Pink pill
-            style = Paint.Style.FILL
-            isAntiAlias = true
-        }
-        canvas.drawRoundRect(pillRect, 20f, 20f, pillPaint)
-        canvas.drawText(headerTitle, width / 2f, baselineY, titlePaint)
-
-        // Date and progress line (Centered)
-        baselineY += ruleSpacing
-        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-        val dateStr = sdf.format(Date())
-        val checkedCount = items.count { it.isChecked }
-        val statusStr = "$dateStr • $checkedCount / ${items.size} faits"
-
-        val subPaint = Paint().apply {
-            typeface = manropeBold
+        val datePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = patrickHandFont
+            textSize = 29f
             color = mutedInkColor
-            isAntiAlias = true
-            textSize = 28f
+            textAlign = if (effectiveRtl) Paint.Align.LEFT else Paint.Align.RIGHT
+        }
+
+        if (effectiveRtl) {
+            canvas.drawText(brandText, width - marginX, rule2Baseline, brandPaint)
+            canvas.drawText(dateStr, marginX, rule2Baseline, datePaint)
+        } else {
+            canvas.drawText(brandText, marginX, rule2Baseline, brandPaint)
+            canvas.drawText(dateStr, width - marginX, rule2Baseline, datePaint)
+        }
+
+        // 7. Title in Pink Wash Pill (Rule 4)
+        val rule4Y = 4 * ruleSpacing
+        val titleBaseline = rule4Y - 12f
+        val headerTitle = if (title.isBlank()) (if (effectiveRtl) "قائمة المهام" else "Checklist") else title
+
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = boldFont
+            color = inkColor
+            textSize = 56f
+            textAlign = Paint.Align.CENTER
+            isFakeBoldText = true
+        }
+
+        val rawTitleW = titlePaint.measureText(headerTitle).coerceAtMost(width - marginX * 2 - 40f)
+        val pillW = (rawTitleW + 64f).coerceAtMost(width - marginX * 2)
+        val pillRect = RectF(
+            (width - pillW) / 2f,
+            rule4Y - ruleSpacing + 12f,
+            (width + pillW) / 2f,
+            rule4Y - 4f
+        )
+        val pillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.argb(90, 0xF4, 0x8F, 0xB1) // Pink wash
+            style = Paint.Style.FILL
+        }
+        canvas.drawRoundRect(pillRect, 18f, 18f, pillPaint)
+        val truncatedTitle = truncateToWidth(titlePaint, headerTitle, pillW - 40f)
+        canvas.drawText(truncatedTitle, width / 2f, titleBaseline, titlePaint)
+
+        // 8. Date and Progress Subtitle (Rule 5)
+        val rule5Y = 5 * ruleSpacing
+        val subBaseline = rule5Y - 12f
+        val checkedCount = items.count { it.isChecked }
+        val progressText = if (effectiveRtl) {
+            if (checkedCount == items.size && items.isNotEmpty()) "جميع العناصر مكتملة (${items.size} / ${items.size}) ✨"
+            else "$checkedCount من أصل ${items.size} مكتملة"
+        } else {
+            if (checkedCount == items.size && items.isNotEmpty()) "Tous les éléments complétés (${items.size}/${items.size}) ✨"
+            else "$checkedCount / ${items.size} complétés"
+        }
+        val progressPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = primaryFont
+            color = mutedInkColor
+            textSize = 32f
             textAlign = Paint.Align.CENTER
         }
-        canvas.drawText(statusStr, width / 2f, baselineY, subPaint)
+        canvas.drawText(progressText, width / 2f, subBaseline, progressPaint)
 
-        // Draw separator
-        val dividerPaint = Paint().apply {
-            color = Color.argb(80, 0x24, 0x24, 0x21)
-            strokeWidth = 2f
+        // 9. Separator Line: drawn directly along Rule 6 blue line
+        val separatorY = 6 * ruleSpacing
+        val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.argb(120, 0x24, 0x24, 0x21)
+            strokeWidth = 2.5f
             style = Paint.Style.STROKE
+            strokeCap = Paint.Cap.ROUND
         }
-        baselineY += ruleSpacing * 0.4f
-        canvas.drawLine(40f, baselineY, width - 40f, baselineY, dividerPaint)
+        canvas.drawLine(marginX, separatorY, width - marginX, separatorY, dividerPaint)
 
-        // Draw Items
-        val checkboxSize = 40f
-        val checkStrokePaint = Paint().apply {
+        // 10. Items Section (Rule 8 to 7 + displayItemCount)
+        val checkboxSize = 42f
+        val checkStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = inkColor
             strokeWidth = 3f
             style = Paint.Style.STROKE
-            isAntiAlias = true
         }
-        val checkFillPaint = Paint().apply {
+        val checkFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = checkGreenColor
             strokeWidth = 4.5f
             style = Paint.Style.STROKE
             strokeCap = Paint.Cap.ROUND
-            isAntiAlias = true
         }
 
-        val textPaint = Paint().apply {
+        val itemTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = primaryFont
-            color = inkColor
-            isAntiAlias = true
-            textSize = 42f
-            textAlign = Paint.Align.LEFT
+            textSize = 48f
         }
 
-        val numberPaint = Paint().apply {
-            typeface = primaryFont
-            isAntiAlias = true
-            textSize = 42f
-            textAlign = Paint.Align.CENTER
+        val itemNumPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = boldFont
+            textSize = 46f
+            isFakeBoldText = true
         }
 
-        items.forEachIndexed { index, item ->
-            baselineY += ruleSpacing
-
-            // 1. Draw number on the left
-            val dotColor = rowDotColors[index % rowDotColors.size]
-            numberPaint.color = dotColor
-            canvas.drawText("${index + 1}", 75f, baselineY, numberPaint)
-
-            // 2. Draw Checkbox on far right
-            val boxX = width - 110f
-            val boxY = baselineY - checkboxSize + 6f
-            val rect = RectF(boxX, boxY, boxX + checkboxSize, boxY + checkboxSize)
-
-            // Checkbox stroke (no colored background fill)
-            canvas.drawRoundRect(rect, 8f, 8f, checkStrokePaint)
-
-            if (item.isChecked) {
-                val p1x = rect.left + checkboxSize * 0.20f
-                val p1y = rect.top + checkboxSize * 0.52f
-                val p2x = rect.left + checkboxSize * 0.42f
-                val p2y = rect.top + checkboxSize * 0.76f
-                val p3x = rect.left + checkboxSize * 0.82f
-                val p3y = rect.top + checkboxSize * 0.22f
-
-                canvas.drawLine(p1x, p1y, p2x, p2y, checkFillPaint)
-                canvas.drawLine(p2x, p2y, p3x, p3y, checkFillPaint)
+        if (items.isEmpty()) {
+            val emptyY = 8 * ruleSpacing
+            val emptyBaseline = emptyY - 12f
+            val emptyText = if (effectiveRtl) "(لا توجد عناصر في هذه القائمة)" else "(Aucun élément dans cette liste)"
+            val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                typeface = primaryFont
+                color = mutedInkColor
+                textSize = 36f
+                textAlign = Paint.Align.CENTER
             }
+            canvas.drawText(emptyText, width / 2f, emptyBaseline, emptyPaint)
+        } else {
+            items.forEachIndexed { index, item ->
+                val lineY = (8 + index) * ruleSpacing
+                val baselineY = lineY - 12f
+                val checkboxY = lineY - checkboxSize - 9f
 
-            // 3. Draw text starting right next to line numbers (NO red line)
-            val itemTextX = 125f
-            val itemPaint = Paint(textPaint).apply {
-                color = if (item.isChecked) mutedInkColor else inkColor
-                textAlign = Paint.Align.LEFT
-            }
-            val maxTextWidth = boxX - itemTextX - 25f
-            val displayText = if (itemPaint.measureText(item.text) > maxTextWidth) {
-                var truncated = item.text
-                while (truncated.isNotEmpty() && itemPaint.measureText("$truncated...") > maxTextWidth) {
-                    truncated = truncated.dropLast(1)
+                val dotColor = rowDotColors[index % rowDotColors.size]
+                itemNumPaint.color = dotColor
+
+                if (effectiveRtl) {
+                    // RTL: Number on Right, Text on Right, Checkbox on Left
+                    val numX = width - marginX - 16f
+                    itemNumPaint.textAlign = Paint.Align.RIGHT
+                    canvas.drawText("${index + 1}.", numX, baselineY, itemNumPaint)
+
+                    // Checkbox on far Left
+                    val boxX = marginX + 16f
+                    val rect = RectF(boxX, checkboxY, boxX + checkboxSize, checkboxY + checkboxSize)
+                    canvas.drawRoundRect(rect, 8f, 8f, checkStrokePaint)
+
+                    if (item.isChecked) {
+                        val p1x = rect.left + checkboxSize * 0.20f
+                        val p1y = rect.top + checkboxSize * 0.52f
+                        val p2x = rect.left + checkboxSize * 0.42f
+                        val p2y = rect.top + checkboxSize * 0.76f
+                        val p3x = rect.left + checkboxSize * 0.82f
+                        val p3y = rect.top + checkboxSize * 0.22f
+                        canvas.drawLine(p1x, p1y, p2x, p2y, checkFillPaint)
+                        canvas.drawLine(p2x, p2y, p3x, p3y, checkFillPaint)
+                    }
+
+                    // Item Text flowing from Right to Left
+                    val textRight = width - marginX - 78f
+                    val textLeft = boxX + checkboxSize + 25f
+                    val maxTextW = textRight - textLeft
+
+                    val itemPaint = Paint(itemTextPaint).apply {
+                        color = if (item.isChecked) mutedInkColor else inkColor
+                        textAlign = Paint.Align.RIGHT
+                    }
+                    val displayText = truncateToWidth(itemPaint, item.text, maxTextW)
+                    canvas.drawText(displayText, textRight, baselineY, itemPaint)
+
+                    // Strikethrough line if checked
+                    if (item.isChecked) {
+                        val textW = itemPaint.measureText(displayText)
+                        val strikePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = Color.argb(100, 0x24, 0x24, 0x21)
+                            strokeWidth = 2.5f
+                            strokeCap = Paint.Cap.ROUND
+                        }
+                        val strikeY = baselineY - 15f
+                        canvas.drawLine(textRight - textW - 4f, strikeY, textRight + 4f, strikeY, strikePaint)
+                    }
+                } else {
+                    // LTR: Number on Left, Text on Left, Checkbox on Right
+                    val numX = marginX + 16f
+                    itemNumPaint.textAlign = Paint.Align.LEFT
+                    canvas.drawText("${index + 1}.", numX, baselineY, itemNumPaint)
+
+                    // Checkbox on far Right
+                    val boxX = width - marginX - checkboxSize - 16f
+                    val rect = RectF(boxX, checkboxY, boxX + checkboxSize, checkboxY + checkboxSize)
+                    canvas.drawRoundRect(rect, 8f, 8f, checkStrokePaint)
+
+                    if (item.isChecked) {
+                        val p1x = rect.left + checkboxSize * 0.20f
+                        val p1y = rect.top + checkboxSize * 0.52f
+                        val p2x = rect.left + checkboxSize * 0.42f
+                        val p2y = rect.top + checkboxSize * 0.76f
+                        val p3x = rect.left + checkboxSize * 0.82f
+                        val p3y = rect.top + checkboxSize * 0.22f
+                        canvas.drawLine(p1x, p1y, p2x, p2y, checkFillPaint)
+                        canvas.drawLine(p2x, p2y, p3x, p3y, checkFillPaint)
+                    }
+
+                    // Item Text flowing from Left to Right
+                    val textLeft = marginX + 78f
+                    val textRight = boxX - 25f
+                    val maxTextW = textRight - textLeft
+
+                    val itemPaint = Paint(itemTextPaint).apply {
+                        color = if (item.isChecked) mutedInkColor else inkColor
+                        textAlign = Paint.Align.LEFT
+                    }
+                    val displayText = truncateToWidth(itemPaint, item.text, maxTextW)
+                    canvas.drawText(displayText, textLeft, baselineY, itemPaint)
+
+                    // Strikethrough line if checked
+                    if (item.isChecked) {
+                        val textW = itemPaint.measureText(displayText)
+                        val strikePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = Color.argb(100, 0x24, 0x24, 0x21)
+                            strokeWidth = 2.5f
+                            strokeCap = Paint.Cap.ROUND
+                        }
+                        val strikeY = baselineY - 15f
+                        canvas.drawLine(textLeft - 4f, strikeY, textLeft + textW + 4f, strikeY, strikePaint)
+                    }
                 }
-                "$truncated..."
-            } else {
-                item.text
-            }
-
-            canvas.drawText(displayText, itemTextX, baselineY, itemPaint)
-
-            // Soft pencil black strikethrough line ONLY across the text width
-            if (item.isChecked) {
-                val textW = itemPaint.measureText(displayText)
-                val strikePaint = Paint().apply {
-                    color = Color.argb(90, 0x24, 0x24, 0x21)
-                    strokeWidth = 2.5f
-                    strokeCap = Paint.Cap.ROUND
-                    isAntiAlias = true
-                }
-                val strikeY = baselineY - 14f
-                canvas.drawLine(itemTextX - 4f, strikeY, itemTextX + textW + 4f, strikeY, strikePaint)
             }
         }
 
-        // Footer brand
-        baselineY += ruleSpacing * 1.5f
-        val footerPaint = Paint().apply {
+        // 11. Footer Brand Watermark
+        val footerRule = 9 + displayItemCount
+        val footerBaseline = footerRule * ruleSpacing - 12f
+        val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = primaryFont
             color = mutedInkColor
-            isAntiAlias = true
             textSize = 32f
             textAlign = Paint.Align.CENTER
         }
-        canvas.drawText("Sarf • كناش الحسابات المغربي", width / 2f, baselineY, footerPaint)
+        canvas.drawText("Sarf • كناش الحسابات المغربي", width / 2f, footerBaseline, footerPaint)
 
         return bitmap
     }
