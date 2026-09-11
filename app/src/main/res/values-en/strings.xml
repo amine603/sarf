@@ -299,7 +299,21 @@
     <string name="cash_register_back_to_calc">Edit total</string>
     <string name="cash_register_calc_title">Purchase Calculator</string>
     <string name="cash_register_calc_hint">Enter total or add up items</string>
-    <string name="cash_register_home_card_badge">Quick POS</string>
     <string name="cash_register_heading_banknotes">Banknotes to return</string>
     <string name="cash_register_heading_coins">Coins to return</string>
+
+    <!-- Notes & Ideas -->
+    <string name="home_action_notes">Notes &amp; Ideas</string>
+    <string name="notes_title">My Notes &amp; Ideas</string>
+    <string name="note_untitled">Untitled note</string>
+    <string name="note_new">+ New note</string>
+    <string name="note_delete_title">Delete note?</string>
+    <string name="note_delete_confirm">Are you sure you want to permanently delete this note?</string>
+    <string name="note_empty_title">No notes yet</string>
+    <string name="note_empty_subtitle">Write down ideas, thoughts, or daily memos ✍️</string>
+    <string name="note_color_label">Color:</string>
+    <string name="note_voice_listening">🔴 Listening, speak now...</string>
+    <string name="note_voice_hint">🎙️ Quick voice dictation</string>
+    <string name="note_title_hint">Note title...</string>
+    <string name="note_body_hint">Write your thoughts, ideas or memos here... ✍️\nYou can also tap the mic to dictate!</string>
 </resources>

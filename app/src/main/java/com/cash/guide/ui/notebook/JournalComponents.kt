@@ -2019,6 +2019,89 @@ fun NotebookChecklistActionButton(
     }
 }
 
+/**
+ * Quick action button on HomeScreen for Notes & Ideas.
+ * Respects the 1-rule spacing grid with clean paper background, ink borders and handwritten text.
+ */
+@Composable
+fun NotebookNotesActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    title: String = "Notes & Idées"
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(26.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(JournalPaper)
+                .border(
+                    BorderStroke(0.9.dp, JournalRule.copy(alpha = 0.85f)),
+                    RoundedCornerShape(8.dp)
+                )
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = title,
+                    onClick = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        onClick()
+                    }
+                )
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "📝",
+                        fontSize = 15.sp,
+                        modifier = Modifier.offset(y = (-0.5).dp)
+                    )
+                    Text(
+                        text = title,
+                        fontFamily = resolveJournalFont(title, isRtl),
+                        fontSize = if (isArabicScript(title) || isRtl) 14.sp else 14.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = JournalWritingInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.offset(y = if (isRtl) 0.5.dp else 0.dp)
+                    )
+                }
+
+                Text(
+                    text = if (isRtl) "←" else "→",
+                    fontFamily = PatrickHandFamily,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalMutedInk.copy(alpha = 0.75f),
+                    style = TextStyle(platformStyle = NoFontPadding)
+                )
+            }
+        }
+    }
+}
+
 
 /**
  * Standard 2-rule notebook calculation row (58dp).

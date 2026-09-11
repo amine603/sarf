@@ -1,0 +1,36 @@
+package com.cash.guide.data.db
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface NoteDao {
+
+    @Query("SELECT * FROM notes ORDER BY isPinned DESC, updatedAtEpochMs DESC")
+    fun observeAll(): Flow<List<NoteEntity>>
+
+    @Query("SELECT * FROM notes WHERE id = :id")
+    fun observeNote(id: String): Flow<NoteEntity?>
+
+    @Query("SELECT * FROM notes WHERE id = :id LIMIT 1")
+    suspend fun getNote(id: String): NoteEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertNote(note: NoteEntity)
+
+    @Update
+    suspend fun updateNote(note: NoteEntity)
+
+    @Query("DELETE FROM notes WHERE id = :id")
+    suspend fun deleteNote(id: String)
+
+    @Query("UPDATE notes SET isPinned = :isPinned, updatedAtEpochMs = :updatedAtEpochMs WHERE id = :id")
+    suspend fun setPinned(id: String, isPinned: Boolean, updatedAtEpochMs: Long)
+
+    @Query("UPDATE notes SET colorTag = :colorTag, updatedAtEpochMs = :updatedAtEpochMs WHERE id = :id")
+    suspend fun setColorTag(id: String, colorTag: String, updatedAtEpochMs: Long)
+}

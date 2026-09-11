@@ -366,4 +366,19 @@
     <string name="cash_register_home_card_badge">صندوق الكاش</string>
     <string name="cash_register_heading_banknotes">الأوراق النقدية</string>
     <string name="cash_register_heading_coins">القطع النقدية</string>
+
+    <!-- Notes & Idées -->
+    <string name="home_action_notes">ملاحظات وأفكار</string>
+    <string name="notes_title">ملاحظاتي وأفكاري</string>
+    <string name="note_untitled">ملاحظة بدون عنوان</string>
+    <string name="note_new">+ ملاحظة جديدة</string>
+    <string name="note_delete_title">مسح الملاحظة؟</string>
+    <string name="note_delete_confirm">هل أنت متأكد من رغبتك في حذف هذه الملاحظة نهائياً؟</string>
+    <string name="note_empty_title">لا توجد أي ملاحظات حالياً</string>
+    <string name="note_empty_subtitle">دوّن أفكارك، خواطرك، أو أي شيء تريد تذكره ✍️</string>
+    <string name="note_color_label">اللون :</string>
+    <string name="note_voice_listening">🔴 أستمع إليك الآن، تفضل بالتحدث...</string>
+    <string name="note_voice_hint">🎙️ إملاء صوتي سريع</string>
+    <string name="note_title_hint">عنوان الملاحظة...</string>
+    <string name="note_body_hint">اكتب أفكارك، خواطرك، أو أي شيء تريد تذكره هنا... ✍️\nيمكنك أيضاً الضغط على الميكروفون للإملاء الصوتي !</string>
 </resources>

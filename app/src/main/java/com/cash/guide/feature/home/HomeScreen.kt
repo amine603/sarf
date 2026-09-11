@@ -91,6 +91,7 @@ import com.cash.guide.ui.notebook.NotebookDateGroupBlock
 import com.cash.guide.ui.notebook.NotebookPrimaryActionButton
 import com.cash.guide.ui.notebook.NotebookCashRegisterActionButton
 import com.cash.guide.ui.notebook.NotebookChecklistActionButton
+import com.cash.guide.ui.notebook.NotebookNotesActionButton
 import com.cash.guide.ui.notebook.NotebookSearchField
 import com.cash.guide.ui.notebook.NotebookSectionBand
 import com.cash.guide.ui.notebook.NotebookSegmentedControl
@@ -122,6 +123,7 @@ fun HomeScreen(
     onOpenStyleShowcase: () -> Unit = {},
     onOpenCashRegister: () -> Unit = {},
     onOpenChecklist: () -> Unit = {},
+    onOpenNotes: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -243,6 +245,12 @@ fun HomeScreen(
             // Line 7: Checklist (Quick Access Action - 29dp)
             NotebookChecklistActionButton(
                 onClick = onOpenChecklist
+            )
+
+            // Line 8: Notes & Idées (Quick Access Action - 29dp)
+            NotebookNotesActionButton(
+                onClick = onOpenNotes,
+                title = stringResource(R.string.home_action_notes)
             )
 
             // Line 8: 1 rule spacer

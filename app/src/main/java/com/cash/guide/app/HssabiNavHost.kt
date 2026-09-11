@@ -26,11 +26,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.rememberCoroutineScope
 import com.cash.guide.data.CalculationRepository
 import com.cash.guide.data.ChecklistRepository
+import com.cash.guide.data.NoteRepository
 import com.cash.guide.data.SettingsRepository
 import com.cash.guide.feature.checklist.ChecklistScreen
 import com.cash.guide.feature.checklist.ChecklistViewModel
 import com.cash.guide.feature.checklist.ChecklistsOverviewScreen
 import com.cash.guide.feature.checklist.ChecklistsOverviewViewModel
+import com.cash.guide.feature.note.NotesOverviewScreen
+import com.cash.guide.feature.note.NotesOverviewViewModel
+import com.cash.guide.feature.note.NoteEditorScreen
+import com.cash.guide.feature.note.NoteViewModel
 import com.cash.guide.feature.history.MonthCalculationsScreen
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -44,6 +49,7 @@ fun HssabiNavHost(
     settingsViewModel: SettingsViewModel,
     calculationRepository: CalculationRepository,
     checklistRepository: ChecklistRepository,
+    noteRepository: NoteRepository,
     settingsRepository: SettingsRepository,
     editorViewModelFactory: () -> CalculationEditorViewModel,
     modifier: Modifier = Modifier
@@ -76,7 +82,8 @@ fun HssabiNavHost(
                 },
                 onOpenStyleShowcase = { navController.navigate(AppDestination.StyleShowcase.route) },
                 onOpenCashRegister = { navController.navigate(AppDestination.CashRegister.route) },
-                onOpenChecklist = { navController.navigate(AppDestination.Checklist.route) }
+                onOpenChecklist = { navController.navigate(AppDestination.Checklist.route) },
+                onOpenNotes = { navController.navigate(AppDestination.Notes.route) }
             )
         }
 
@@ -178,6 +185,41 @@ fun HssabiNavHost(
             }
             ChecklistScreen(
                 viewModel = checklistViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(AppDestination.Notes.route) { backStackEntry ->
+            val overviewViewModel: NotesOverviewViewModel = viewModel(
+                viewModelStoreOwner = backStackEntry
+            ) {
+                NotesOverviewViewModel(noteRepository)
+            }
+            NotesOverviewScreen(
+                viewModel = overviewViewModel,
+                onOpenNote = { noteId ->
+                    navController.navigate(AppDestination.NoteDetail.createRoute(noteId))
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = AppDestination.NoteDetail.ROUTE_PATTERN,
+            arguments = listOf(navArgument("noteId") {
+                type = NavType.StringType
+            })
+        ) { backStackEntry ->
+            val noteId = backStackEntry.arguments?.getString("noteId")
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val noteViewModel: NoteViewModel = viewModel(
+                viewModelStoreOwner = backStackEntry,
+                key = "note_${noteId ?: "new"}"
+            ) {
+                NoteViewModel(noteRepository, noteId, context)
+            }
+            NoteEditorScreen(
+                viewModel = noteViewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

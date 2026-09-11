@@ -366,4 +366,19 @@
     <string name="cash_register_home_card_badge">Caisse express</string>
     <string name="cash_register_heading_banknotes">Billets à rendre</string>
     <string name="cash_register_heading_coins">Pièces à rendre</string>
+
+    <!-- Notes & Idées -->
+    <string name="home_action_notes">Notes &amp; Idées</string>
+    <string name="notes_title">Mes Notes &amp; Idées</string>
+    <string name="note_untitled">Note sans titre</string>
+    <string name="note_new">+ Nouvelle note</string>
+    <string name="note_delete_title">Supprimer la note ?</string>
+    <string name="note_delete_confirm">Voulez-vous vraiment supprimer définitivement cette note ?</string>
+    <string name="note_empty_title">Aucune note pour l\'instant</string>
+    <string name="note_empty_subtitle">Notez vos idées, pensées et mémos du quotidien ✍️</string>
+    <string name="note_color_label">Couleur :</string>
+    <string name="note_voice_listening">🔴 Écoute en cours, parlez...</string>
+    <string name="note_voice_hint">🎙️ Dictée vocale rapide</string>
+    <string name="note_title_hint">Titre de la note...</string>
+    <string name="note_body_hint">Écrivez vos pensées, idées ou mémos ici... ✍️\nVous pouvez aussi appuyer sur le micro pour dicter !</string>
 </resources>

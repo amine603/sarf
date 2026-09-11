@@ -299,7 +299,21 @@
     <string name="cash_register_back_to_calc">بدّل الحساب</string>
     <string name="cash_register_calc_title">حساب السلعة</string>
     <string name="cash_register_calc_hint">كتب الثمن ولا جمع السلعة بالزائد</string>
-    <string name="cash_register_home_card_badge">الكاسة</string>
     <string name="cash_register_heading_banknotes">الأوراق لي غاترجع</string>
     <string name="cash_register_heading_coins">الصرف لي غاترجع</string>
+
+    <!-- Notes & Idées -->
+    <string name="home_action_notes">ملاحظات وأفكار</string>
+    <string name="notes_title">ملاحظاتي وخواطري</string>
+    <string name="note_untitled">نوت بلا عنوان</string>
+    <string name="note_new">+ نوت جديدة</string>
+    <string name="note_delete_title">مسح هاد النوت؟</string>
+    <string name="note_delete_confirm">واش متأكد باغي تمسح هاد النوت نهائياً؟</string>
+    <string name="note_empty_title">ما كاين حتى نوت دابا</string>
+    <string name="note_empty_subtitle">قيد أفكارك، خواطرك، أو أي حاجة بغيتي تفكرها ✍️</string>
+    <string name="note_color_label">اللون :</string>
+    <string name="note_voice_listening">🔴 كنسمع ليك دابا، تفضل هضر...</string>
+    <string name="note_voice_hint">🎙️ هضر وديكتاسيون تكتب ليك</string>
+    <string name="note_title_hint">عنوان النوت...</string>
+    <string name="note_body_hint">كتب أفكارك، خواطرك، أو أي حاجة بغيتي تفكرها هنا... ✍️\nتقدر تضغط على المايك وتهضر مباشرة !</string>
 </resources>

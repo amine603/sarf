@@ -18,6 +18,11 @@ sealed class AppDestination(val route: String) {
             return if (checklistId != null) "checklist_detail/$checklistId" else "checklists"
         }
     }
+    data object Notes : AppDestination("notes")
+    data object NoteDetail : AppDestination("note_detail") {
+        const val ROUTE_PATTERN = "note_detail/{noteId}"
+        fun createRoute(noteId: String): String = "note_detail/$noteId"
+    }
     data object NewCalculation : AppDestination("calculation/new") {
         const val ROUTE_PATTERN = "calculation/new?groupId={groupId}&type={type}&currency={currency}&title={title}&templateId={templateId}"
         fun createRoute(

@@ -15,6 +15,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.cash.guide.data.CalculationRepository
 import com.cash.guide.data.ChecklistRepository
+import com.cash.guide.data.NoteRepository
 import com.cash.guide.data.SecurityRepository
 import com.cash.guide.data.SettingsRepository
 import com.cash.guide.data.TemplateRepository
@@ -75,6 +76,9 @@ fun HssabiApp(
     }
     val checklistRepository = remember {
         ChecklistRepository(database.checklistDao())
+    }
+    val noteRepository = remember {
+        NoteRepository(database.noteDao())
     }
     val settingsRepository = remember { SettingsRepository(context) }
     val securityRepository = remember { SecurityRepository(context) }
@@ -243,6 +247,7 @@ fun HssabiApp(
                     settingsViewModel = settingsViewModel,
                     calculationRepository = calculationRepository,
                     checklistRepository = checklistRepository,
+                    noteRepository = noteRepository,
                     settingsRepository = settingsRepository,
                     editorViewModelFactory = {
                         CalculationEditorViewModel(
