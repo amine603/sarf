@@ -22,6 +22,8 @@ data class NoteMonthGroup(
 
 data class NotesOverviewUiState(
     val searchQuery: String = "",
+    val selectedMonthKey: String? = null,
+    val availableMonths: List<Pair<String, String>> = emptyList(), // Pair(key, displayTitle)
     val monthGroups: List<NoteMonthGroup> = emptyList(),
     val totalCount: Int = 0,
     val isLoading: Boolean = true
@@ -34,24 +36,52 @@ class NotesOverviewViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
+    private val _selectedMonthKey = MutableStateFlow<String?>(null)
+    val selectedMonthKey: StateFlow<String?> = _selectedMonthKey
+
     val uiState: StateFlow<NotesOverviewUiState> = combine(
         noteRepository.observeAll(),
-        _searchQuery
-    ) { allNotes, query ->
-        val filtered = if (query.isBlank()) {
+        _searchQuery,
+        _selectedMonthKey
+    ) { allNotes, query, selectedMonth ->
+        val monthKeyFormatter = SimpleDateFormat("yyyy-MM", Locale.US)
+        val monthDisplayFormatter = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+
+        // Compute available distinct months from all existing notes
+        val allMonthKeys = allNotes.map { note ->
+            monthKeyFormatter.format(Date(note.createdAtEpochMs))
+        }.distinct()
+
+        val availableMonths = allMonthKeys.map { key ->
+            val sampleNote = allNotes.first { monthKeyFormatter.format(Date(it.createdAtEpochMs)) == key }
+            val raw = monthDisplayFormatter.format(Date(sampleNote.createdAtEpochMs))
+            val display = raw.replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+            }
+            Pair(key, display)
+        }
+
+        // Apply month filter
+        val monthFiltered = if (selectedMonth.isNullOrBlank()) {
             allNotes
         } else {
-            val q = query.trim().lowercase()
             allNotes.filter { note ->
+                monthKeyFormatter.format(Date(note.createdAtEpochMs)) == selectedMonth
+            }
+        }
+
+        // Apply search query filter
+        val searchFiltered = if (query.isBlank()) {
+            monthFiltered
+        } else {
+            val q = query.trim().lowercase()
+            monthFiltered.filter { note ->
                 note.title.lowercase().contains(q) || note.content.lowercase().contains(q)
             }
         }
 
-        // Group by Month and Year (e.g. "2026-03")
-        val monthKeyFormatter = SimpleDateFormat("yyyy-MM", Locale.US)
-        val monthDisplayFormatter = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
-
-        val groupedMap = filtered.groupBy { note ->
+        // Group by Month and Year
+        val groupedMap = searchFiltered.groupBy { note ->
             monthKeyFormatter.format(Date(note.createdAtEpochMs))
         }
 
@@ -70,8 +100,10 @@ class NotesOverviewViewModel(
 
         NotesOverviewUiState(
             searchQuery = query,
+            selectedMonthKey = selectedMonth,
+            availableMonths = availableMonths,
             monthGroups = groups,
-            totalCount = filtered.size,
+            totalCount = searchFiltered.size,
             isLoading = false
         )
     }.stateIn(
@@ -82,6 +114,10 @@ class NotesOverviewViewModel(
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun selectMonth(monthKey: String?) {
+        _selectedMonthKey.value = monthKey
     }
 
     fun deleteNote(id: String) {

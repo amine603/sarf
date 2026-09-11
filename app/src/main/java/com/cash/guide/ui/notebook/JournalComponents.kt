@@ -1299,11 +1299,10 @@ fun JournalInlineSearchRow(
             }
         }
 
-        // Generous breathing space before the calendar icon
-        Spacer(modifier = Modifier.width(14.dp))
-
         // Calendar Icon Button, touching both top and bottom lines
         if (onOpenCalendar != null) {
+            // Generous breathing space before the calendar icon
+            Spacer(modifier = Modifier.width(14.dp))
             Box(
                 modifier = Modifier
                     .size(JournalRuleSpacing)
