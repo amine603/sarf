@@ -79,7 +79,9 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
+import com.cash.guide.domain.RecentActivityItem
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -4378,4 +4380,488 @@ fun DateGroupHeader(
         }
     }
 }
+
+/**
+ * Single-line activity row (29dp) for Activité récente.
+ * Supports Calculations (amount on end), Checklists (dashed line + chevron), and Notes (dashed line + chevron).
+ */
+@Composable
+fun NotebookActivityRow(
+    activity: RecentActivityItem,
+    onClick: () -> Unit,
+    onMoreClick: () -> Unit,
+    searchQuery: String = "",
+    modifier: Modifier = Modifier
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val title = activity.title.ifBlank {
+        when (activity) {
+            is RecentActivityItem.CalculationActivity -> stringResource(R.string.editor_new_title)
+            is RecentActivityItem.ChecklistActivity -> stringResource(R.string.checklist_untitled)
+            is RecentActivityItem.NoteActivity -> stringResource(R.string.note_untitled)
+        }
+    }
+
+    // Determine colors and badge for the activity
+    val (dotColor, badgeBgColor, badgeBorderColor) = remember(activity) {
+        when (activity) {
+            is RecentActivityItem.CalculationActivity -> {
+                val tLower = activity.calculationWithItems.calculation.title.lowercase()
+                if (tLower.contains("caisse") || tLower.contains("rendu") || tLower.contains("صرف")) {
+                    Triple(Color(0xFF3B82F6), Color(0xFFDBEAFE), Color(0xFF93C5FD)) // Soft Blue
+                } else {
+                    Triple(Color(0xFFEF4444), Color(0xFFFCE7F3), Color(0xFFF472B6)) // Soft Rose Pink
+                }
+            }
+            is RecentActivityItem.ChecklistActivity -> {
+                Triple(Color(0xFF10B981), Color(0xFFDCFCE7), Color(0xFF86EFAC)) // Soft Sage/Emerald Green
+            }
+            is RecentActivityItem.NoteActivity -> {
+                Triple(Color(0xFFF59E0B), Color(0xFFFEF3C7), Color(0xFFFCD34D)) // Soft Amber Yellow
+            }
+        }
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing)
+            .clickable(
+                role = Role.Button,
+                onClickLabel = title,
+                onClick = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    onClick()
+                }
+            )
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        // Start side: Dot + Badge Icon + Title
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.widthIn(max = 240.dp)
+        ) {
+            // Dot
+            Canvas(
+                modifier = Modifier
+                    .size(7.dp)
+                    .offset(y = (-4.5).dp)
+            ) {
+                drawCircle(color = dotColor)
+            }
+
+            // Small rounded icon badge
+            Box(
+                modifier = Modifier
+                    .size(21.dp)
+                    .offset(y = (-3).dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(badgeBgColor)
+                    .border(0.7.dp, badgeBorderColor.copy(alpha = 0.55f), RoundedCornerShape(5.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                when (activity) {
+                    is RecentActivityItem.CalculationActivity -> {
+                        Text(
+                            text = "🧮",
+                            fontSize = 11.5.sp,
+                            modifier = Modifier.offset(y = (-0.5).dp)
+                        )
+                    }
+                    is RecentActivityItem.ChecklistActivity -> {
+                        Canvas(modifier = Modifier.size(10.dp)) {
+                            val strokeW = 1.35.dp.toPx()
+                            drawRoundRect(
+                                color = JournalWritingInk,
+                                style = Stroke(width = strokeW),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx())
+                            )
+                            val p = androidx.compose.ui.graphics.Path().apply {
+                                moveTo(size.width * 0.22f, size.height * 0.50f)
+                                lineTo(size.width * 0.44f, size.height * 0.74f)
+                                lineTo(size.width * 0.82f, size.height * 0.26f)
+                            }
+                            drawPath(
+                                path = p,
+                                color = JournalWritingInk,
+                                style = Stroke(width = strokeW, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+                            )
+                        }
+                    }
+                    is RecentActivityItem.NoteActivity -> {
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Page,
+                            contentDescription = null,
+                            tint = JournalWritingInk,
+                            size = 11.dp
+                        )
+                    }
+                }
+            }
+
+            // Title
+            Text(
+                text = title,
+                fontFamily = resolveJournalFont(title, isRtl),
+                fontSize = if (isArabicScript(title) || isRtl) 15.sp else 15.5.sp,
+                fontWeight = FontWeight.Normal,
+                color = JournalWritingInk,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(platformStyle = NoFontPadding),
+                modifier = Modifier.journalBaselineOnRule()
+            )
+        }
+
+        // Connecting dashed line directly on the blue notebook line
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(JournalRuleSpacing)
+                .padding(horizontal = 6.dp)
+                .drawBehind {
+                    val strokeW = 0.85.dp.toPx()
+                    val y = size.height
+                    drawLine(
+                        color = JournalWritingInk.copy(alpha = 0.25f),
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = strokeW,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.5.dp.toPx()))
+                    )
+                }
+        )
+
+        // End side: Amount if calculation, Chevron > if checklist/note, + 3-dots menu
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            when (activity) {
+                is RecentActivityItem.CalculationActivity -> {
+                    val calc = activity.calculationWithItems
+                    val currency = runCatching { MoneyUnit.valueOf(calc.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
+                    val totalFormatted = JournalLedgerManager.formatTotal(calc.totalCentimes, currency)
+                    val currencySuffix = if (currency == MoneyUnit.DIRHAM) {
+                        stringResource(R.string.currency_dirham)
+                    } else {
+                        stringResource(R.string.currency_rial)
+                    }
+                    val isLatinSuffix = currencySuffix.contains(Regex("[a-zA-Z]"))
+
+                    Text(
+                        text = totalFormatted,
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 17.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalWritingInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
+                    )
+
+                    Text(
+                        text = currencySuffix,
+                        fontFamily = if (isLatinSuffix) PatrickHandFamily else TajawalFamily,
+                        fontSize = if (isLatinSuffix) 14.sp else 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = JournalMutedInk,
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
+                    )
+                }
+                is RecentActivityItem.ChecklistActivity, is RecentActivityItem.NoteActivity -> {
+                    Text(
+                        text = if (isRtl) "←" else "→",
+                        fontFamily = PatrickHandFamily,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalMutedInk.copy(alpha = 0.70f),
+                        style = TextStyle(platformStyle = NoFontPadding),
+                        modifier = Modifier.journalBaselineOnRule()
+                    )
+                }
+            }
+
+            // 3-dots menu
+            Box(
+                modifier = Modifier
+                    .size(width = 22.dp, height = JournalRuleSpacing)
+                    .clickable(
+                        role = Role.Button,
+                        onClickLabel = stringResource(R.string.cd_more_options),
+                        onClick = onMoreClick
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                HisabiSketchIcon(
+                    symbol = HisabiSymbol.More,
+                    contentDescription = null,
+                    tint = JournalMutedInk,
+                    size = 14.dp
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Date group container for unified Activité récente.
+ * Includes date header pill with subtle vertical guideline connecting all rows.
+ */
+@Composable
+fun NotebookActivityDateGroupBlock(
+    header: String,
+    items: List<RecentActivityItem>,
+    onOpenCalculation: (String) -> Unit,
+    onOpenChecklist: (String) -> Unit,
+    onOpenNote: (String) -> Unit,
+    onMoreClick: (RecentActivityItem) -> Unit,
+    searchQuery: String = "",
+    modifier: Modifier = Modifier
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
+    val todayText = stringResource(R.string.date_today)
+    val yesterdayText = stringResource(R.string.date_yesterday)
+    val timelineStyle = getDateTimelineStyle(header, todayText, yesterdayText)
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Line 1: Date separator band (29dp)
+        JournalDateRuleBand(title = header)
+
+        // Activity rows column with vertical grouping guide
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    if (items.size > 1) {
+                        val strokeW = 1.4.dp.toPx()
+                        val guideX = if (isRtl) size.width - 17.5.dp.toPx() else 17.5.dp.toPx()
+                        val rowHeightPx = JournalRuleSpacing.toPx() // 29dp (single notebook rule)
+                        val dotCenterY = 24.5.dp.toPx()
+                        val startY = dotCenterY
+                        val endY = (items.size - 1) * rowHeightPx + dotCenterY
+
+                        drawLine(
+                            color = timelineStyle.dotColor.copy(alpha = 0.40f),
+                            start = Offset(guideX, startY),
+                            end = Offset(guideX, endY),
+                            strokeWidth = strokeW,
+                            cap = StrokeCap.Round
+                        )
+                    }
+                }
+        ) {
+            items.forEach { activity ->
+                NotebookActivityRow(
+                    activity = activity,
+                    searchQuery = searchQuery,
+                    onClick = {
+                        when (activity) {
+                            is RecentActivityItem.CalculationActivity -> onOpenCalculation(activity.id)
+                            is RecentActivityItem.ChecklistActivity -> onOpenChecklist(activity.id)
+                            is RecentActivityItem.NoteActivity -> onOpenNote(activity.id)
+                        }
+                    },
+                    onMoreClick = { onMoreClick(activity) }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Speed Dial Floating Action Button for Home screen matching mockups 3, 4, 5.
+ * Features a 52dp pink circular button with black '+'.
+ * Expands into a stack of cream capsules: Note, Checklist, Calcul.
+ */
+@Composable
+fun NotebookSpeedDialFab(
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    onDismiss: () -> Unit,
+    onNewCalcul: () -> Unit,
+    onNewChecklist: () -> Unit,
+    onNewNote: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val rotationDegree by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isExpanded) 45f else 0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "fab_rotation"
+    )
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Speed dial menu capsules (animated)
+        androidx.compose.animation.AnimatedVisibility(
+            visible = isExpanded,
+            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically { it / 2 } + androidx.compose.animation.scaleIn(initialScale = 0.85f),
+            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.slideOutVertically { it / 2 } + androidx.compose.animation.scaleOut(targetScale = 0.85f)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.padding(bottom = 2.dp)
+            ) {
+                // Item 1: Note
+                SpeedDialCapsuleItem(
+                    title = stringResource(R.string.speed_dial_note),
+                    icon = {
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Page,
+                            contentDescription = null,
+                            tint = JournalWritingInk,
+                            size = 17.dp
+                        )
+                    },
+                    onClick = onNewNote
+                )
+
+                // Item 2: Checklist
+                SpeedDialCapsuleItem(
+                    title = stringResource(R.string.speed_dial_checklist),
+                    icon = {
+                        Canvas(modifier = Modifier.size(15.dp)) {
+                            val strokeW = 1.6.dp.toPx()
+                            drawRoundRect(
+                                color = JournalWritingInk,
+                                style = Stroke(width = strokeW),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx())
+                            )
+                            val p = androidx.compose.ui.graphics.Path().apply {
+                                moveTo(size.width * 0.22f, size.height * 0.50f)
+                                lineTo(size.width * 0.44f, size.height * 0.74f)
+                                lineTo(size.width * 0.82f, size.height * 0.26f)
+                            }
+                            drawPath(
+                                path = p,
+                                color = JournalWritingInk,
+                                style = Stroke(width = strokeW, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
+                            )
+                        }
+                    },
+                    onClick = onNewChecklist
+                )
+
+                // Item 3: Calcul
+                SpeedDialCapsuleItem(
+                    title = stringResource(R.string.speed_dial_calcul),
+                    icon = {
+                        Text(
+                            text = "🧮",
+                            fontSize = 16.sp,
+                            modifier = Modifier.offset(y = (-0.5).dp)
+                        )
+                    },
+                    onClick = onNewCalcul
+                )
+            }
+        }
+
+        // Main pink FAB circle (52dp)
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .shadow(
+                    elevation = 4.dp,
+                    shape = CircleShape,
+                    ambientColor = JournalInk.copy(alpha = 0.25f),
+                    spotColor = JournalInk.copy(alpha = 0.35f)
+                )
+                .clip(CircleShape)
+                .background(HighlighterPink.copy(alpha = 0.85f))
+                .border(
+                    width = 1.1.dp,
+                    color = JournalInk.copy(alpha = 0.35f),
+                    shape = CircleShape
+                )
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = "Ajouter",
+                    onClick = onToggle
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(
+                modifier = Modifier
+                    .size(20.dp)
+                    .graphicsLayer(rotationZ = rotationDegree)
+            ) {
+                val strokeW = 2.4.dp.toPx()
+                val ink = JournalWritingInk
+                val midX = size.width / 2f
+                val midY = size.height / 2f
+                drawLine(ink, Offset(1.5.dp.toPx(), midY), Offset(size.width - 1.5.dp.toPx(), midY), strokeW, StrokeCap.Round)
+                drawLine(ink, Offset(midX, 1.5.dp.toPx()), Offset(midX, size.height - 1.5.dp.toPx()), strokeW, StrokeCap.Round)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpeedDialCapsuleItem(
+    title: String,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
+    Box(
+        modifier = Modifier
+            .shadow(
+                elevation = 3.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = JournalInk.copy(alpha = 0.15f),
+                spotColor = JournalInk.copy(alpha = 0.20f)
+            )
+            .clip(RoundedCornerShape(20.dp))
+            .background(JournalPaper)
+            .border(
+                width = 0.9.dp,
+                color = JournalRule.copy(alpha = 0.85f),
+                shape = RoundedCornerShape(20.dp)
+            )
+            .clickable(
+                role = Role.Button,
+                onClickLabel = title,
+                onClick = onClick
+            )
+            .padding(horizontal = 14.dp, vertical = 7.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            icon()
+
+            Text(
+                text = title,
+                fontFamily = resolveJournalFont(title, isRtl),
+                fontSize = if (isArabicScript(title) || isRtl) 14.5.sp else 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = JournalWritingInk,
+                style = TextStyle(platformStyle = NoFontPadding)
+            )
+        }
+    }
+}
+
 

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -85,14 +86,13 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.cash.guide.feature.groups.AssignToGroupDialog
 import com.cash.guide.app.LocalizedContextWrapper
 import com.cash.guide.domain.DateGroupHelper
+import com.cash.guide.domain.RecentActivityItem
 import com.cash.guide.ui.notebook.HighlighterYellow
 import com.cash.guide.ui.notebook.HighlighterBlue
 import com.cash.guide.ui.notebook.NotebookDateGroupBlock
-import com.cash.guide.ui.notebook.NotebookPrimaryActionButton
-import com.cash.guide.ui.notebook.NotebookCalculsActionButton
-import com.cash.guide.ui.notebook.NotebookCashRegisterActionButton
-import com.cash.guide.ui.notebook.NotebookChecklistActionButton
-import com.cash.guide.ui.notebook.NotebookNotesActionButton
+import com.cash.guide.ui.notebook.NotebookActivityDateGroupBlock
+import com.cash.guide.ui.notebook.NotebookSpeedDialFab
+import com.cash.guide.ui.notebook.isArabicScript
 import com.cash.guide.ui.notebook.NotebookSearchField
 import com.cash.guide.ui.notebook.NotebookSectionBand
 import com.cash.guide.ui.notebook.NotebookSegmentedControl
@@ -125,7 +125,11 @@ fun HomeScreen(
     onOpenCalculs: () -> Unit = {},
     onOpenCashRegister: () -> Unit = {},
     onOpenChecklist: () -> Unit = {},
+    onOpenChecklistWithId: (String) -> Unit = {},
     onOpenNotes: () -> Unit = {},
+    onOpenNote: (String) -> Unit = {},
+    onNewChecklist: () -> Unit = {},
+    onNewNote: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -227,26 +231,6 @@ fun HomeScreen(
             // Line 4: 1 rule spacer
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Line 5: Calculs (Quick Access Action - 29dp)
-            NotebookCalculsActionButton(
-                onClick = onOpenCalculs,
-                title = stringResource(R.string.home_action_calculs)
-            )
-
-            // Line 7: Checklist (Quick Access Action - 29dp)
-            NotebookChecklistActionButton(
-                onClick = onOpenChecklist
-            )
-
-            // Line 8: Notes & Idées (Quick Access Action - 29dp)
-            NotebookNotesActionButton(
-                onClick = onOpenNotes,
-                title = stringResource(R.string.home_action_notes)
-            )
-
-            // Line 8: 1 rule spacer
-            Spacer(modifier = Modifier.height(JournalRuleSpacing))
-
             // Notebook Filter Tabs Row (29dp)
             Row(
                 modifier = Modifier
@@ -310,24 +294,60 @@ fun HomeScreen(
                 }
             }
 
-            // 1 rule spacer before calculations list
+            // 1 rule spacer before Activité récente section header
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Recent calculations list directly under spacer
-            if (!state.isEmpty) {
-                // Date-grouped saved calculations with vertical grouping guide
-                state.displayDateGroups.forEachIndexed { groupIndex, group ->
-                    NotebookDateGroupBlock(
+            // Section Header: Activité récente in soft pink highlighter pill
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(JournalRuleSpacing)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val activityTitle = stringResource(R.string.home_recent_activity_title)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(HighlighterPink.copy(alpha = 0.45f))
+                        .padding(horizontal = 10.dp, vertical = 2.5.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = activityTitle,
+                        fontFamily = resolveJournalFont(activityTitle, isRtl),
+                        fontSize = if (isArabicScript(activityTitle) || isRtl) 15.sp else 15.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = JournalWritingInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+            }
+
+            // 1 rule spacer before activities list
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Recent activities list directly under spacer
+            if (!state.isActivityEmpty) {
+                state.displayActivityGroups.forEachIndexed { groupIndex, group ->
+                    NotebookActivityDateGroupBlock(
                         header = group.header,
-                        calculations = group.calculations,
+                        items = group.items,
                         onOpenCalculation = onOpenCalculation,
-                        onMoreClick = { viewModel.selectCalculationForAction(it) },
-                        searchQuery = state.searchQuery,
-                        pinnedCalculationIds = state.pinnedCalculationIds
+                        onOpenChecklist = onOpenChecklistWithId,
+                        onOpenNote = onOpenNote,
+                        onMoreClick = { item ->
+                            if (item is RecentActivityItem.CalculationActivity) {
+                                viewModel.selectCalculationForAction(item.calculationWithItems)
+                            } else {
+                                viewModel.deleteActivityItem(item)
+                            }
+                        },
+                        searchQuery = state.searchQuery
                     )
 
                     // 1 empty notebook line between date groups
-                    if (groupIndex < state.displayDateGroups.lastIndex) {
+                    if (groupIndex < state.displayActivityGroups.lastIndex) {
                         Spacer(modifier = Modifier.height(JournalRuleSpacing))
                     }
                 }
@@ -433,6 +453,46 @@ fun HomeScreen(
 
             // Bottom Spacers: 5 notebook lines for full scrolling clearance above dock
             Spacer(modifier = Modifier.height(JournalRuleSpacing * 5))
+        }
+
+        // Scrim overlay when FAB speed dial is open
+        if (state.isFabExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.25f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { viewModel.setFabExpanded(false) }
+                    )
+            )
+        }
+
+        // Notebook Speed Dial FAB (52dp pink circle expanding into 3 capsules)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(end = 18.dp, bottom = 18.dp),
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            NotebookSpeedDialFab(
+                isExpanded = state.isFabExpanded,
+                onToggle = { viewModel.toggleFabExpanded() },
+                onDismiss = { viewModel.setFabExpanded(false) },
+                onNewCalcul = {
+                    viewModel.setFabExpanded(false)
+                    showNewCalcSetupSheet = true
+                },
+                onNewChecklist = {
+                    viewModel.setFabExpanded(false)
+                    onNewChecklist()
+                },
+                onNewNote = {
+                    viewModel.setFabExpanded(false)
+                    onNewNote()
+                }
+            )
         }
 
         // Action Sheet

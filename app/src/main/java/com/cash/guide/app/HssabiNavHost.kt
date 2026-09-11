@@ -84,9 +84,20 @@ fun HssabiNavHost(
                 },
                 onOpenStyleShowcase = { navController.navigate(AppDestination.StyleShowcase.route) },
                 onOpenCalculs = { navController.navigate(AppDestination.Calculs.route) },
-                onOpenCashRegister = { navController.navigate(AppDestination.CashRegister.route) },
                 onOpenChecklist = { navController.navigate(AppDestination.Checklist.route) },
-                onOpenNotes = { navController.navigate(AppDestination.Notes.route) }
+                onOpenChecklistWithId = { id ->
+                    navController.navigate(AppDestination.ChecklistDetail.createRoute(id))
+                },
+                onOpenNotes = { navController.navigate(AppDestination.Notes.route) },
+                onOpenNote = { id ->
+                    navController.navigate(AppDestination.NoteDetail.createRoute(id))
+                },
+                onNewChecklist = {
+                    navController.navigate(AppDestination.Checklist.route)
+                },
+                onNewNote = {
+                    navController.navigate(AppDestination.NoteDetail.createRoute(java.util.UUID.randomUUID().toString()))
+                }
             )
         }
 

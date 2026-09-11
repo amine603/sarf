@@ -4,26 +4,41 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cash.guide.R
-import com.cash.guide.data.SettingsRepository
 import com.cash.guide.data.CalculationRepository
+import com.cash.guide.data.ChecklistRepository
+import com.cash.guide.data.NoteRepository
+import com.cash.guide.data.SettingsRepository
 import com.cash.guide.data.db.CalculationWithItems
+import com.cash.guide.data.db.ChecklistWithItems
+import com.cash.guide.data.db.NoteEntity
+import com.cash.guide.domain.ActivityDateGroupHelper
 import com.cash.guide.domain.DateGroupHelper
+import com.cash.guide.domain.RecentActivityItem
 import com.cash.guide.domain.reminder.CreditReminderScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 class HomeViewModel(
     val repository: CalculationRepository,
-    private val settingsRepository: SettingsRepository? = null
+    private val settingsRepository: SettingsRepository? = null,
+    private val checklistRepository: ChecklistRepository? = null,
+    private val noteRepository: NoteRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    private var allItems: List<CalculationWithItems> = emptyList()
+    private var allCalculations: List<CalculationWithItems> = emptyList()
+    private var allChecklists: List<ChecklistWithItems> = emptyList()
+    private var allNotes: List<NoteEntity> = emptyList()
     private var lastContext: Context? = null
 
     init {
@@ -52,11 +67,28 @@ class HomeViewModel(
         lastContext = context
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            repository.observeAllSaved().collect { items ->
-                allItems = items
+
+            val calcsFlow = repository.observeAllSaved()
+            val checklistsFlow = checklistRepository?.observeAll() ?: flowOf(emptyList())
+            val notesFlow = noteRepository?.observeAll() ?: flowOf(emptyList())
+
+            combine(calcsFlow, checklistsFlow, notesFlow) { calcs, checklists, notes ->
+                Triple(calcs, checklists, notes)
+            }.collect { (calcs, checklists, notes) ->
+                allCalculations = calcs
+                allChecklists = checklists
+                allNotes = notes
                 applyFilters(context)
             }
         }
+    }
+
+    fun setFabExpanded(expanded: Boolean) {
+        _uiState.update { it.copy(isFabExpanded = expanded) }
+    }
+
+    fun toggleFabExpanded() {
+        _uiState.update { it.copy(isFabExpanded = !it.isFabExpanded) }
     }
 
     fun updateSearchQuery(query: String) {
@@ -135,64 +167,118 @@ class HomeViewModel(
         val selectedDate = _uiState.value.selectedDateEpoch
         val paymentFilter = _uiState.value.selectedPaymentFilter
         val pinnedIds = _uiState.value.pinnedCalculationIds
-        val favorites = allItems.filter { it.calculation.id in pinnedIds }
+        val favorites = allCalculations.filter { it.calculation.id in pinnedIds }
 
-        val unpaidTotal = allItems
+        val unpaidTotal = allCalculations
             .filter { (it.calculation.calcType == "CREDIT" || it.calculation.paymentStatus == "UNPAID") && it.calculation.paymentStatus == "UNPAID" }
             .sumOf { it.totalCentimes }
 
-        val recentGroups = DateGroupHelper.groupByDate(
-            items = allItems,
+        val now = LocalDate.now(ZoneId.systemDefault())
+        val monthTotal = allCalculations.filter {
+            val date = Instant.ofEpochMilli(it.calculation.updatedAtEpochMs).atZone(ZoneId.systemDefault()).toLocalDate()
+            date.year == now.year && date.monthValue == now.monthValue
+        }.sumOf { it.totalCentimes }
+
+        // Filter Calculations
+        val filteredCalcs = allCalculations.filter { calc ->
+            val matchesQuery = if (query.isBlank()) true else {
+                calc.calculation.title.contains(query, ignoreCase = true) ||
+                calc.items.any { it.label.contains(query, ignoreCase = true) }
+            }
+            val matchesDate = if (selectedDate == null) true else {
+                isSameDay(calc.calculation.updatedAtEpochMs, selectedDate)
+            }
+            val matchesPayment = when (paymentFilter) {
+                PaymentFilter.ALL -> true
+                PaymentFilter.UNPAID -> calc.calculation.calcType == "CREDIT" || calc.calculation.paymentStatus == "UNPAID"
+                PaymentFilter.PAID -> calc.calculation.paymentStatus == "PAID"
+            }
+            matchesQuery && matchesDate && matchesPayment
+        }
+
+        // Filter Checklists (only show when PaymentFilter == ALL)
+        val filteredChecklists = if (paymentFilter == PaymentFilter.ALL) {
+            allChecklists.filter { chk ->
+                val matchesQuery = if (query.isBlank()) true else {
+                    chk.checklist.title.contains(query, ignoreCase = true) ||
+                    chk.items.any { it.text.contains(query, ignoreCase = true) }
+                }
+                val matchesDate = if (selectedDate == null) true else {
+                    isSameDay(chk.checklist.updatedAtEpochMs, selectedDate)
+                }
+                matchesQuery && matchesDate
+            }
+        } else emptyList()
+
+        // Filter Notes (only show when PaymentFilter == ALL)
+        val filteredNotes = if (paymentFilter == PaymentFilter.ALL) {
+            allNotes.filter { n ->
+                val matchesQuery = if (query.isBlank()) true else {
+                    n.title.contains(query, ignoreCase = true) ||
+                    n.content.contains(query, ignoreCase = true)
+                }
+                val matchesDate = if (selectedDate == null) true else {
+                    isSameDay(n.updatedAtEpochMs, selectedDate)
+                }
+                matchesQuery && matchesDate
+            }
+        } else emptyList()
+
+        // 1. Calculations only groups (legacy compatibility)
+        val recentCalcGroups = DateGroupHelper.groupByDate(
+            items = allCalculations,
             todayString = context.getString(R.string.date_today),
             yesterdayString = context.getString(R.string.date_yesterday),
             thisWeekString = context.getString(R.string.date_this_week),
             locale = context.resources.configuration.locales[0]
         )
 
-        if (query.isBlank() && selectedDate == null && paymentFilter == PaymentFilter.ALL) {
-            _uiState.update {
-                it.copy(
-                    recentDateGroups = recentGroups,
-                    filteredDateGroups = emptyList(),
-                    favoriteCalculations = favorites,
-                    unpaidTotalCentimes = unpaidTotal,
-                    isLoading = false
-                )
-            }
-        } else {
-            val filtered = allItems.filter { calc ->
-                val matchesQuery = if (query.isBlank()) true else {
-                    calc.calculation.title.contains(query, ignoreCase = true) ||
-                    calc.items.any { it.label.contains(query, ignoreCase = true) }
-                }
-                val matchesDate = if (selectedDate == null) true else {
-                    isSameDay(calc.calculation.updatedAtEpochMs, selectedDate)
-                }
-                val matchesPayment = when (paymentFilter) {
-                    PaymentFilter.ALL -> true
-                    PaymentFilter.UNPAID -> calc.calculation.calcType == "CREDIT" || calc.calculation.paymentStatus == "UNPAID"
-                    PaymentFilter.PAID -> calc.calculation.paymentStatus == "PAID"
-                }
-                matchesQuery && matchesDate && matchesPayment
-            }
+        val filteredCalcGroups = DateGroupHelper.groupByDate(
+            items = filteredCalcs,
+            todayString = context.getString(R.string.date_today),
+            yesterdayString = context.getString(R.string.date_yesterday),
+            thisWeekString = context.getString(R.string.date_this_week),
+            locale = context.resources.configuration.locales[0]
+        )
 
-            val filteredGroups = DateGroupHelper.groupByDate(
-                items = filtered,
-                todayString = context.getString(R.string.date_today),
-                yesterdayString = context.getString(R.string.date_yesterday),
-                thisWeekString = context.getString(R.string.date_this_week),
-                locale = context.resources.configuration.locales[0]
+        // 2. Unified Activity Groups (Calculations + Checklists + Notes)
+        val allActivityList = mutableListOf<RecentActivityItem>()
+        allCalculations.forEach { allActivityList.add(RecentActivityItem.CalculationActivity(it)) }
+        allChecklists.forEach { allActivityList.add(RecentActivityItem.ChecklistActivity(it)) }
+        allNotes.forEach { allActivityList.add(RecentActivityItem.NoteActivity(it)) }
+
+        val filteredActivityList = mutableListOf<RecentActivityItem>()
+        filteredCalcs.forEach { filteredActivityList.add(RecentActivityItem.CalculationActivity(it)) }
+        filteredChecklists.forEach { filteredActivityList.add(RecentActivityItem.ChecklistActivity(it)) }
+        filteredNotes.forEach { filteredActivityList.add(RecentActivityItem.NoteActivity(it)) }
+
+        val recentActivityGroups = ActivityDateGroupHelper.groupByDate(
+            items = allActivityList,
+            todayString = context.getString(R.string.date_today),
+            yesterdayString = context.getString(R.string.date_yesterday),
+            thisWeekString = context.getString(R.string.date_this_week),
+            locale = context.resources.configuration.locales[0]
+        )
+
+        val filteredActivityGroups = ActivityDateGroupHelper.groupByDate(
+            items = filteredActivityList,
+            todayString = context.getString(R.string.date_today),
+            yesterdayString = context.getString(R.string.date_yesterday),
+            thisWeekString = context.getString(R.string.date_this_week),
+            locale = context.resources.configuration.locales[0]
+        )
+
+        _uiState.update {
+            it.copy(
+                recentDateGroups = recentCalcGroups,
+                filteredDateGroups = filteredCalcGroups,
+                recentActivityGroups = recentActivityGroups,
+                filteredActivityGroups = filteredActivityGroups,
+                favoriteCalculations = favorites,
+                unpaidTotalCentimes = unpaidTotal,
+                monthTotalCentimes = monthTotal,
+                isLoading = false
             )
-
-            _uiState.update {
-                it.copy(
-                    recentDateGroups = recentGroups,
-                    filteredDateGroups = filteredGroups,
-                    favoriteCalculations = favorites,
-                    unpaidTotalCentimes = unpaidTotal,
-                    isLoading = false
-                )
-            }
         }
     }
 
@@ -207,12 +293,38 @@ class HomeViewModel(
         _uiState.update { it.copy(selectedCalculationForAction = calc) }
     }
 
+    fun selectActivityForAction(activity: RecentActivityItem?) {
+        _uiState.update { it.copy(selectedActivityForAction = activity) }
+        if (activity is RecentActivityItem.CalculationActivity) {
+            _uiState.update { it.copy(selectedCalculationForAction = activity.calculationWithItems) }
+        }
+    }
+
     fun requestDelete(calc: CalculationWithItems) {
         _uiState.update {
             it.copy(
                 selectedCalculationForAction = null,
+                selectedActivityForAction = null,
                 calculationToDelete = calc
             )
+        }
+    }
+
+    fun deleteActivityItem(activity: RecentActivityItem) {
+        viewModelScope.launch {
+            when (activity) {
+                is RecentActivityItem.CalculationActivity -> {
+                    repository.deleteCalculation(activity.id)
+                    lastContext?.let { CreditReminderScheduler.cancelReminder(it, activity.id) }
+                }
+                is RecentActivityItem.ChecklistActivity -> {
+                    checklistRepository?.deleteChecklist(activity.id)
+                }
+                is RecentActivityItem.NoteActivity -> {
+                    noteRepository?.deleteNote(activity.id)
+                }
+            }
+            _uiState.update { it.copy(selectedActivityForAction = null) }
         }
     }
 
@@ -238,3 +350,4 @@ class HomeViewModel(
         }
     }
 }
+

@@ -163,7 +163,14 @@ fun HssabiApp(
     val layoutDirection = if (isArabicLanguage) LayoutDirection.Rtl else LayoutDirection.Ltr
 
     val templateRepository = remember { TemplateRepository.getInstance(context) }
-    val homeViewModel = viewModel { HomeViewModel(calculationRepository, settingsRepository) }
+    val homeViewModel = viewModel {
+        HomeViewModel(
+            repository = calculationRepository,
+            settingsRepository = settingsRepository,
+            checklistRepository = checklistRepository,
+            noteRepository = noteRepository
+        )
+    }
     val groupsViewModel = viewModel { GroupsViewModel(calculationRepository) }
     val historyViewModel = viewModel { HistoryViewModel(calculationRepository) }
     val backupManager = remember { BackupManager(database) }

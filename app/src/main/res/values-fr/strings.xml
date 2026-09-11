@@ -16,6 +16,11 @@
     <string name="calculs_action_change_title">Rendu de monnaie</string>
     <string name="calculs_action_change_subtitle">Montant reçu · monnaie à rendre</string>
     <string name="home_recent_title">Calculs récents</string>
+    <string name="home_recent_activity_title">Activité récente</string>
+    <string name="speed_dial_note">Note</string>
+    <string name="speed_dial_checklist">Checklist</string>
+    <string name="speed_dial_calcul">Calcul</string>
+    <string name="checklist_untitled">Checklist</string>
     <string name="home_favorites_title">Vos favoris</string>
     <string name="home_favorites_empty_hint">Épinglez vos calculs importants ici (⋮)</string>
     <string name="action_pin">Épingler</string>
