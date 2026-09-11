@@ -10,7 +10,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -3419,52 +3422,50 @@ private fun JournalKeySpecCell(
         else -> null
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     val gestureModifier = when {
         spec.isBackspace && backspaceController != null -> {
-            Modifier.pointerInput(backspaceController) {
-                detectTapGestures(
-                    onPress = {
-                        try {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        } catch (_: Exception) {}
-                        backspaceController.onPointerDown()
-                        val released = tryAwaitRelease()
-                        if (released) {
-                            backspaceController.onPointerUp()
-                        } else {
-                            backspaceController.cancel()
+            val backspaceInteractionSource = remember { MutableInteractionSource() }
+            Modifier
+                .indication(backspaceInteractionSource, LocalIndication.current)
+                .pointerInput(backspaceController) {
+                    detectTapGestures(
+                        onPress = { offset ->
+                            val press = PressInteraction.Press(offset)
+                            backspaceInteractionSource.emit(press)
+                            try {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            } catch (_: Exception) {}
+                            backspaceController.onPointerDown()
+                            val released = tryAwaitRelease()
+                            if (released) {
+                                backspaceInteractionSource.emit(PressInteraction.Release(press))
+                                backspaceController.onPointerUp()
+                            } else {
+                                backspaceInteractionSource.emit(PressInteraction.Cancel(press))
+                                backspaceController.cancel()
+                            }
                         }
-                    }
-                )
-            }
-        }
-        onLongPress != null && spec.alternatives.isNotEmpty() -> {
-            Modifier.pointerInput(spec) {
-                detectTapGestures(
-                    onTap = {
-                        try {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        } catch (_: Exception) {}
-                        onTap()
-                    },
-                    onLongPress = {
-                        try {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        } catch (_: Exception) {}
-                        keyBounds?.let { onLongPress(it) }
-                    }
-                )
-            }
+                    )
+                }
         }
         else -> {
-            Modifier.clickable(
+            Modifier.combinedClickable(
                 role = Role.Button,
                 onClick = {
                     try {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     } catch (_: Exception) {}
                     onTap()
-                }
+                },
+                onLongClick = if (onLongPress != null && spec.alternatives.isNotEmpty()) {
+                    {
+                        try {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        } catch (_: Exception) {}
+                        keyBounds?.let { onLongPress(it) }
+                    }
+                } else null
             )
         }
     }
@@ -3641,17 +3642,27 @@ private fun JournalBackspaceKeyCell(
     modifier: Modifier = Modifier,
     controller: BackspaceRepeatController
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val haptic = LocalHapticFeedback.current
     Box(
         modifier = modifier
             .fillMaxHeight()
+            .indication(interactionSource, LocalIndication.current)
             .pointerInput(controller) {
                 detectTapGestures(
-                    onPress = {
+                    onPress = { offset ->
+                        val press = PressInteraction.Press(offset)
+                        interactionSource.emit(press)
+                        try {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        } catch (_: Exception) {}
                         controller.onPointerDown()
                         val released = tryAwaitRelease()
                         if (released) {
+                            interactionSource.emit(PressInteraction.Release(press))
                             controller.onPointerUp()
                         } else {
+                            interactionSource.emit(PressInteraction.Cancel(press))
                             controller.cancel()
                         }
                     }

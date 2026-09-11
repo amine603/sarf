@@ -56,9 +56,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.cash.guide.domain.ai.CalculationAiEntry
-import com.cash.guide.ui.notebook.ColorCoral
 import com.cash.guide.ui.notebook.HighlighterBlue
-import com.cash.guide.ui.notebook.HighlighterYellow
 import com.cash.guide.ui.notebook.JournalActionConfirm
 import com.cash.guide.ui.notebook.JournalActionDelete
 import com.cash.guide.ui.notebook.JournalInk
@@ -67,7 +65,6 @@ import com.cash.guide.ui.notebook.JournalPaper
 import com.cash.guide.ui.notebook.JournalRule
 import com.cash.guide.ui.notebook.NumberBoldVisualTransformation
 import com.cash.guide.ui.notebook.PatrickHandFamily
-import com.cash.guide.ui.notebook.highlightNumbersInText
 import com.cash.guide.ui.notebook.isArabicScript
 import com.cash.guide.ui.notebook.journalDashedBorder
 import com.cash.guide.ui.notebook.resolveJournalFont
@@ -148,7 +145,7 @@ fun AiChecklistReviewDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .drawBehind {
-                            // 1. Subtle tactile paper grain / flecks
+                            // Subtle tactile paper grain / flecks
                             val dotColor = JournalInk.copy(alpha = 0.025f)
                             var px = 16f
                             while (px < size.width) {
@@ -163,15 +160,6 @@ fun AiChecklistReviewDialog(
                                 }
                                 px += 44f
                             }
-
-                            // 2. Notebook margin guide line
-                            val marginX = if (isRtl) size.width - 24.dp.toPx() else 24.dp.toPx()
-                            drawLine(
-                                color = ColorCoral.copy(alpha = 0.22f),
-                                start = Offset(marginX, 0f),
-                                end = Offset(marginX, size.height),
-                                strokeWidth = 1.dp.toPx()
-                            )
                         }
                         .padding(horizontal = 18.dp, vertical = 18.dp)
                 ) {
@@ -198,29 +186,6 @@ fun AiChecklistReviewDialog(
                         }
                     }
 
-                    // Quote of what was heard
-                    if (originalSpeech.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = HighlighterYellow.copy(alpha = 0.22f),
-                            border = BorderStroke(1.dp, JournalRule.copy(alpha = 0.35f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            val isQuoteArabic = isArabicScript(originalSpeech)
-                            Text(
-                                text = highlightNumbersInText("💬 \"$originalSpeech\"", JournalInk),
-                                fontFamily = resolveJournalFont(originalSpeech, isQuoteArabic),
-                                fontSize = 13.sp,
-                                color = JournalInk,
-                                lineHeight = 18.sp,
-                                textAlign = if (isQuoteArabic) TextAlign.Right else TextAlign.Left,
-                                style = TextStyle(textDirection = if (isQuoteArabic) TextDirection.Rtl else TextDirection.Ltr),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
-                            )
-                        }
-                    }
-
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
@@ -231,13 +196,13 @@ fun AiChecklistReviewDialog(
                         lineHeight = 16.sp
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     // Items list
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 260.dp)
+                            .heightIn(max = 280.dp)
                     ) {
                         itemsIndexed(items) { index, item ->
                             val isItemArabic = isArabicScript(item)
@@ -451,8 +416,6 @@ fun AiCalculationReviewDialog(
     var newLabel by remember { mutableStateOf("") }
     var newAmount by remember { mutableStateOf("") }
 
-    val totalDh = entries.sumOf { it.amountStr.toDoubleOrNull() ?: 0.0 }
-
     val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales.get(0)
     val appLang = currentLocale?.language ?: "ar"
     val isFrench = appLang == "fr"
@@ -484,11 +447,6 @@ fun AiCalculationReviewDialog(
         isFrench -> "Prix"
         isEnglish -> "Price"
         else -> "الثمن"
-    }
-    val totalLabel = when {
-        isFrench -> "Total calculé :"
-        isEnglish -> "Calculated total:"
-        else -> "المجموع المحسوب:"
     }
     val cancelBtn = when {
         isFrench -> "Annuler"
@@ -534,7 +492,7 @@ fun AiCalculationReviewDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .drawBehind {
-                            // 1. Subtle tactile paper grain / flecks
+                            // Subtle tactile paper grain / flecks
                             val dotColor = JournalInk.copy(alpha = 0.025f)
                             var px = 16f
                             while (px < size.width) {
@@ -549,15 +507,6 @@ fun AiCalculationReviewDialog(
                                 }
                                 px += 44f
                             }
-
-                            // 2. Notebook margin guide line (warm coral/red)
-                            val marginX = if (isRtl) size.width - 24.dp.toPx() else 24.dp.toPx()
-                            drawLine(
-                                color = ColorCoral.copy(alpha = 0.22f),
-                                start = Offset(marginX, 0f),
-                                end = Offset(marginX, size.height),
-                                strokeWidth = 1.dp.toPx()
-                            )
                         }
                         .padding(horizontal = 18.dp, vertical = 18.dp)
                 ) {
@@ -584,29 +533,6 @@ fun AiCalculationReviewDialog(
                         }
                     }
 
-                    // Quote of what was heard
-                    if (originalSpeech.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = HighlighterYellow.copy(alpha = 0.22f),
-                            border = BorderStroke(1.dp, JournalRule.copy(alpha = 0.35f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            val isQuoteArabic = isArabicScript(originalSpeech)
-                            Text(
-                                text = highlightNumbersInText("💬 \"$originalSpeech\"", JournalInk),
-                                fontFamily = resolveJournalFont(originalSpeech, isQuoteArabic),
-                                fontSize = 13.sp,
-                                color = JournalInk,
-                                lineHeight = 18.sp,
-                                textAlign = if (isQuoteArabic) TextAlign.Right else TextAlign.Left,
-                                style = TextStyle(textDirection = if (isQuoteArabic) TextDirection.Rtl else TextDirection.Ltr),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
-                            )
-                        }
-                    }
-
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
@@ -617,13 +543,13 @@ fun AiCalculationReviewDialog(
                         lineHeight = 16.sp
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     // Entries list
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 240.dp)
+                            .heightIn(max = 280.dp)
                     ) {
                         itemsIndexed(entries) { index, entry ->
                             val isEntryArabic = isArabicScript(entry.label)
@@ -846,40 +772,6 @@ fun AiCalculationReviewDialog(
                                     )
                                 }
                             }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Total Bar (warm highlighter summary)
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = HighlighterYellow.copy(alpha = 0.28f),
-                        border = BorderStroke(1.dp, JournalRule.copy(alpha = 0.6f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = totalLabel,
-                                fontFamily = resolveJournalFont(totalLabel, isRtl),
-                                fontWeight = FontWeight.Bold,
-                                color = JournalInk,
-                                fontSize = 14.5.sp
-                            )
-                            val totalStr = if (totalDh % 1.0 == 0.0) "${totalDh.toLong()} DH" else String.format(java.util.Locale.US, "%.2f DH", totalDh)
-                            Text(
-                                text = totalStr,
-                                fontFamily = PatrickHandFamily,
-                                fontWeight = FontWeight.Bold,
-                                color = JournalActionConfirm,
-                                fontSize = 17.sp
-                            )
                         }
                     }
 
