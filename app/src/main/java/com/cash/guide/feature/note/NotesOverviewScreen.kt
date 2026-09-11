@@ -457,7 +457,7 @@ fun NotesOverviewScreen(
                             Spacer(modifier = Modifier.height(JournalRuleSpacing))
                         }
 
-                        // Creamy Cards (Height = exactly 2 rule line spaces = 58dp: snaps top and bottom to blue lines!)
+                        // Full-Pill Creamy Cards (Height = 58dp = 2 rule boxes, R = 29dp, right-pointing crescent on left)
                         monthGroup.notes.forEach { note ->
                             val globalIndex = allNotes.indexOf(note).coerceAtLeast(0)
                             val accentColor = cardAccentColors[globalIndex % cardAccentColors.size]
@@ -471,35 +471,37 @@ fun NotesOverviewScreen(
                                     .padding(horizontal = 14.dp)
                                     .shadow(
                                         elevation = 1.5.dp,
-                                        shape = RoundedCornerShape(16.dp),
-                                        ambientColor = Color(0x10000000),
+                                        shape = RoundedCornerShape(29.dp),
+                                        ambientColor = Color(0x12000000),
                                         spotColor = Color(0x08000000)
                                     )
-                                    .clip(RoundedCornerShape(16.dp))
+                                    .clip(RoundedCornerShape(29.dp))
                                     .clickable(role = Role.Button) { onOpenNote(note.id) },
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(29.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFCFAF4)),
-                                border = BorderStroke(0.8.dp, Color(0xFFE8E2D6))
+                                border = BorderStroke(0.9.dp, Color(0xFFD6CEBF))
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .drawBehind {
-                                            // Crescent moon (هلال) on the left edge: thin at top and bottom, bulges in the middle
+                                            // Crescent moon on left: horns point to the right as in user sketch
+                                            val hornX = 46.dp.toPx()
+                                            val hollowX = 10.dp.toPx()
                                             val crescentPath = Path().apply {
                                                 moveTo(0f, 0f)
-                                                lineTo(0f, size.height)
-                                                val maxBulge = 12.dp.toPx()
+                                                lineTo(hornX, 0f)
                                                 cubicTo(
-                                                    maxBulge, size.height * 0.72f,
-                                                    maxBulge, size.height * 0.28f,
-                                                    0f, 0f
+                                                    hollowX, size.height * 0.25f,
+                                                    hollowX, size.height * 0.75f,
+                                                    hornX, size.height
                                                 )
+                                                lineTo(0f, size.height)
                                                 close()
                                             }
                                             drawPath(path = crescentPath, color = accentColor)
                                         }
-                                        .padding(start = 20.dp, end = 16.dp)
+                                        .padding(start = 52.dp, end = 20.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxSize(),
@@ -514,7 +516,7 @@ fun NotesOverviewScreen(
                                             Text(
                                                 text = displayTitle,
                                                 fontFamily = resolveJournalFont(displayTitle, isRtl),
-                                                fontSize = if (isArabicScript(displayTitle)) 16.5.sp else 17.sp,
+                                                fontSize = if (isArabicScript(displayTitle)) 16.5.sp else 17.5.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = JournalWritingInk,
                                                 maxLines = 1,
@@ -527,20 +529,20 @@ fun NotesOverviewScreen(
                                                 text = dateStr,
                                                 fontFamily = PatrickHandFamily,
                                                 fontSize = 11.5.sp,
-                                                color = JournalMutedInk.copy(alpha = 0.55f),
+                                                color = JournalMutedInk.copy(alpha = 0.65f),
                                                 style = TextStyle(platformStyle = NoFontPadding)
                                             )
                                         }
 
                                         Spacer(modifier = Modifier.width(10.dp))
 
-                                        // Right Entry Arrow vertically centered in the card
+                                        // Right Entry Arrow vertically centered in the right semicircular cap
                                         Text(
                                             text = "→",
                                             fontFamily = PatrickHandFamily,
-                                            fontSize = 22.sp,
+                                            fontSize = 24.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = JournalMutedInk.copy(alpha = 0.55f)
+                                            color = JournalMutedInk.copy(alpha = 0.65f)
                                         )
                                     }
                                 }
