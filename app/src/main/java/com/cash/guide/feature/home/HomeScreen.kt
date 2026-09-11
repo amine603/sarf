@@ -273,14 +273,17 @@ fun HomeScreen(
                 }
             )
 
-            // Line 6 & 7: Auto-swiping Week Reminders Carousel Card
+            // Line 6: 1 rule spacer between category cards and week reminders card
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Line 7 & 8: Auto-swiping Week Reminders Carousel Card (takes 2 spaces)
             HomeWeekRemindersCarousel(
                 reminders = state.weekReminders,
                 isRtl = isRtl,
                 onOpenCalculation = onOpenCalculation
             )
 
-            // Line 8: 1 rule spacer before Activité récente section header
+            // Line 9: 1 rule spacer before Activité récente section header
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
             // Section Header: Activité récente in soft pink highlighter pill
