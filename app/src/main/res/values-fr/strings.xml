@@ -22,6 +22,8 @@
     <string name="home_category_notes">Notes</string>
     <string name="home_category_checklists">Checklists</string>
     <string name="home_category_rappels">Rappels</string>
+    <string name="home_week_reminders_title">Rappels de la semaine</string>
+    <string name="home_week_reminders_empty">Aucun rappel pour cette semaine</string>
     <string name="reminders_sheet_title">Rappels &amp; Échéances</string>
     <string name="reminders_empty">Aucun rappel programmé</string>
     <string name="home_quick_calculation">Calcul</string>

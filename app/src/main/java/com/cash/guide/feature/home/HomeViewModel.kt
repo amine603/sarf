@@ -345,6 +345,28 @@ class HomeViewModel(
                 .thenByDescending { it.calculation.updatedAtEpochMs }
         )
 
+        val nowCal = java.util.Calendar.getInstance()
+        val currentWeek = nowCal.get(java.util.Calendar.WEEK_OF_YEAR)
+        val currentYear = nowCal.get(java.util.Calendar.YEAR)
+
+        val weekItems = allCalculations.filter { calc ->
+            val due = calc.calculation.dueDateEpochMs
+            val isUnpaid = (calc.calculation.calcType == "CREDIT" || calc.calculation.paymentStatus == "UNPAID") && calc.calculation.paymentStatus != "PAID"
+            val hasReminder = calc.calculation.reminderEnabled
+            if (due != null) {
+                val dueCal = java.util.Calendar.getInstance().apply { timeInMillis = due }
+                (dueCal.get(java.util.Calendar.YEAR) == currentYear && dueCal.get(java.util.Calendar.WEEK_OF_YEAR) == currentWeek) ||
+                (due <= System.currentTimeMillis() && isUnpaid)
+            } else {
+                hasReminder || isUnpaid
+            }
+        }.sortedWith(
+            compareBy<CalculationWithItems> { it.calculation.dueDateEpochMs ?: Long.MAX_VALUE }
+                .thenByDescending { it.calculation.updatedAtEpochMs }
+        )
+
+        val activeWeekReminders = if (weekItems.isNotEmpty()) weekItems else reminders
+
         _uiState.update {
             it.copy(
                 recentDateGroups = recentCalcGroups,
@@ -355,6 +377,7 @@ class HomeViewModel(
                 todayActivityItems = todayActivityItems,
                 favoriteCalculations = favorites,
                 reminderCalculations = reminders,
+                weekReminders = activeWeekReminders,
                 unpaidTotalCentimes = unpaidTotal,
                 monthTotalCentimes = monthTotal,
                 isLoading = false

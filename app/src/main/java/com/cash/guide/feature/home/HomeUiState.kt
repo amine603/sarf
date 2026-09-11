@@ -21,6 +21,7 @@ data class HomeUiState(
     val todayActivityItems: List<RecentActivityItem> = emptyList(),
     val favoriteCalculations: List<CalculationWithItems> = emptyList(),
     val reminderCalculations: List<CalculationWithItems> = emptyList(),
+    val weekReminders: List<CalculationWithItems> = emptyList(),
     val favoriteGroups: List<CalculationGroupWithCalculations> = emptyList(),
     val pinnedCalculationIds: Set<String> = emptySet(),
     val searchQuery: String = "",

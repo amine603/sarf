@@ -18,6 +18,8 @@
     <string name="home_category_notes">Notes</string>
     <string name="home_category_checklists">Checklists</string>
     <string name="home_category_rappels">Reminders</string>
+    <string name="home_week_reminders_title">This week\'s reminders</string>
+    <string name="home_week_reminders_empty">No reminders for this week</string>
     <string name="reminders_sheet_title">Reminders &amp; Due Dates</string>
     <string name="reminders_empty">No scheduled reminders</string>
     <string name="home_quick_calculation">Calculation</string>

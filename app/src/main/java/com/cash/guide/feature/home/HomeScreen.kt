@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -31,7 +33,11 @@ import com.cash.guide.ui.notebook.NotebookRemindersSheet
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.delay
+import java.util.Locale
 import com.cash.guide.domain.CalculationImageShareHelper
 import com.cash.guide.domain.export.ExcelExportHelper
 import com.cash.guide.domain.export.FileExportManager
@@ -239,7 +245,10 @@ fun HomeScreen(
                 isDateFiltered = state.selectedDateEpoch != null
             )
 
-            // Line 4: 4 Category quick cards directly under the search bar
+            // Line 4: 1 rule spacer (the Espace requested by user)
+            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+            // Line 5: 4 Category quick cards
             HomeCategoryCardsRow(
                 isRtl = isRtl,
                 onCalculs = {
@@ -264,7 +273,14 @@ fun HomeScreen(
                 }
             )
 
-            // 1 rule spacer before Activité récente section header
+            // Line 6 & 7: Auto-swiping Week Reminders Carousel Card
+            HomeWeekRemindersCarousel(
+                reminders = state.weekReminders,
+                isRtl = isRtl,
+                onOpenCalculation = onOpenCalculation
+            )
+
+            // Line 8: 1 rule spacer before Activité récente section header
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
             // Section Header: Activité récente in soft pink highlighter pill
@@ -867,6 +883,220 @@ private fun CategoryQuickCard(
                     overflow = TextOverflow.Ellipsis,
                     style = TextStyle(platformStyle = NoFontPadding)
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Auto-swiping horizontal carousel card showing reminders of the week.
+ * Placed neatly on the notebook rules below the 4 category cards.
+ * Height: 58.dp (2 ruled lines), black ink outline (0.95dp), clean paper background.
+ * Cycles every 3.5s when there are multiple reminders.
+ */
+@Composable
+private fun HomeWeekRemindersCarousel(
+    reminders: List<CalculationWithItems>,
+    isRtl: Boolean,
+    onOpenCalculation: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val currentReminders by rememberUpdatedState(reminders)
+    val pagerState = rememberPagerState(pageCount = { currentReminders.size.coerceAtLeast(1) })
+
+    LaunchedEffect(pagerState, reminders.size) {
+        if (reminders.size > 1) {
+            while (true) {
+                delay(3500)
+                if (!pagerState.isScrollInProgress) {
+                    val count = currentReminders.size
+                    if (count > 1) {
+                        val targetPage = (pagerState.currentPage + 1) % count
+                        try {
+                            pagerState.animateScrollToPage(targetPage)
+                        } catch (_: Throwable) {
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    val dateFormat = remember { SimpleDateFormat("d MMM", Locale.getDefault()) }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing * 2)
+            .padding(horizontal = 14.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.White.copy(alpha = 0.90f))
+            .border(
+                width = 0.95.dp,
+                color = JournalWritingInk.copy(alpha = 0.85f),
+                shape = RoundedCornerShape(8.dp)
+            )
+    ) {
+        if (reminders.isEmpty()) {
+            // Empty state slide
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(Color(0xFF3B82F6), CircleShape)
+                )
+                Column(
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_week_reminders_title),
+                        fontFamily = resolveJournalFont(stringResource(R.string.home_week_reminders_title), isRtl),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = JournalWritingInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.home_week_reminders_empty),
+                        fontFamily = resolveJournalFont(stringResource(R.string.home_week_reminders_empty), isRtl),
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = JournalMutedInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+            }
+        } else {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                val item = reminders[page]
+                val calcTitle = item.calculation.title.ifBlank {
+                    stringResource(R.string.home_quick_calculation)
+                }
+                val dueDateStr = item.calculation.dueDateEpochMs?.let { dateFormat.format(Date(it)) }
+                val totalCentimes = item.totalCentimes
+                val totalFormatted = if (totalCentimes % 100 == 0L) {
+                    "${totalCentimes / 100} ${item.calculation.currency}"
+                } else {
+                    String.format(Locale.US, "%.2f %s", totalCentimes / 100.0, item.calculation.currency)
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(
+                            role = Role.Button,
+                            onClick = { onOpenCalculation(item.calculation.id) }
+                        )
+                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Top row: Blue category dot + Tag ("Rappels de la semaine") + Dots indicator
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(Color(0xFF3B82F6), CircleShape)
+                            )
+                            Text(
+                                text = stringResource(R.string.home_week_reminders_title),
+                                fontFamily = resolveJournalFont(stringResource(R.string.home_week_reminders_title), isRtl),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = JournalMutedInk,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                            if (dueDateStr != null) {
+                                Text(
+                                    text = "• $dueDateStr",
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = Color(0xFFC2410C),
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
+                            }
+                        }
+
+                        // Slide indicator dots
+                        if (reminders.size > 1) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                repeat(reminders.size.coerceAtMost(6)) { index ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(if (index == page) 5.dp else 3.5.dp)
+                                            .background(
+                                                color = if (index == page) Color(0xFF3B82F6) else JournalMutedInk.copy(alpha = 0.35f),
+                                                shape = CircleShape
+                                            )
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Bottom row: Calculation Title + Amount
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            modifier = Modifier.weight(1f, fill = false),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = calcTitle,
+                                fontFamily = resolveJournalFont(calcTitle, isRtl),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = JournalWritingInk,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                            if (item.calculation.reminderEnabled) {
+                                Text(
+                                    text = "🔔",
+                                    fontSize = 11.sp,
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = totalFormatted,
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = if (item.calculation.paymentStatus == "UNPAID") Color(0xFFDC2626) else JournalWritingInk,
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
+                    }
+                }
             }
         }
     }

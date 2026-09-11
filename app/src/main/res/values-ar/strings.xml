@@ -22,6 +22,8 @@
     <string name="home_category_notes">ملاحظات</string>
     <string name="home_category_checklists">قوائم مهام</string>
     <string name="home_category_rappels">تذكيرات</string>
+    <string name="home_week_reminders_title">تذكيرات هذا الأسبوع</string>
+    <string name="home_week_reminders_empty">لا توجد تذكيرات لهذا الأسبوع</string>
     <string name="reminders_sheet_title">التذكيرات والمواعيد</string>
     <string name="reminders_empty">لا توجد تذكيرات معلقة</string>
     <string name="home_quick_calculation">حساب</string>
