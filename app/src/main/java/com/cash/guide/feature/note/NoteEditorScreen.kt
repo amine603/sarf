@@ -7,9 +7,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -48,7 +46,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -71,12 +68,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cash.guide.domain.NoteShareHelper
 import com.cash.guide.ui.notebook.HighlighterPink
-import com.cash.guide.ui.notebook.HighlighterYellow
-import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.HisabiSketchIcon
 import com.cash.guide.ui.notebook.HisabiSymbol
 import com.cash.guide.ui.notebook.JournalActionDelete
-import com.cash.guide.ui.notebook.JournalHandFamily
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalPaper
@@ -85,76 +79,14 @@ import com.cash.guide.ui.notebook.JournalRuleSpacing
 import com.cash.guide.ui.notebook.JournalRuledDocument
 import com.cash.guide.ui.notebook.JournalTextKeyboardDock
 import com.cash.guide.ui.notebook.JournalWritingInk
+import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
-import com.cash.guide.ui.notebook.isArabicScript
 import com.cash.guide.ui.notebook.journalBaselineOnRule
 import com.cash.guide.ui.notebook.resolveJournalFont
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-data class NoteColorPalette(
-    val id: String,
-    val labelFr: String,
-    val labelAr: String,
-    val background: Color,
-    val outline: Color,
-    val pillColor: Color
-)
-
-fun getNoteCardColors(tag: String): NoteColorPalette {
-    return when (tag.uppercase()) {
-        "YELLOW" -> NoteColorPalette(
-            id = "YELLOW",
-            labelFr = "Jaune",
-            labelAr = "أصفر",
-            background = Color(0xFFFEFCE8),
-            outline = Color(0xFFD97706),
-            pillColor = HighlighterYellow
-        )
-        "PINK" -> NoteColorPalette(
-            id = "PINK",
-            labelFr = "Rose",
-            labelAr = "وردي",
-            background = Color(0xFFFDF2F8),
-            outline = Color(0xFFE11D48),
-            pillColor = HighlighterPink
-        )
-        "BLUE" -> NoteColorPalette(
-            id = "BLUE",
-            labelFr = "Bleu",
-            labelAr = "أزرق",
-            background = Color(0xFFEFF6FF),
-            outline = Color(0xFF2563EB),
-            pillColor = Color(0xFFBFDBFE)
-        )
-        "GREEN" -> NoteColorPalette(
-            id = "GREEN",
-            labelFr = "Vert",
-            labelAr = "أخضر",
-            background = Color(0xFFF0FDF4),
-            outline = Color(0xFF059669),
-            pillColor = Color(0xFFBBF7D0)
-        )
-        "PURPLE" -> NoteColorPalette(
-            id = "PURPLE",
-            labelFr = "Mauve",
-            labelAr = "بنفسجي",
-            background = Color(0xFFFAF5FF),
-            outline = Color(0xFF7C3AED),
-            pillColor = Color(0xFFE9D5FF)
-        )
-        else -> NoteColorPalette(
-            id = "DEFAULT",
-            labelFr = "Naturel",
-            labelAr = "عادي",
-            background = JournalPaper,
-            outline = Color(0xFF3B82F6),
-            pillColor = HighlighterPink.copy(alpha = 0.35f)
-        )
-    }
-}
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -164,15 +96,16 @@ fun NoteEditorScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val focusManager = LocalFocusManager.current
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Intercept hardware or system back button to close custom keyboard first or save
+    // Auto-save on back navigation
     BackHandler {
         if (uiState.activeInputTarget != NoteInputTarget.NONE) {
             viewModel.closeKeyboard()
@@ -189,19 +122,7 @@ fun NoteEditorScreen(
         }
     }
 
-    val availablePalettes = remember {
-        listOf(
-            getNoteCardColors("DEFAULT"),
-            getNoteCardColors("YELLOW"),
-            getNoteCardColors("PINK"),
-            getNoteCardColors("BLUE"),
-            getNoteCardColors("GREEN"),
-            getNoteCardColors("PURPLE")
-        )
-    }
-    val currentPalette = remember(uiState.colorTag) { getNoteCardColors(uiState.colorTag) }
-
-    // Cursor animation for custom handwriting editor
+    // Cursor blink animation
     val infiniteTransition = rememberInfiniteTransition(label = "note_cursor")
     val cursorAlpha by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -237,26 +158,30 @@ fun NoteEditorScreen(
                         .fillMaxSize()
                         .statusBarsPadding()
                 ) {
-                    // Header Top Bar
+                    // Header Top Bar (matching ChecklistScreen style)
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         color = JournalPaper,
                         tonalElevation = 0.dp
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
+                            // Row 1: Back button + Centered Title in Pink Pill + Balancing Spacer
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(52.dp)
+                                    .height(48.dp)
                                     .padding(horizontal = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Back Button (Auto-save)
+                                // Back Button
                                 Box(
                                     modifier = Modifier
                                         .size(42.dp)
                                         .clip(CircleShape)
                                         .clickable(role = Role.Button) {
+                                            if (uiState.activeInputTarget != NoteInputTarget.NONE) {
+                                                viewModel.closeKeyboard()
+                                            }
                                             viewModel.saveChanges()
                                             onNavigateBack()
                                         },
@@ -270,66 +195,93 @@ fun NoteEditorScreen(
                                     )
                                 }
 
-                                // Centered Title Pill reflecting chosen color
+                                // Centered Title in Watercolor Pink Pill
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
-                                        .padding(horizontal = 6.dp),
+                                        .padding(horizontal = 6.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(
+                                            if (uiState.activeInputTarget == NoteInputTarget.TITLE) HighlighterPink.copy(alpha = 0.55f)
+                                            else HighlighterPink.copy(alpha = 0.35f)
+                                        )
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null
+                                        ) {
+                                            keyboardController?.hide()
+                                            viewModel.focusTitle()
+                                        }
+                                        .padding(horizontal = 14.dp, vertical = 6.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .background(currentPalette.pillColor.copy(alpha = 0.50f))
-                                            .border(
-                                                BorderStroke(1.2.dp, currentPalette.outline.copy(alpha = 0.60f)),
-                                                RoundedCornerShape(16.dp)
-                                            )
-                                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
                                     ) {
-                                        val headerText = if (uiState.title.text.isNotBlank()) {
+                                        val displayTitle = if (uiState.title.text.isNotBlank()) {
                                             uiState.title.text
                                         } else {
                                             if (isRtl) "ملاحظة جديدة" else "Nouvelle note"
                                         }
                                         Text(
-                                            text = headerText,
-                                            fontFamily = resolveJournalFont(headerText, isRtl),
-                                            fontSize = if (isRtl) 15.sp else 16.sp,
+                                            text = displayTitle,
+                                            fontFamily = resolveJournalFont(displayTitle, isRtl),
+                                            fontSize = if (isRtl) 16.5.sp else 17.5.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = JournalWritingInk,
+                                            textAlign = TextAlign.Center,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                             style = TextStyle(platformStyle = NoFontPadding)
                                         )
+
+                                        if (uiState.activeInputTarget == NoteInputTarget.TITLE && cursorAlpha > 0f) {
+                                            Spacer(modifier = Modifier.width(2.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .width(2.dp)
+                                                    .height(16.dp)
+                                                    .background(JournalWritingInk.copy(alpha = cursorAlpha))
+                                            )
+                                        }
                                     }
                                 }
 
-                                // Top Right Actions: Pin, Share, Delete
+                                // Balancing Spacer so Title is centered
+                                Spacer(modifier = Modifier.size(42.dp))
+                            }
+
+                            // Row 2: Sub-toolbar (Date on start, Share & Delete on end)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(36.dp)
+                                    .padding(horizontal = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                // Date on start
+                                Text(
+                                    text = formattedDate,
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 13.sp,
+                                    color = JournalMutedInk.copy(alpha = 0.75f),
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
+
+                                // Action buttons on end
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    // Pin
+                                    // Partager ↗
+                                    val shareText = if (isRtl) "مشاركة ↗" else "Partager ↗"
                                     Box(
                                         modifier = Modifier
-                                            .size(38.dp)
-                                            .clip(CircleShape)
-                                            .clickable(role = Role.Button) { viewModel.togglePin() },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = if (uiState.isPinned) "📌" else "📍",
-                                            fontSize = 17.sp
-                                        )
-                                    }
-
-                                    // Share Image
-                                    Box(
-                                        modifier = Modifier
-                                            .size(38.dp)
-                                            .clip(CircleShape)
+                                            .clip(RoundedCornerShape(6.dp))
                                             .clickable(role = Role.Button) {
+                                                viewModel.closeKeyboard()
                                                 viewModel.saveChanges()
                                                 NoteShareHelper.shareAsImage(
                                                     context = context,
@@ -337,21 +289,35 @@ fun NoteEditorScreen(
                                                     isRtl = isRtl,
                                                     coroutineScope = coroutineScope
                                                 )
+                                            }
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            .drawBehind {
+                                                val strokeW = 1.2.dp.toPx()
+                                                val y = size.height + 1.dp.toPx()
+                                                drawLine(
+                                                    color = HighlighterPink,
+                                                    start = Offset(0f, y),
+                                                    end = Offset(size.width, y),
+                                                    strokeWidth = strokeW,
+                                                    cap = StrokeCap.Round
+                                                )
                                             },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        HisabiSketchIcon(
-                                            symbol = HisabiSymbol.Share,
-                                            contentDescription = "Partager",
-                                            tint = JournalInk,
-                                            size = 18.dp
+                                        Text(
+                                            text = shareText,
+                                            fontFamily = resolveJournalFont(shareText, isRtl),
+                                            fontSize = 13.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = JournalInk,
+                                            style = TextStyle(platformStyle = NoFontPadding)
                                         )
                                     }
 
-                                    // Delete
+                                    // Delete icon
                                     Box(
                                         modifier = Modifier
-                                            .size(38.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
                                             .clickable(role = Role.Button) { showDeleteDialog = true },
                                         contentAlignment = Alignment.Center
@@ -359,54 +325,9 @@ fun NoteEditorScreen(
                                         HisabiSketchIcon(
                                             symbol = HisabiSymbol.Trash,
                                             contentDescription = "Supprimer",
-                                            tint = JournalActionDelete.copy(alpha = 0.80f),
-                                            size = 18.dp
+                                            tint = JournalActionDelete.copy(alpha = 0.75f),
+                                            size = 17.dp
                                         )
-                                    }
-                                }
-                            }
-
-                            // Color selection row with visible active highlights
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Text(
-                                    text = if (isRtl) "اللون :" else "Couleur :",
-                                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = JournalInk
-                                )
-
-                                availablePalettes.forEach { pal ->
-                                    val isSelected = uiState.colorTag.equals(pal.id, ignoreCase = true)
-                                    Box(
-                                        modifier = Modifier
-                                            .size(28.dp)
-                                            .clip(CircleShape)
-                                            .background(pal.pillColor.copy(alpha = 0.70f))
-                                            .border(
-                                                BorderStroke(
-                                                    if (isSelected) 2.2.dp else 1.dp,
-                                                    if (isSelected) pal.outline else JournalRule.copy(alpha = 0.40f)
-                                                ),
-                                                CircleShape
-                                            )
-                                            .clickable(role = Role.Button) { viewModel.setColorTag(pal.id) },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        if (isSelected) {
-                                            Text(
-                                                text = "✓",
-                                                fontSize = 13.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = pal.outline
-                                            )
-                                        }
                                     }
                                 }
                             }
@@ -428,39 +349,10 @@ fun NoteEditorScreen(
                             .fillMaxWidth()
                     ) {
                         JournalRuledDocument(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .drawBehind {
-                                    // Colored notebook vertical guide / margin line reflecting chosen color
-                                    val marginX = if (isRtl) size.width - 24.dp.toPx() else 24.dp.toPx()
-                                    drawLine(
-                                        color = currentPalette.outline.copy(alpha = 0.50f),
-                                        start = Offset(marginX, 0f),
-                                        end = Offset(marginX, size.height),
-                                        strokeWidth = 1.3.dp.toPx()
-                                    )
-                                },
+                            modifier = Modifier.fillMaxSize(),
                             clearFocusOnTap = false
                         ) {
-                            // Rule 1 (29dp): Date stamp sitting on the first blue line
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(JournalRuleSpacing)
-                                    .padding(horizontal = 32.dp),
-                                verticalAlignment = Alignment.Bottom
-                            ) {
-                                Text(
-                                    text = formattedDate,
-                                    fontFamily = PatrickHandFamily,
-                                    fontSize = 13.sp,
-                                    color = JournalMutedInk.copy(alpha = 0.80f),
-                                    style = TextStyle(platformStyle = NoFontPadding),
-                                    modifier = Modifier.journalBaselineOnRule(opticalOffsetFromBottom = 2.dp)
-                                )
-                            }
-
-                            // Rule 2 (29dp): Title input sitting on the second blue line
+                            // Rule 1 (29dp): Title input sitting on the first blue line
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -472,7 +364,7 @@ fun NoteEditorScreen(
                                         keyboardController?.hide()
                                         viewModel.focusTitle()
                                     }
-                                    .padding(horizontal = 32.dp),
+                                    .padding(horizontal = 20.dp),
                                 verticalAlignment = Alignment.Bottom
                             ) {
                                 val isTitleActive = uiState.activeInputTarget == NoteInputTarget.TITLE
@@ -487,9 +379,9 @@ fun NoteEditorScreen(
                                 ) {
                                     if (displayTitle.isEmpty()) {
                                         Text(
-                                            text = if (isRtl) "عنوان الملاحظة..." else "Titre de la note...",
+                                            text = if (isRtl) "عنوان الملاحظة... ✍️" else "Titre de la note... ✍️",
                                             fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                            fontSize = if (isRtl) 18.sp else 19.sp,
+                                            fontSize = 17.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = JournalMutedInk.copy(alpha = 0.40f),
                                             style = TextStyle(platformStyle = NoFontPadding)
@@ -498,7 +390,7 @@ fun NoteEditorScreen(
                                         Text(
                                             text = displayTitle,
                                             fontFamily = resolveJournalFont(displayTitle, isRtl),
-                                            fontSize = if (isRtl) 18.sp else 19.sp,
+                                            fontSize = 17.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = JournalWritingInk,
                                             style = TextStyle(platformStyle = NoFontPadding)
@@ -510,7 +402,7 @@ fun NoteEditorScreen(
                                         val textMeasurer = rememberTextMeasurer()
                                         val titleStyle = TextStyle(
                                             fontFamily = resolveJournalFont(displayTitle, isRtl),
-                                            fontSize = if (isRtl) 18.sp else 19.sp,
+                                            fontSize = 17.sp,
                                             fontWeight = FontWeight.Bold,
                                             platformStyle = NoFontPadding
                                         )
@@ -519,7 +411,6 @@ fun NoteEditorScreen(
                                             style = titleStyle
                                         )
                                         val cursorX = if (isRtl) {
-                                            // In RTL, cursor is to the left of the measured text
                                             -layout.size.width.toFloat()
                                         } else {
                                             layout.size.width.toFloat()
@@ -529,21 +420,21 @@ fun NoteEditorScreen(
                                             modifier = Modifier
                                                 .offset(x = with(LocalDensity.current) { cursorX.toDp() })
                                                 .width(2.dp)
-                                                .height(19.dp)
+                                                .height(18.dp)
                                                 .background(JournalWritingInk.copy(alpha = cursorAlpha))
                                         )
                                     }
                                 }
                             }
 
-                            // Rule 3 (29dp): Empty breathing space line
+                            // Rule 2 (29dp): Empty breathing spacer line
                             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-                            // Rule 4 onwards: Multiline note content rendered line-by-line directly on rules
+                            // Rule 3 onwards: Multiline note content rendered line-by-line directly on rules
                             BoxWithConstraints(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 32.dp)
+                                    .padding(horizontal = 20.dp)
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication = null
@@ -580,7 +471,7 @@ fun NoteEditorScreen(
                                             contentAlignment = Alignment.BottomStart
                                         ) {
                                             Text(
-                                                text = if (isRtl) "اكتب أفكارك وملاحظاتك هنا... ✍️" else "Écrivez vos pensées et idées ici... ✍️",
+                                                text = if (isRtl) "اكتب أفكارك وملاحظاتك هنا..." else "Écrivez vos pensées et idées ici...",
                                                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                                                 fontSize = if (isRtl) 15.sp else 16.sp,
                                                 color = JournalMutedInk.copy(alpha = 0.45f),
@@ -597,25 +488,25 @@ fun NoteEditorScreen(
                                         }
                                     }
                                 } else {
-                                    // Measure and split text into lines matching width
-                                    val layoutResult = remember(contentText, availableWidthPx, contentStyle) {
-                                        textMeasurer.measure(
-                                            text = AnnotatedString(contentText),
-                                            style = contentStyle,
-                                            constraints = Constraints(maxWidth = availableWidthPx)
-                                        )
+                                    // Split text into paragraphs
+                                    val paragraphs = remember(contentText) { contentText.split('\n') }
+                                    val paragraphStarts = remember(paragraphs) {
+                                        val starts = mutableListOf<Int>()
+                                        var cur = 0
+                                        paragraphs.forEach { p ->
+                                            starts.add(cur)
+                                            cur += p.length + 1
+                                        }
+                                        starts
                                     }
+                                    val cursorPosition = uiState.content.selection.end
 
-                                    val lineCount = layoutResult.lineCount
-                                    val cursorPos = uiState.content.selection.end.coerceIn(0, contentText.length)
-                                    val activeLineIndex = layoutResult.getLineForOffset(cursorPos)
+                                    paragraphs.forEachIndexed { pIdx, paragraph ->
+                                        val currentGlobalCharIndex = paragraphStarts[pIdx]
 
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        for (i in 0 until lineCount) {
-                                            val start = layoutResult.getLineStart(i)
-                                            val end = layoutResult.getLineEnd(i)
-                                            val lineStr = contentText.substring(start, end).trimEnd('\r', '\n')
-
+                                        if (paragraph.isEmpty()) {
+                                            // Empty paragraph takes exactly 1 notebook rule
+                                            val isCursorHere = isContentActive && (cursorPosition == currentGlobalCharIndex)
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
@@ -624,8 +515,7 @@ fun NoteEditorScreen(
                                                         interactionSource = remember { MutableInteractionSource() },
                                                         indication = null
                                                     ) {
-                                                        keyboardController?.hide()
-                                                        viewModel.focusContent(start + (lineStr.length / 2))
+                                                        viewModel.focusContent(currentGlobalCharIndex)
                                                     },
                                                 verticalAlignment = Alignment.Bottom
                                             ) {
@@ -635,18 +525,9 @@ fun NoteEditorScreen(
                                                         .journalBaselineOnRule(opticalOffsetFromBottom = 2.dp),
                                                     contentAlignment = Alignment.BottomStart
                                                 ) {
-                                                    Text(
-                                                        text = lineStr,
-                                                        style = contentStyle
-                                                    )
-
-                                                    // Draw cursor on the active line
-                                                    if (isContentActive && i == activeLineIndex && cursorAlpha > 0f) {
-                                                        val lineCursorPos = cursorPos.coerceIn(start, end)
-                                                        val cursorRect = layoutResult.getCursorRect(lineCursorPos)
+                                                    if (isCursorHere && cursorAlpha > 0f) {
                                                         Box(
                                                             modifier = Modifier
-                                                                .offset(x = with(LocalDensity.current) { cursorRect.left.toDp() })
                                                                 .width(2.dp)
                                                                 .height(18.dp)
                                                                 .background(JournalInk.copy(alpha = cursorAlpha))
@@ -654,55 +535,84 @@ fun NoteEditorScreen(
                                                     }
                                                 }
                                             }
-                                        }
+                                        } else {
+                                            // Measure paragraph with text layout to wrap into lines
+                                            val layoutResult = textMeasurer.measure(
+                                                text = AnnotatedString(paragraph),
+                                                style = contentStyle,
+                                                constraints = Constraints(maxWidth = availableWidthPx)
+                                            )
+                                            val lineCount = layoutResult.lineCount
 
-                                        // If content ends with newline, show next line for cursor
-                                        if (contentText.endsWith("\n") && isContentActive) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(JournalRuleSpacing),
-                                                verticalAlignment = Alignment.Bottom
-                                            ) {
-                                                Box(
+                                            for (lineIndex in 0 until lineCount) {
+                                                val lineStartInP = layoutResult.getLineStart(lineIndex)
+                                                val lineEndInP = layoutResult.getLineEnd(lineIndex)
+                                                val lineText = paragraph.substring(lineStartInP, lineEndInP)
+
+                                                val globalLineStart = currentGlobalCharIndex + lineStartInP
+                                                val globalLineEnd = currentGlobalCharIndex + lineEndInP
+
+                                                val isCursorInThisLine = isContentActive &&
+                                                        (cursorPosition >= globalLineStart &&
+                                                                (cursorPosition < globalLineEnd || (cursorPosition == globalLineEnd && lineIndex == lineCount - 1)))
+
+                                                Row(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .journalBaselineOnRule(opticalOffsetFromBottom = 2.dp)
+                                                        .height(JournalRuleSpacing)
+                                                    .clickable(
+                                                        interactionSource = remember { MutableInteractionSource() },
+                                                        indication = null
+                                                    ) {
+                                                        viewModel.focusContent(globalLineStart + lineText.length)
+                                                    },
+                                                    verticalAlignment = Alignment.Bottom
                                                 ) {
-                                                    if (cursorAlpha > 0f) {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .width(2.dp)
-                                                                .height(18.dp)
-                                                                .background(JournalInk.copy(alpha = cursorAlpha))
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .journalBaselineOnRule(opticalOffsetFromBottom = 2.dp),
+                                                        contentAlignment = Alignment.BottomStart
+                                                    ) {
+                                                        Text(
+                                                            text = lineText,
+                                                            style = contentStyle
                                                         )
+
+                                                        if (isCursorInThisLine && cursorAlpha > 0f) {
+                                                            val offsetInLine = (cursorPosition - globalLineStart).coerceIn(0, lineText.length)
+                                                            val subLayout = textMeasurer.measure(
+                                                                text = AnnotatedString(lineText.take(offsetInLine)),
+                                                                style = contentStyle
+                                                            )
+                                                            val cursorX = if (isRtl) {
+                                                                -subLayout.size.width.toFloat()
+                                                            } else {
+                                                                subLayout.size.width.toFloat()
+                                                            }
+
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .offset(x = with(LocalDensity.current) { cursorX.toDp() })
+                                                                    .width(2.dp)
+                                                                    .height(18.dp)
+                                                                    .background(JournalInk.copy(alpha = cursorAlpha))
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
                                     }
                                 }
-                            }
 
-                            // 10 Empty Notebook Rules continuing to bottom
-                            repeat(10) {
-                                Spacer(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(JournalRuleSpacing)
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = null
-                                        ) {
-                                            keyboardController?.hide()
-                                            viewModel.focusContent()
-                                        }
-                                )
+                                // 3 rules of blank writing space at bottom
+                                Spacer(modifier = Modifier.height(JournalRuleSpacing * 3))
                             }
                         }
                     }
 
-                    // In-App Custom Journal Keyboard Dock
+                    // In-app Journal Keyboard Dock
                     if (uiState.activeInputTarget != NoteInputTarget.NONE) {
                         JournalTextKeyboardDock(
                             language = uiState.keyboardLanguage,
@@ -715,64 +625,67 @@ fun NoteEditorScreen(
                             onInsertText = { viewModel.applyTextKey(it) },
                             onBackspace = { viewModel.applyTextBackspace() },
                             onSwitchToNumericMode = { },
-                            onConfirm = { viewModel.confirmInput() }
+                            onConfirm = { viewModel.confirmInput() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(JournalPaper)
+                                .navigationBarsPadding()
                         )
                     }
                 }
+
+                // Delete Confirmation Dialog
+                if (showDeleteDialog) {
+                    val noteTitle = uiState.title.text.ifBlank { if (isRtl) "هذه الملاحظة" else "cette note" }
+                    AlertDialog(
+                        onDismissRequest = { showDeleteDialog = false },
+                        title = {
+                            Text(
+                                text = if (isRtl) "حذف الملاحظة ؟" else "Supprimer la note ?",
+                                fontFamily = resolveJournalFont(noteTitle, isRtl),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = JournalWritingInk
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = if (isRtl) "واش متأكد باغي تمسح \"$noteTitle\" نهائياً؟" else "Êtes-vous sûr de vouloir supprimer définitivement \"$noteTitle\" ?",
+                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                fontSize = 15.sp,
+                                color = JournalInk
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    showDeleteDialog = false
+                                    viewModel.deleteNote {
+                                        onNavigateBack()
+                                    }
+                                }
+                            ) {
+                                Text(
+                                    text = if (isRtl) "حذف" else "Supprimer",
+                                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = JournalActionDelete
+                                )
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDeleteDialog = false }) {
+                                Text(
+                                    text = if (isRtl) "إلغاء" else "Annuler",
+                                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                                    color = JournalMutedInk
+                                )
+                            }
+                        },
+                        containerColor = JournalPaper
+                    )
+                }
             }
         }
-    }
-
-    // Delete Confirmation Dialog
-    if (showDeleteDialog) {
-        val titleText = if (isRtl) "حذف الملاحظة ؟" else "Supprimer la note ?"
-        val msgText = if (isRtl) "واش متأكد باغي تمسح هاد الملاحظة نهائياً؟" else "Êtes-vous sûr de vouloir supprimer cette note définitivement ?"
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = {
-                Text(
-                    text = titleText,
-                    fontFamily = resolveJournalFont(titleText, isRtl),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = JournalWritingInk
-                )
-            },
-            text = {
-                Text(
-                    text = msgText,
-                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                    fontSize = 15.sp,
-                    color = JournalInk
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                        viewModel.deleteNote {
-                            onNavigateBack()
-                        }
-                    }
-                ) {
-                    Text(
-                        text = if (isRtl) "حذف" else "Supprimer",
-                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        fontWeight = FontWeight.Bold,
-                        color = JournalActionDelete
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(
-                        text = if (isRtl) "إلغاء" else "Annuler",
-                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                        color = JournalMutedInk
-                    )
-                }
-            },
-            containerColor = JournalPaper
-        )
     }
 }
