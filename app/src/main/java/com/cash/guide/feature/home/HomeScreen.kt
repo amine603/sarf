@@ -276,14 +276,14 @@ fun HomeScreen(
             // Line 6: 1 rule spacer between category cards and week reminders card
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Line 7 & 8: Auto-swiping Week Reminders Carousel Card (takes 2 spaces)
+            // Line 7, 8 & 9: Auto-swiping Week Reminders Carousel Card (takes 3 spaces)
             HomeWeekRemindersCarousel(
                 reminders = state.weekReminders,
                 isRtl = isRtl,
                 onOpenCalculation = onOpenCalculation
             )
 
-            // Line 9: 1 rule spacer before Activité récente section header
+            // Line 10: 1 rule spacer before Activité récente section header
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
             // Section Header: Activité récente in soft pink highlighter pill
@@ -930,10 +930,10 @@ private fun HomeWeekRemindersCarousel(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(JournalRuleSpacing * 2)
+            .height(JournalRuleSpacing * 3)
             .padding(horizontal = 14.dp, vertical = 2.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(Color.White.copy(alpha = 0.90f))
+            .background(JournalPaper)
             .border(
                 width = 0.95.dp,
                 color = JournalWritingInk.copy(alpha = 0.85f),
@@ -942,39 +942,40 @@ private fun HomeWeekRemindersCarousel(
     ) {
         if (reminders.isEmpty()) {
             // Empty state slide
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(Color(0xFF3B82F6), CircleShape)
-                )
-                Column(
-                    verticalArrangement = Arrangement.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(Color(0xFF3B82F6), CircleShape)
+                    )
                     Text(
                         text = stringResource(R.string.home_week_reminders_title),
                         fontFamily = resolveJournalFont(stringResource(R.string.home_week_reminders_title), isRtl),
-                        fontSize = 12.sp,
+                        fontSize = 12.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = JournalWritingInk,
                         style = TextStyle(platformStyle = NoFontPadding)
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = stringResource(R.string.home_week_reminders_empty),
-                        fontFamily = resolveJournalFont(stringResource(R.string.home_week_reminders_empty), isRtl),
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = JournalMutedInk,
-                        style = TextStyle(platformStyle = NoFontPadding)
-                    )
                 }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.home_week_reminders_empty),
+                    fontFamily = resolveJournalFont(stringResource(R.string.home_week_reminders_empty), isRtl),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = JournalMutedInk,
+                    style = TextStyle(platformStyle = NoFontPadding)
+                )
             }
         } else {
             HorizontalPager(
@@ -1000,10 +1001,10 @@ private fun HomeWeekRemindersCarousel(
                             role = Role.Button,
                             onClick = { onOpenCalculation(item.calculation.id) }
                         )
-                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Top row: Blue category dot + Tag ("Rappels de la semaine") + Dots indicator
+                    // Row 1 (Top): Category dot + Tag ("Rappels de la semaine") + Dots indicator
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -1021,21 +1022,11 @@ private fun HomeWeekRemindersCarousel(
                             Text(
                                 text = stringResource(R.string.home_week_reminders_title),
                                 fontFamily = resolveJournalFont(stringResource(R.string.home_week_reminders_title), isRtl),
-                                fontSize = 11.sp,
+                                fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Normal,
                                 color = JournalMutedInk,
                                 style = TextStyle(platformStyle = NoFontPadding)
                             )
-                            if (dueDateStr != null) {
-                                Text(
-                                    text = "• $dueDateStr",
-                                    fontFamily = PatrickHandFamily,
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = Color(0xFFC2410C),
-                                    style = TextStyle(platformStyle = NoFontPadding)
-                                )
-                            }
                         }
 
                         // Slide indicator dots
@@ -1058,42 +1049,62 @@ private fun HomeWeekRemindersCarousel(
                         }
                     }
 
-                    // Bottom row: Calculation Title + Amount
+                    // Row 2 (Middle): Calculation Title + Reminder bell
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = calcTitle,
+                            fontFamily = resolveJournalFont(calcTitle, isRtl),
+                            fontSize = 15.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = JournalWritingInk,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = TextStyle(platformStyle = NoFontPadding),
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (item.calculation.reminderEnabled) {
+                            Text(
+                                text = "🔔",
+                                fontSize = 12.sp,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
+                        }
+                    }
+
+                    // Row 3 (Bottom): Due date (if any) on start, Amount on end
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(
-                            modifier = Modifier.weight(1f, fill = false),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
+                        if (dueDateStr != null) {
                             Text(
-                                text = calcTitle,
-                                fontFamily = resolveJournalFont(calcTitle, isRtl),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = JournalWritingInk,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                text = "📅 $dueDateStr",
+                                fontFamily = PatrickHandFamily,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = Color(0xFFC2410C),
                                 style = TextStyle(platformStyle = NoFontPadding)
                             )
-                            if (item.calculation.reminderEnabled) {
-                                Text(
-                                    text = "🔔",
-                                    fontSize = 11.sp,
-                                    style = TextStyle(platformStyle = NoFontPadding)
-                                )
-                            }
+                        } else {
+                            Text(
+                                text = stringResource(R.string.home_category_rappels),
+                                fontFamily = resolveJournalFont(stringResource(R.string.home_category_rappels), isRtl),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = JournalMutedInk,
+                                style = TextStyle(platformStyle = NoFontPadding)
+                            )
                         }
-
-                        Spacer(modifier = Modifier.width(8.dp))
 
                         Text(
                             text = totalFormatted,
                             fontFamily = PatrickHandFamily,
-                            fontSize = 15.sp,
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.Normal,
                             color = if (item.calculation.paymentStatus == "UNPAID") Color(0xFFDC2626) else JournalWritingInk,
                             style = TextStyle(platformStyle = NoFontPadding)
