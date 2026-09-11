@@ -268,12 +268,66 @@ class HomeViewModel(
             locale = context.resources.configuration.locales[0]
         )
 
+        // 2-2-2 stream for Activité récente (up to 2 calcs, 2 checklists, 2 notes = 6 max)
+        val top2Calcs: List<RecentActivityItem> = filteredCalcs
+            .sortedByDescending { it.calculation.updatedAtEpochMs }
+            .take(2)
+            .map { RecentActivityItem.CalculationActivity(it) }
+
+        val top2Checklists: List<RecentActivityItem> = filteredChecklists
+            .sortedWith(
+                compareByDescending<com.cash.guide.data.db.ChecklistWithItems> {
+                    it.items.isNotEmpty() && it.items.any { item -> !item.isChecked }
+                }.thenByDescending { it.checklist.updatedAtEpochMs }
+            )
+            .take(2)
+            .map { RecentActivityItem.ChecklistActivity(it) }
+
+        val top2Notes: List<RecentActivityItem> = filteredNotes
+            .sortedByDescending { it.updatedAtEpochMs }
+            .take(2)
+            .map { RecentActivityItem.NoteActivity(it) }
+
+        val top6RecentActivity: List<RecentActivityItem> = (top2Calcs + top2Checklists + top2Notes)
+            .sortedByDescending { it.updatedAtEpochMs }
+
+        // Items for Aujourd'hui not already in top6RecentActivity
+        val top6Ids = top6RecentActivity.map { it.id }.toSet()
+        val nowMs = System.currentTimeMillis()
+
+        val todayRemainingCalcs: List<RecentActivityItem> = filteredCalcs
+            .filter { it.calculation.id !in top6Ids && isSameDay(it.calculation.updatedAtEpochMs, nowMs) }
+            .sortedByDescending { it.calculation.updatedAtEpochMs }
+            .take(2)
+            .map { RecentActivityItem.CalculationActivity(it) }
+
+        val todayRemainingChecklists: List<RecentActivityItem> = filteredChecklists
+            .filter { it.checklist.id !in top6Ids && isSameDay(it.checklist.updatedAtEpochMs, nowMs) }
+            .sortedWith(
+                compareByDescending<com.cash.guide.data.db.ChecklistWithItems> {
+                    it.items.isNotEmpty() && it.items.any { item -> !item.isChecked }
+                }.thenByDescending { it.checklist.updatedAtEpochMs }
+            )
+            .take(2)
+            .map { RecentActivityItem.ChecklistActivity(it) }
+
+        val todayRemainingNotes: List<RecentActivityItem> = filteredNotes
+            .filter { it.id !in top6Ids && isSameDay(it.updatedAtEpochMs, nowMs) }
+            .sortedByDescending { it.updatedAtEpochMs }
+            .take(2)
+            .map { RecentActivityItem.NoteActivity(it) }
+
+        val todayActivityItems: List<RecentActivityItem> = (todayRemainingCalcs + todayRemainingChecklists + todayRemainingNotes)
+            .sortedByDescending { it.updatedAtEpochMs }
+
         _uiState.update {
             it.copy(
                 recentDateGroups = recentCalcGroups,
                 filteredDateGroups = filteredCalcGroups,
                 recentActivityGroups = recentActivityGroups,
                 filteredActivityGroups = filteredActivityGroups,
+                recentActivityItems = top6RecentActivity,
+                todayActivityItems = todayActivityItems,
                 favoriteCalculations = favorites,
                 unpaidTotalCentimes = unpaidTotal,
                 monthTotalCentimes = monthTotal,
@@ -300,44 +354,69 @@ class HomeViewModel(
         }
     }
 
+    fun promptDeleteActivity(activity: RecentActivityItem) {
+        _uiState.update {
+            it.copy(
+                selectedCalculationForAction = null,
+                selectedActivityForAction = null,
+                activityToDelete = activity
+            )
+        }
+    }
+
     fun requestDelete(calc: CalculationWithItems) {
         _uiState.update {
             it.copy(
                 selectedCalculationForAction = null,
                 selectedActivityForAction = null,
-                calculationToDelete = calc
+                calculationToDelete = calc,
+                activityToDelete = RecentActivityItem.CalculationActivity(calc)
             )
         }
     }
 
-    fun deleteActivityItem(activity: RecentActivityItem) {
-        viewModelScope.launch {
-            when (activity) {
-                is RecentActivityItem.CalculationActivity -> {
-                    repository.deleteCalculation(activity.id)
-                    lastContext?.let { CreditReminderScheduler.cancelReminder(it, activity.id) }
-                }
-                is RecentActivityItem.ChecklistActivity -> {
-                    checklistRepository?.deleteChecklist(activity.id)
-                }
-                is RecentActivityItem.NoteActivity -> {
-                    noteRepository?.deleteNote(activity.id)
-                }
-            }
-            _uiState.update { it.copy(selectedActivityForAction = null) }
+    fun dismissDeleteDialog() {
+        _uiState.update {
+            it.copy(
+                calculationToDelete = null,
+                activityToDelete = null
+            )
         }
     }
 
-    fun dismissDeleteDialog() {
-        _uiState.update { it.copy(calculationToDelete = null) }
+    fun confirmDelete() {
+        confirmDeleteActivity()
     }
 
-    fun confirmDelete() {
-        val toDelete = _uiState.value.calculationToDelete ?: return
+    fun confirmDeleteActivity() {
+        val activity = _uiState.value.activityToDelete
+        val calc = _uiState.value.calculationToDelete
         viewModelScope.launch {
-            repository.deleteCalculation(toDelete.calculation.id)
-            lastContext?.let { CreditReminderScheduler.cancelReminder(it, toDelete.calculation.id) }
-            _uiState.update { it.copy(calculationToDelete = null) }
+            if (activity != null) {
+                when (activity) {
+                    is RecentActivityItem.CalculationActivity -> {
+                        repository.deleteCalculation(activity.id)
+                        lastContext?.let { CreditReminderScheduler.cancelReminder(it, activity.id) }
+                    }
+                    is RecentActivityItem.ChecklistActivity -> {
+                        checklistRepository?.deleteChecklist(activity.id)
+                    }
+                    is RecentActivityItem.NoteActivity -> {
+                        noteRepository?.deleteNote(activity.id)
+                    }
+                }
+            } else if (calc != null) {
+                repository.deleteCalculation(calc.calculation.id)
+                lastContext?.let { CreditReminderScheduler.cancelReminder(it, calc.calculation.id) }
+            }
+            _uiState.update {
+                it.copy(
+                    calculationToDelete = null,
+                    activityToDelete = null,
+                    selectedActivityForAction = null,
+                    selectedCalculationForAction = null
+                )
+            }
         }
     }
 

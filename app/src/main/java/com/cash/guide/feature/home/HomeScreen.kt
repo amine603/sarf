@@ -91,11 +91,14 @@ import com.cash.guide.ui.notebook.HighlighterYellow
 import com.cash.guide.ui.notebook.HighlighterBlue
 import com.cash.guide.ui.notebook.NotebookDateGroupBlock
 import com.cash.guide.ui.notebook.NotebookActivityDateGroupBlock
+import com.cash.guide.ui.notebook.NotebookActivityTimelineBlock
+import com.cash.guide.ui.notebook.NotebookActivityActionsSheet
 import com.cash.guide.ui.notebook.NotebookSpeedDialFab
 import com.cash.guide.ui.notebook.isArabicScript
 import com.cash.guide.ui.notebook.NotebookSearchField
 import com.cash.guide.ui.notebook.NotebookSectionBand
-import com.cash.guide.ui.notebook.NotebookSegmentedControl
+import com.cash.guide.domain.ChecklistShareHelper
+import com.cash.guide.domain.NoteShareHelper
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -228,72 +231,6 @@ fun HomeScreen(
                 isDateFiltered = state.selectedDateEpoch != null
             )
 
-            // Line 4: 1 rule spacer
-            Spacer(modifier = Modifier.height(JournalRuleSpacing))
-
-            // Notebook Filter Tabs Row (29dp)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(JournalRuleSpacing)
-                    .padding(horizontal = 14.dp),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                NotebookSegmentedControl(
-                    options = listOf(
-                        PaymentFilter.ALL to stringResource(R.string.filter_all),
-                        PaymentFilter.UNPAID to stringResource(R.string.filter_unpaid),
-                        PaymentFilter.PAID to stringResource(R.string.filter_paid)
-                    ),
-                    selectedOption = state.selectedPaymentFilter,
-                    onSelectOption = { viewModel.setPaymentFilter(it) }
-                )
-            }
-
-            // If filtering by UNPAID, show the total debt banner (29dp)
-            if (state.selectedPaymentFilter == PaymentFilter.UNPAID) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(JournalRuleSpacing)
-                        .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(27.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .border(1.dp, androidx.compose.ui.graphics.Color(0xFFF59E0B).copy(alpha = 0.55f), RoundedCornerShape(6.dp))
-                            .background(androidx.compose.ui.graphics.Color(0xFFFFFBEB))
-                            .padding(horizontal = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        val bannerTitle = stringResource(R.string.total_unpaid_banner)
-                        Text(
-                            text = bannerTitle,
-                            fontFamily = resolveJournalFont(bannerTitle, isRtl),
-                            fontSize = if (isRtl) 13.sp else 13.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = androidx.compose.ui.graphics.Color(0xFFB45309),
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-
-                        val totalStr = JournalLedgerManager.formatTotal(state.unpaidTotalCentimes, MoneyUnit.DIRHAM)
-                        val dirhamSuffix = stringResource(R.string.currency_dirham)
-                        Text(
-                            text = "$totalStr $dirhamSuffix",
-                            fontFamily = PatrickHandFamily,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = androidx.compose.ui.graphics.Color(0xFFB45309),
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    }
-                }
-            }
-
             // 1 rule spacer before Activité récente section header
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
@@ -327,33 +264,55 @@ fun HomeScreen(
             // 1 rule spacer before activities list
             Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-            // Recent activities list directly under spacer
-            if (!state.isActivityEmpty) {
-                state.displayActivityGroups.forEachIndexed { groupIndex, group ->
-                    NotebookActivityDateGroupBlock(
-                        header = group.header,
-                        items = group.items,
+            // Recent activities list
+            if (state.isFiltering) {
+                // When actively searching or filtering, show filtered groups
+                if (state.displayActivityGroups.isNotEmpty()) {
+                    state.displayActivityGroups.forEachIndexed { groupIndex, group ->
+                        NotebookActivityDateGroupBlock(
+                            header = group.header,
+                            items = group.items,
+                            onOpenCalculation = onOpenCalculation,
+                            onOpenChecklist = onOpenChecklistWithId,
+                            onOpenNote = onOpenNote,
+                            onMoreClick = { item -> viewModel.selectActivityForAction(item) },
+                            searchQuery = state.searchQuery
+                        )
+                        if (groupIndex < state.displayActivityGroups.lastIndex) {
+                            Spacer(modifier = Modifier.height(JournalRuleSpacing))
+                        }
+                    }
+                }
+            } else if (!state.isActivityEmpty) {
+                // Section 1: Activités récentes - Top 6 items (2 Notes, 2 Calculs, 2 Checklists) directly without date tag
+                if (state.recentActivityItems.isNotEmpty()) {
+                    NotebookActivityTimelineBlock(
+                        items = state.recentActivityItems,
                         onOpenCalculation = onOpenCalculation,
                         onOpenChecklist = onOpenChecklistWithId,
                         onOpenNote = onOpenNote,
-                        onMoreClick = { item ->
-                            if (item is RecentActivityItem.CalculationActivity) {
-                                viewModel.selectCalculationForAction(item.calculationWithItems)
-                            } else {
-                                viewModel.deleteActivityItem(item)
-                            }
-                        },
+                        onMoreClick = { item -> viewModel.selectActivityForAction(item) },
                         searchQuery = state.searchQuery
                     )
+                }
 
-                    // 1 empty notebook line between date groups
-                    if (groupIndex < state.displayActivityGroups.lastIndex) {
-                        Spacer(modifier = Modifier.height(JournalRuleSpacing))
-                    }
+                // Section 2: Aujourd'hui (items from today not in recent top 6)
+                if (state.todayActivityItems.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(JournalRuleSpacing))
+
+                    NotebookActivityDateGroupBlock(
+                        header = stringResource(R.string.date_today),
+                        items = state.todayActivityItems,
+                        onOpenCalculation = onOpenCalculation,
+                        onOpenChecklist = onOpenChecklistWithId,
+                        onOpenNote = onOpenNote,
+                        onMoreClick = { item -> viewModel.selectActivityForAction(item) },
+                        searchQuery = state.searchQuery
+                    )
                 }
 
                 // "Voir tout" under the content on the right (with 1 skipped line before it)
-                if (state.displayDateGroups.isNotEmpty()) {
+                if (state.displayActivityGroups.isNotEmpty() || state.recentActivityItems.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
                     Row(
@@ -482,15 +441,15 @@ fun HomeScreen(
                 onDismiss = { viewModel.setFabExpanded(false) },
                 onNewCalcul = {
                     viewModel.setFabExpanded(false)
-                    showNewCalcSetupSheet = true
+                    onOpenCalculs()
                 },
                 onNewChecklist = {
                     viewModel.setFabExpanded(false)
-                    onNewChecklist()
+                    onOpenChecklist()
                 },
                 onNewNote = {
                     viewModel.setFabExpanded(false)
-                    onNewNote()
+                    onOpenNotes()
                 }
             )
         }
@@ -619,6 +578,53 @@ fun HomeScreen(
             )
         }
 
+        // Action Sheet for Checklist and Note activities
+        val selectedAct = state.selectedActivityForAction
+        if (selectedAct != null && selectedAct !is RecentActivityItem.CalculationActivity) {
+            val actTitle = when (selectedAct) {
+                is RecentActivityItem.ChecklistActivity -> selectedAct.checklistWithItems.checklist.title
+                is RecentActivityItem.NoteActivity -> selectedAct.note.title
+                else -> ""
+            }
+            NotebookActivityActionsSheet(
+                title = actTitle,
+                onOpen = {
+                    when (selectedAct) {
+                        is RecentActivityItem.ChecklistActivity -> onOpenChecklistWithId(selectedAct.checklistWithItems.checklist.id)
+                        is RecentActivityItem.NoteActivity -> onOpenNote(selectedAct.note.id)
+                        else -> Unit
+                    }
+                    viewModel.selectActivityForAction(null)
+                },
+                onShare = {
+                    coroutineScope.launch {
+                        when (selectedAct) {
+                            is RecentActivityItem.ChecklistActivity -> {
+                                ChecklistShareHelper.shareAsImage(
+                                    context = context,
+                                    checklistId = selectedAct.checklistWithItems.checklist.id,
+                                    title = selectedAct.checklistWithItems.checklist.title,
+                                    items = selectedAct.checklistWithItems.items,
+                                    isRtl = isRtl
+                                )
+                            }
+                            is RecentActivityItem.NoteActivity -> {
+                                NoteShareHelper.shareAsImage(context, selectedAct.note, isRtl)
+                            }
+                            else -> Unit
+                        }
+                    }
+                    viewModel.selectActivityForAction(null)
+                },
+                onDelete = {
+                    viewModel.promptDeleteActivity(selectedAct)
+                },
+                onDismiss = {
+                    viewModel.selectActivityForAction(null)
+                }
+            )
+        }
+
         // Assign to Group Dialog
         calcToAssignToGroup?.let { calc ->
             AssignToGroupDialog(
@@ -675,7 +681,7 @@ fun HomeScreen(
         }
 
         // Delete Confirmation Dialog
-        if (state.calculationToDelete != null) {
+        if (state.calculationToDelete != null || state.activityToDelete != null) {
             DeleteConfirmationDialog(
                 onConfirmDelete = { viewModel.confirmDelete() },
                 onDismiss = { viewModel.dismissDeleteDialog() }

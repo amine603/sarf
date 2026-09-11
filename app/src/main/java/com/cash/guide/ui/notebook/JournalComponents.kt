@@ -4470,10 +4470,11 @@ fun NotebookActivityRow(
             ) {
                 when (activity) {
                     is RecentActivityItem.CalculationActivity -> {
-                        Text(
-                            text = "🧮",
-                            fontSize = 11.5.sp,
-                            modifier = Modifier.offset(y = (-0.5).dp)
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Calculator,
+                            contentDescription = null,
+                            tint = JournalWritingInk,
+                            size = 12.dp
                         )
                     }
                     is RecentActivityItem.ChecklistActivity -> {
@@ -4680,6 +4681,63 @@ fun NotebookActivityDateGroupBlock(
 }
 
 /**
+ * Unified Activity Timeline Block directly without a date band header.
+ * Directly renders items connected by a subtle vertical guide line on the left.
+ */
+@Composable
+fun NotebookActivityTimelineBlock(
+    items: List<RecentActivityItem>,
+    onOpenCalculation: (String) -> Unit,
+    onOpenChecklist: (String) -> Unit,
+    onOpenNote: (String) -> Unit,
+    onMoreClick: (RecentActivityItem) -> Unit,
+    searchQuery: String = "",
+    modifier: Modifier = Modifier
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .drawBehind {
+                if (items.size > 1) {
+                    val strokeW = 1.4.dp.toPx()
+                    val guideX = if (isRtl) size.width - 17.5.dp.toPx() else 17.5.dp.toPx()
+                    val rowHeightPx = JournalRuleSpacing.toPx()
+                    val dotCenterY = 24.5.dp.toPx()
+                    val startY = dotCenterY
+                    val endY = (items.size - 1) * rowHeightPx + dotCenterY
+
+                    drawLine(
+                        color = JournalRule.copy(alpha = 0.55f),
+                        start = Offset(guideX, startY),
+                        end = Offset(guideX, endY),
+                        strokeWidth = strokeW,
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
+    ) {
+        items.forEach { activity ->
+            NotebookActivityRow(
+                activity = activity,
+                searchQuery = searchQuery,
+                onClick = {
+                    when (activity) {
+                        is RecentActivityItem.CalculationActivity -> onOpenCalculation(activity.id)
+                        is RecentActivityItem.ChecklistActivity -> onOpenChecklist(activity.id)
+                        is RecentActivityItem.NoteActivity -> onOpenNote(activity.id)
+                    }
+                },
+                onMoreClick = { onMoreClick(activity) }
+            )
+        }
+    }
+}
+
+
+/**
  * Speed Dial Floating Action Button for Home screen matching mockups 3, 4, 5.
  * Features a 52dp pink circular button with black '+'.
  * Expands into a stack of cream capsules: Note, Checklist, Calcul.
@@ -4763,10 +4821,11 @@ fun NotebookSpeedDialFab(
                 SpeedDialCapsuleItem(
                     title = stringResource(R.string.speed_dial_calcul),
                     icon = {
-                        Text(
-                            text = "🧮",
-                            fontSize = 16.sp,
-                            modifier = Modifier.offset(y = (-0.5).dp)
+                        HisabiSketchIcon(
+                            symbol = HisabiSymbol.Calculator,
+                            contentDescription = null,
+                            tint = JournalWritingInk,
+                            size = 18.dp
                         )
                     },
                     onClick = onNewCalcul

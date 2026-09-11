@@ -384,3 +384,121 @@ private fun ActionSheetRuledItem(
         )
     }
 }
+
+/**
+ * Ruled Notebook Action Sheet for Checklists and Notes.
+ * Displays Open, Share, and Delete options.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NotebookActivityActionsSheet(
+    title: String,
+    onOpen: () -> Unit,
+    onShare: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = JournalPaper,
+        scrimColor = Color.Black.copy(alpha = 0.35f),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        dragHandle = null
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+        ) {
+            // Row 1: Header - Title + Close button sitting on ruled line
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(ActionSheetRuleSpacing)
+                    .drawBehind {
+                        val strokeW = 1.0.dp.toPx()
+                        val y = size.height
+                        drawLine(
+                            color = JournalRule.copy(alpha = 0.65f),
+                            start = Offset(0f, y),
+                            end = Offset(size.width, y),
+                            strokeWidth = strokeW
+                        )
+                    }
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = title.ifBlank { "—" },
+                    fontFamily = resolveJournalFont(title, isRtl),
+                    fontSize = if (isArabicScript(title) || isRtl) 16.sp else 16.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = JournalWritingInk,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(platformStyle = NoFontPadding),
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .journalBaselineOnRule(lineHeight = ActionSheetRuleSpacing)
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .clickable(role = Role.Button, onClick = onDismiss)
+                        .offset(y = (-7).dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Close,
+                        contentDescription = null,
+                        tint = JournalMutedInk,
+                        size = 14.dp
+                    )
+                }
+            }
+
+            // Row 2: Action Ouvrir
+            ActionSheetRuledItem(
+                label = stringResource(R.string.action_edit),
+                symbol = HisabiSymbol.Pencil,
+                badgeColor = Color(0xFFE0F2FE),
+                onClick = {
+                    onDismiss()
+                    onOpen()
+                }
+            )
+
+            // Row 3: Action Partager
+            ActionSheetRuledItem(
+                label = stringResource(R.string.action_share_image),
+                symbol = HisabiSymbol.Share,
+                badgeColor = Color(0xFFFEF3C7),
+                onClick = {
+                    onDismiss()
+                    onShare()
+                }
+            )
+
+            // Row 4: Action Supprimer (Destructive)
+            ActionSheetRuledItem(
+                label = stringResource(R.string.action_delete),
+                symbol = HisabiSymbol.Trash,
+                badgeColor = Color(0xFFFEE2E2),
+                isDestructive = true,
+                onClick = {
+                    onDismiss()
+                    onDelete()
+                }
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+        }
+    }
+}
+

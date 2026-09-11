@@ -16,6 +16,8 @@ data class HomeUiState(
     val filteredDateGroups: List<CalculationDateGroup> = emptyList(),
     val recentActivityGroups: List<ActivityDateGroup> = emptyList(),
     val filteredActivityGroups: List<ActivityDateGroup> = emptyList(),
+    val recentActivityItems: List<RecentActivityItem> = emptyList(),
+    val todayActivityItems: List<RecentActivityItem> = emptyList(),
     val favoriteCalculations: List<CalculationWithItems> = emptyList(),
     val pinnedCalculationIds: Set<String> = emptySet(),
     val searchQuery: String = "",
@@ -27,6 +29,7 @@ data class HomeUiState(
     val selectedCalculationForAction: CalculationWithItems? = null,
     val selectedActivityForAction: RecentActivityItem? = null,
     val calculationToDelete: CalculationWithItems? = null,
+    val activityToDelete: RecentActivityItem? = null,
     val isFabExpanded: Boolean = false,
     val userName: String = "Youssef"
 ) {
@@ -40,8 +43,8 @@ data class HomeUiState(
         get() = if (isFiltering) filteredActivityGroups else recentActivityGroups
 
     val isEmpty: Boolean
-        get() = !isLoading && displayActivityGroups.isEmpty() && displayDateGroups.isEmpty()
+        get() = !isLoading && recentActivityItems.isEmpty() && todayActivityItems.isEmpty() && displayActivityGroups.isEmpty()
 
     val isActivityEmpty: Boolean
-        get() = !isLoading && displayActivityGroups.isEmpty()
+        get() = !isLoading && recentActivityItems.isEmpty() && todayActivityItems.isEmpty() && displayActivityGroups.isEmpty()
 }
