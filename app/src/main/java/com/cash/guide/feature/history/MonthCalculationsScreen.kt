@@ -50,6 +50,7 @@ import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.journalBaselineOnRule
+import com.cash.guide.ui.notebook.journalVisualOnRule
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -129,7 +130,7 @@ fun MonthCalculationsScreen(
                     contentDescription = stringResource(R.string.cd_back),
                     tint = JournalInk,
                     size = 20.dp,
-                    modifier = Modifier.offset(y = (-4.5).dp)
+                    modifier = Modifier.journalVisualOnRule(gapAboveRule = 2.dp)
                 )
             }
 

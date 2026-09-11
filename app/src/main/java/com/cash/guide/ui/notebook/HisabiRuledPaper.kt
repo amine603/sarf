@@ -94,6 +94,26 @@ fun Modifier.baselineOnPaperRule(): Modifier = journalBaselineOnRule()
 fun Modifier.editableTextOnPaperRules(): Modifier = journalBaselineOnRule()
 
 /**
+ * Places a non-text visual (icon, bullet, emoji, sketch) in one notebook slot
+ * with its visual bottom resting just above the rule. This is the companion to
+ * [journalBaselineOnRule] and avoids screen-specific `offset(y = …)` fixes.
+ */
+fun Modifier.journalVisualOnRule(
+    lineHeight: Dp = JournalRuleSpacing,
+    gapAboveRule: Dp = 2.dp
+): Modifier = this.layout { measurable, constraints ->
+    val placeable = measurable.measure(
+        constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity)
+    )
+    val rowHeight = lineHeight.roundToPx()
+    val yOffset = (rowHeight - gapAboveRule.roundToPx() - placeable.height)
+        .coerceAtLeast(0)
+    layout(placeable.width, rowHeight) {
+        placeable.placeRelative(0, yOffset)
+    }
+}
+
+/**
  * Aligns single-line or multi-line text (up to 2 lines) directly onto the 29dp notebook rules.
  * - Line 1 FirstBaseline sits on Rule 1 (lineHeight = 29dp).
  * - Line 2 LastBaseline sits on Rule 2 (lineHeight * 2 = 58dp).

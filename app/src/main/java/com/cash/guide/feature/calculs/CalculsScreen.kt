@@ -60,6 +60,7 @@ import com.cash.guide.ui.notebook.NoFontPadding
 import com.cash.guide.ui.notebook.NotebookDateGroupBlock
 import com.cash.guide.ui.notebook.NotebookHubActionCard
 import com.cash.guide.ui.notebook.NotebookSearchField
+import com.cash.guide.ui.notebook.NotebookSectionBand
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.SavedCalculationActionsSheet
 import com.cash.guide.ui.notebook.TajawalFamily
@@ -252,31 +253,11 @@ fun CalculsScreen(
                 Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
                 // Line 9: Section header: "Calculs récents" with soft yellow highlighter pill
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(JournalRuleSpacing)
-                        .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val recentTitle = stringResource(R.string.home_recent_title)
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(HighlighterYellow.copy(alpha = 0.50f))
-                            .padding(horizontal = 10.dp, vertical = 2.5.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = recentTitle,
-                            fontFamily = resolveJournalFont(recentTitle, isRtl),
-                            fontSize = if (isArabicScript(recentTitle) || isRtl) 15.sp else 15.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = JournalWritingInk,
-                            style = TextStyle(platformStyle = NoFontPadding)
-                        )
-                    }
-                }
+                NotebookSectionBand(
+                    title = stringResource(R.string.home_recent_title),
+                    highlightColor = HighlighterYellow,
+                    isCentered = false
+                )
 
                 // Line 10: 1 rule spacer before list
                 Spacer(modifier = Modifier.height(JournalRuleSpacing))

@@ -76,6 +76,7 @@ import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.NotebookMetrics
 import com.cash.guide.ui.notebook.journalBaselineOnRule
+import com.cash.guide.ui.notebook.journalVisualOnRule
 import com.cash.guide.ui.notebook.resolveJournalFont
 import com.cash.guide.ui.notebook.isArabicScript
 
@@ -341,8 +342,8 @@ private fun NotebookGroupRow(
                 // Sketched folder badge with group highlight tint
                 Box(
                     modifier = Modifier
+                        .journalVisualOnRule(gapAboveRule = 2.dp)
                         .size(24.dp)
-                        .offset(y = (-2.5).dp)
                         .clip(RoundedCornerShape(6.dp))
                         .background(groupColor.copy(alpha = 0.45f)),
                     contentAlignment = Alignment.Center

@@ -66,6 +66,7 @@ import com.cash.guide.ui.notebook.NotebookSegmentedControl
 import com.cash.guide.ui.notebook.PatrickHandFamily
 import com.cash.guide.ui.notebook.TajawalFamily
 import com.cash.guide.ui.notebook.journalBaselineOnRule
+import com.cash.guide.ui.notebook.journalVisualOnRule
 import com.cash.guide.ui.notebook.NotebookMetrics
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -256,8 +257,8 @@ fun SettingsScreen(
                     ) {
                         Canvas(
                             modifier = Modifier
-                                .size(7.5.dp)
-                                .offset(y = (-2.5).dp)
+                                        .journalVisualOnRule(gapAboveRule = 2.dp)
+                                        .size(7.5.dp)
                         ) {
                             drawCircle(color = Color(0xFFE27B97)) // Soft Rose Pink
                         }
@@ -331,8 +332,8 @@ fun SettingsScreen(
                     ) {
                         Canvas(
                             modifier = Modifier
-                                .size(7.5.dp)
-                                .offset(y = (-2.5).dp)
+                                    .journalVisualOnRule(gapAboveRule = 2.dp)
+                                    .size(7.5.dp)
                         ) {
                             drawCircle(color = Color(0xFF5B9EC9)) // Soft Sky Blue
                         }
@@ -409,8 +410,8 @@ fun SettingsScreen(
                     ) {
                         Canvas(
                             modifier = Modifier
+                                .journalVisualOnRule(gapAboveRule = 2.dp)
                                 .size(7.5.dp)
-                                .offset(y = (-2.5).dp)
                         ) {
                             drawCircle(color = Color(0xFFE27B97)) // Soft Rose Pink
                         }
@@ -497,8 +498,8 @@ fun SettingsScreen(
                             ) {
                                 Canvas(
                                     modifier = Modifier
-                                        .size(7.5.dp)
-                                        .offset(y = (-2.5).dp)
+                                .journalVisualOnRule(gapAboveRule = 2.dp)
+                                .size(7.5.dp)
                                 ) {
                                     drawCircle(color = Color(0xFF5B9EC9))
                                 }
@@ -564,8 +565,8 @@ fun SettingsScreen(
                         ) {
                             Canvas(
                                 modifier = Modifier
-                                    .size(7.5.dp)
-                                    .offset(y = (-2.5).dp)
+                                .journalVisualOnRule(gapAboveRule = 2.dp)
+                                .size(7.5.dp)
                             ) {
                                 drawCircle(color = Color(0xFFE5A93C))
                             }
@@ -644,8 +645,8 @@ fun SettingsScreen(
                     ) {
                         Canvas(
                             modifier = Modifier
+                                .journalVisualOnRule(gapAboveRule = 2.dp)
                                 .size(7.5.dp)
-                                .offset(y = (-2.5).dp)
                         ) {
                             drawCircle(color = Color(0xFF7FA85B)) // Soft Sage Green
                         }
@@ -925,8 +926,8 @@ private fun JournalActionRow(
             ) {
                 Canvas(
                     modifier = Modifier
+                        .journalVisualOnRule(gapAboveRule = 2.dp)
                         .size(7.5.dp)
-                        .offset(y = (-2.5).dp)
                 ) {
                     drawCircle(color = bulletColor)
                 }

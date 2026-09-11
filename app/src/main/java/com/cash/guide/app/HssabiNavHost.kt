@@ -84,6 +84,9 @@ fun HssabiNavHost(
                 },
                 onOpenStyleShowcase = { navController.navigate(AppDestination.StyleShowcase.route) },
                 onOpenCalculs = { navController.navigate(AppDestination.Calculs.route) },
+                onOpenCashRegister = { navController.navigate(AppDestination.CashRegister.route) },
+                onOpenGroups = { navController.navigate(AppDestination.Groups.route) },
+                onOpenGroup = { groupId -> navController.navigate("group/$groupId") },
                 onOpenChecklist = { navController.navigate(AppDestination.Checklist.route) },
                 onOpenChecklistWithId = { id ->
                     navController.navigate(AppDestination.ChecklistDetail.createRoute(id))

@@ -1644,44 +1644,27 @@ fun NotebookSectionBand(
     val layoutDirection = LocalLayoutDirection.current
     val isRtl = layoutDirection == LayoutDirection.Rtl
 
-    Box(
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .height(JournalRuleSpacing)
-            .drawBehind {
-                // 1. Full-width highlight filling strictly between upper and lower rules
-                drawRect(
-                    color = highlightColor.copy(alpha = 0.42f),
-                    topLeft = Offset(0f, 0f),
-                    size = Size(size.width, size.height)
-                )
-
-                // 2. Crisp boundary rule strokes matching notebook grid exactly at top and bottom
-                val strokeW = 0.6.dp.toPx()
-                val ruleColor = JournalRule.copy(alpha = 0.35f)
-                drawLine(
-                    color = ruleColor,
-                    start = Offset(0f, 0f),
-                    end = Offset(size.width, 0f),
-                    strokeWidth = strokeW
-                )
-                drawLine(
-                    color = ruleColor,
-                    start = Offset(0f, size.height),
-                    end = Offset(size.width, size.height),
-                    strokeWidth = strokeW
-                )
-            },
-        contentAlignment = if (isCentered) Alignment.Center else Alignment.CenterStart
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = if (isCentered) Arrangement.Center else Arrangement.Start
     ) {
-        Text(
-            text = if (isRtl || !isCentered) title else title.uppercase(),
-            fontFamily = resolveJournalFont(title, isRtl),
-            fontSize = if (isArabicScript(title) || isRtl) 14.sp else 14.5.sp,
-            fontWeight = FontWeight.Bold,
-            color = JournalInk,
-            style = TextStyle(platformStyle = NoFontPadding),
-            modifier = if (isCentered) Modifier else Modifier.padding(horizontal = 14.dp)
+        JournalBaselineHighlightedText(
+            text = title,
+            style = TextStyle(
+                fontFamily = resolveJournalFont(title, isRtl),
+                fontSize = if (isArabicScript(title) || isRtl) 14.sp else 14.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = JournalInk,
+                platformStyle = NoFontPadding
+            ),
+            highlighterColor = highlightColor,
+            highlighterAlpha = 0.22f,
+            horizontalPadding = 7.dp,
+            verticalPadding = 0.dp
         )
     }
 }

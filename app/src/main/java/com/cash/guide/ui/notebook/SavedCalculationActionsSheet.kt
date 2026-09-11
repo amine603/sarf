@@ -16,11 +16,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import com.cash.guide.data.db.CalculationWithItems
+import java.text.SimpleDateFormat
+import java.util.Date
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -501,4 +507,216 @@ fun NotebookActivityActionsSheet(
         }
     }
 }
+
+/**
+ * Bottom Sheet displaying upcoming and active credit reminders and due dates.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NotebookRemindersSheet(
+    reminders: List<CalculationWithItems>,
+    onOpenCalculation: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    val context = LocalContext.current
+    val dateFormat = remember(context) {
+        val locale = context.resources.configuration.locales[0]
+        SimpleDateFormat("d MMM", locale)
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = JournalPaper,
+        scrimColor = Color.Black.copy(alpha = 0.35f),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        dragHandle = null
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+        ) {
+            // Row 1: Header - Blue highlighted title + Close button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(ActionSheetRuleSpacing)
+                    .drawBehind {
+                        val strokeW = 1.0.dp.toPx()
+                        val y = size.height
+                        drawLine(
+                            color = JournalRule.copy(alpha = 0.65f),
+                            start = Offset(0f, y),
+                            end = Offset(size.width, y),
+                            strokeWidth = strokeW
+                        )
+                    }
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                val sheetTitle = stringResource(R.string.reminders_sheet_title)
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(Color(0xFF3B82F6), CircleShape)
+                            .journalVisualOnRule(gapAboveRule = 5.dp)
+                    )
+                    JournalBaselineHighlightedText(
+                        text = sheetTitle,
+                        style = TextStyle(
+                            fontFamily = resolveJournalFont(sheetTitle, isRtl),
+                            fontSize = if (isArabicScript(sheetTitle) || isRtl) 16.sp else 16.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = JournalWritingInk,
+                            platformStyle = NoFontPadding
+                        ),
+                        highlighterColor = Color(0xFF3B82F6),
+                        highlighterAlpha = 0.22f,
+                        horizontalPadding = 6.dp,
+                        verticalPadding = 0.dp
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .journalVisualOnRule(gapAboveRule = 4.dp)
+                        .size(24.dp)
+                        .clickable(role = Role.Button, onClick = onDismiss),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "✕",
+                        fontSize = 15.sp,
+                        color = JournalMutedInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+            }
+
+            if (reminders.isEmpty()) {
+                // Empty state row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ActionSheetRuleSpacing * 2)
+                        .padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.reminders_empty),
+                        fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = JournalMutedInk,
+                        style = TextStyle(platformStyle = NoFontPadding)
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    items(reminders, key = { it.calculation.id }) { calc ->
+                        val calcTitle = calc.calculation.title.ifBlank { stringResource(R.string.editor_new_title) }
+                        val dueDateStr = calc.calculation.dueDateEpochMs?.let { dateFormat.format(Date(it)) }
+                        val totalCentimes = calc.totalCentimes
+                        val totalFormatted = if (totalCentimes % 100 == 0L) {
+                            "${totalCentimes / 100} ${calc.calculation.currency}"
+                        } else {
+                            String.format(java.util.Locale.US, "%.2f %s", totalCentimes / 100.0, calc.calculation.currency)
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(ActionSheetRuleSpacing)
+                                .clickable(
+                                    role = Role.Button,
+                                    onClick = {
+                                        onDismiss()
+                                        onOpenCalculation(calc.calculation.id)
+                                    }
+                                )
+                                .drawBehind {
+                                    val strokeW = 0.8.dp.toPx()
+                                    val y = size.height
+                                    drawLine(
+                                        color = JournalRule.copy(alpha = 0.40f),
+                                        start = Offset(0f, y),
+                                        end = Offset(size.width, y),
+                                        strokeWidth = strokeW
+                                    )
+                                }
+                                .padding(horizontal = 20.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.weight(1f, fill = false)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(Color(0xFF3B82F6), CircleShape)
+                                )
+                                Text(
+                                    text = calcTitle,
+                                    fontFamily = resolveJournalFont(calcTitle, isRtl),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = JournalWritingInk,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
+                                if (dueDateStr != null) {
+                                    Text(
+                                        text = "($dueDateStr)",
+                                        fontFamily = PatrickHandFamily,
+                                        fontSize = 13.sp,
+                                        color = JournalMutedInk,
+                                        style = TextStyle(platformStyle = NoFontPadding)
+                                    )
+                                }
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                if (calc.calculation.reminderEnabled) {
+                                    Text(
+                                        text = "🔔",
+                                        fontSize = 12.sp,
+                                        style = TextStyle(platformStyle = NoFontPadding)
+                                    )
+                                }
+                                Text(
+                                    text = totalFormatted,
+                                    fontFamily = PatrickHandFamily,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = JournalWritingInk,
+                                    style = TextStyle(platformStyle = NoFontPadding)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 

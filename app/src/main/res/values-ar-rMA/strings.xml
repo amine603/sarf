@@ -13,6 +13,12 @@
     <string name="home_new_calculation">حساب جديد</string>
     <string name="home_recent_title">الحسابات الأخيرة</string>
     <string name="home_recent_activity_title">النشاط الأخير</string>
+    <string name="home_category_calculs">حسابات</string>
+    <string name="home_category_notes">نوطات</string>
+    <string name="home_category_checklists">تشيك لست</string>
+    <string name="home_category_rappels">تذكيرات</string>
+    <string name="reminders_sheet_title">التذكيرات والأجال</string>
+    <string name="reminders_empty">ما كاين حتى تذكير مبرمج</string>
     <string name="speed_dial_note">نوت</string>
     <string name="speed_dial_checklist">تشيك لست</string>
     <string name="speed_dial_calcul">حساب</string>

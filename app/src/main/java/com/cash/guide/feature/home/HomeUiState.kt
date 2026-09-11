@@ -1,6 +1,7 @@
 package com.cash.guide.feature.home
 
 import com.cash.guide.data.db.CalculationWithItems
+import com.cash.guide.data.db.CalculationGroupWithCalculations
 import com.cash.guide.domain.ActivityDateGroup
 import com.cash.guide.domain.CalculationDateGroup
 import com.cash.guide.domain.RecentActivityItem
@@ -19,6 +20,8 @@ data class HomeUiState(
     val recentActivityItems: List<RecentActivityItem> = emptyList(),
     val todayActivityItems: List<RecentActivityItem> = emptyList(),
     val favoriteCalculations: List<CalculationWithItems> = emptyList(),
+    val reminderCalculations: List<CalculationWithItems> = emptyList(),
+    val favoriteGroups: List<CalculationGroupWithCalculations> = emptyList(),
     val pinnedCalculationIds: Set<String> = emptySet(),
     val searchQuery: String = "",
     val selectedDateEpoch: Long? = null,

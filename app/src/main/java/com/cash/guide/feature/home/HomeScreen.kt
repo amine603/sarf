@@ -17,12 +17,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.text.style.TextOverflow
+import com.cash.guide.ui.notebook.NotebookRemindersSheet
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -127,6 +132,8 @@ fun HomeScreen(
     onOpenStyleShowcase: () -> Unit = {},
     onOpenCalculs: () -> Unit = {},
     onOpenCashRegister: () -> Unit = {},
+    onOpenGroups: () -> Unit = {},
+    onOpenGroup: (String) -> Unit = {},
     onOpenChecklist: () -> Unit = {},
     onOpenChecklistWithId: (String) -> Unit = {},
     onOpenNotes: () -> Unit = {},
@@ -144,6 +151,7 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var showMonthPicker by remember { mutableStateOf(false) }
+    var showRemindersSheet by remember { mutableStateOf(false) }
     var showNewCalcSetupSheet by remember { mutableStateOf(false) }
     var calcToAssignToGroup by remember { mutableStateOf<com.cash.guide.data.db.CalculationWithItems?>(null) }
     var creditDueDateCalc by remember { mutableStateOf<com.cash.guide.data.db.CalculationWithItems?>(null) }
@@ -229,6 +237,31 @@ fun HomeScreen(
                 onQueryChange = { query -> viewModel.updateSearchQuery(query) },
                 onOpenCalendar = { showMonthPicker = true },
                 isDateFiltered = state.selectedDateEpoch != null
+            )
+
+            // Line 4: 4 Category quick cards directly under the search bar
+            HomeCategoryCardsRow(
+                isRtl = isRtl,
+                onCalculs = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    onOpenCalculs()
+                },
+                onNotes = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    onOpenNotes()
+                },
+                onChecklists = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    onOpenChecklist()
+                },
+                onRappels = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    showRemindersSheet = true
+                }
             )
 
             // 1 rule spacer before Activité récente section header
@@ -712,6 +745,131 @@ fun HomeScreen(
                 }
             )
         }
+
+        // Reminders & Due Dates Bottom Sheet
+        if (showRemindersSheet) {
+            NotebookRemindersSheet(
+                reminders = state.reminderCalculations,
+                onOpenCalculation = { calcId ->
+                    showRemindersSheet = false
+                    onOpenCalculation(calcId)
+                },
+                onDismiss = { showRemindersSheet = false }
+            )
+        }
     }
 }
+
+/**
+ * 4 Category Quick Cards placed directly below the Search Bar.
+ * Fits neatly between two ruled lines (height = JournalRuleSpacing = 29dp).
+ * Features a minimalist ink outline, black text, and permanent category indicator dots on the left:
+ * - Calculs: Red / Rose
+ * - Notes: Amber / Yellow
+ * - Checklists: Emerald Green
+ * - Rappels: Soft Blue
+ */
+@Composable
+private fun HomeCategoryCardsRow(
+    isRtl: Boolean,
+    onCalculs: () -> Unit,
+    onNotes: () -> Unit,
+    onChecklists: () -> Unit,
+    onRappels: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(JournalRuleSpacing)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        CategoryQuickCard(
+            title = stringResource(R.string.home_category_calculs),
+            dotColor = Color(0xFFEF4444),
+            isRtl = isRtl,
+            onClick = onCalculs,
+            modifier = Modifier.weight(1f)
+        )
+        CategoryQuickCard(
+            title = stringResource(R.string.home_category_notes),
+            dotColor = Color(0xFFF59E0B),
+            isRtl = isRtl,
+            onClick = onNotes,
+            modifier = Modifier.weight(1f)
+        )
+        CategoryQuickCard(
+            title = stringResource(R.string.home_category_checklists),
+            dotColor = Color(0xFF10B981),
+            isRtl = isRtl,
+            onClick = onChecklists,
+            modifier = Modifier.weight(1f)
+        )
+        CategoryQuickCard(
+            title = stringResource(R.string.home_category_rappels),
+            dotColor = Color(0xFF3B82F6),
+            isRtl = isRtl,
+            onClick = onRappels,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun CategoryQuickCard(
+    title: String,
+    dotColor: Color,
+    isRtl: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .padding(vertical = 1.dp)
+            .clip(RoundedCornerShape(7.dp))
+            .border(
+                width = 0.95.dp,
+                color = JournalWritingInk.copy(alpha = 0.85f),
+                shape = RoundedCornerShape(7.dp)
+            )
+            .clickable(
+                role = Role.Button,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                // Colored dot permanently representing the category on the left
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(color = dotColor, shape = CircleShape)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = title,
+                    fontFamily = resolveJournalFont(title, isRtl),
+                    fontSize = if (isArabicScript(title) || isRtl) 11.5.sp else 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = JournalWritingInk,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    style = TextStyle(platformStyle = NoFontPadding)
+                )
+            }
+        }
+    }
+}
+
 

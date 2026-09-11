@@ -71,13 +71,22 @@ class HomeViewModel(
             val calcsFlow = repository.observeAllSaved()
             val checklistsFlow = checklistRepository?.observeAll() ?: flowOf(emptyList())
             val notesFlow = noteRepository?.observeAll() ?: flowOf(emptyList())
+            val groupsFlow = repository.observeAllGroupsWithCalculations()
 
-            combine(calcsFlow, checklistsFlow, notesFlow) { calcs, checklists, notes ->
-                Triple(calcs, checklists, notes)
-            }.collect { (calcs, checklists, notes) ->
+            combine(calcsFlow, checklistsFlow, notesFlow, groupsFlow) { calcs, checklists, notes, groups ->
+                HomeSourceData(calcs, checklists, notes, groups)
+            }.collect { source ->
+                val (calcs, checklists, notes, groups) = source
                 allCalculations = calcs
                 allChecklists = checklists
                 allNotes = notes
+                _uiState.update {
+                    it.copy(
+                        favoriteGroups = groups
+                            .sortedByDescending { group -> group.group.updatedAtEpochMs }
+                            .take(2)
+                    )
+                }
                 applyFilters(context)
             }
         }
@@ -291,7 +300,7 @@ class HomeViewModel(
         val top6RecentActivity: List<RecentActivityItem> = (top2Calcs + top2Checklists + top2Notes)
             .sortedByDescending { it.updatedAtEpochMs }
 
-        // Items for Aujourd'hui not already in top6RecentActivity
+        // Items for Aujourd'hui not already in the balanced recent activity stream
         val top6Ids = top6RecentActivity.map { it.id }.toSet()
         val nowMs = System.currentTimeMillis()
 
@@ -317,8 +326,24 @@ class HomeViewModel(
             .take(2)
             .map { RecentActivityItem.NoteActivity(it) }
 
-        val todayActivityItems: List<RecentActivityItem> = (todayRemainingCalcs + todayRemainingChecklists + todayRemainingNotes)
+        val todayRemainingItems: List<RecentActivityItem> = (todayRemainingCalcs + todayRemainingChecklists + todayRemainingNotes)
             .sortedByDescending { it.updatedAtEpochMs }
+
+        // Home is a "page of the day", not a second archive. One item is offered
+        // as the continuation point and the following four become today's concise list.
+        val homeFlow = (top6RecentActivity + todayRemainingItems)
+            .distinctBy { "${it::class.simpleName}:${it.id}" }
+            .sortedByDescending { it.updatedAtEpochMs }
+        val continueItems = homeFlow.take(1)
+        val todayActivityItems = homeFlow.drop(1).take(3)
+
+        val reminders = allCalculations.filter {
+            it.calculation.reminderEnabled || it.calculation.dueDateEpochMs != null ||
+            (it.calculation.calcType == "CREDIT" && it.calculation.paymentStatus == "UNPAID")
+        }.sortedWith(
+            compareBy<CalculationWithItems> { it.calculation.dueDateEpochMs ?: Long.MAX_VALUE }
+                .thenByDescending { it.calculation.updatedAtEpochMs }
+        )
 
         _uiState.update {
             it.copy(
@@ -326,9 +351,10 @@ class HomeViewModel(
                 filteredDateGroups = filteredCalcGroups,
                 recentActivityGroups = recentActivityGroups,
                 filteredActivityGroups = filteredActivityGroups,
-                recentActivityItems = top6RecentActivity,
+                recentActivityItems = continueItems,
                 todayActivityItems = todayActivityItems,
                 favoriteCalculations = favorites,
+                reminderCalculations = reminders,
                 unpaidTotalCentimes = unpaidTotal,
                 monthTotalCentimes = monthTotal,
                 isLoading = false
@@ -430,3 +456,9 @@ class HomeViewModel(
     }
 }
 
+private data class HomeSourceData(
+    val calculations: List<CalculationWithItems>,
+    val checklists: List<ChecklistWithItems>,
+    val notes: List<NoteEntity>,
+    val groups: List<com.cash.guide.data.db.CalculationGroupWithCalculations>
+)

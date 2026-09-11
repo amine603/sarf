@@ -101,8 +101,10 @@ object HisabiMetrics {
 
 object NotebookMetrics {
     val ruleSpacing = JournalRuleSpacing // 29.dp
-    val baselineOffset = 6.2.dp
-    val baselineOffsetRtl = 7.2.dp // Calibrated specifically for Majaz on 29.dp ruled lines
+    // Text geometry is now baseline-driven. Keep both values at zero so no
+    // locale or screen can drift away from the physical notebook rule.
+    val baselineOffset = 0.dp
+    val baselineOffsetRtl = 0.dp
     val ruleStroke = 0.6.dp
     val verticalGuideThickness = 1.5.dp
 }
