@@ -2,6 +2,7 @@ package com.cash.guide.feature.note
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -86,53 +87,46 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+data class NoteColorOption(
+    val tag: String,
+    val lightColor: Color,
+    val dotColor: Color
+)
+
+val NoteColorPalette = listOf(
+    NoteColorOption("PINK", Color(0xFFFBCFE8), Color(0xFFE879A8)),       // Soft Rose
+    NoteColorOption("PEACH", Color(0xFFFFD8B8), Color(0xFFF59E6B)),      // Soft Peach / Coral
+    NoteColorOption("YELLOW", Color(0xFFFEF08A), Color(0xFFEAB308)),     // Soft Lemon Yellow
+    NoteColorOption("AMBER", Color(0xFFFED7AA), Color(0xFFF59E0B)),      // Soft Warm Amber
+    NoteColorOption("MINT", Color(0xFFBBF7D0), Color(0xFF34D399)),       // Soft Mint Green
+    NoteColorOption("GREEN", Color(0xFFC8E6C9), Color(0xFF5E9C47)),      // Soft Sage Green
+    NoteColorOption("TEAL", Color(0xFF99F6E4), Color(0xFF14B8A6)),       // Soft Aqua Teal
+    NoteColorOption("SKY", Color(0xFFBAE6FD), Color(0xFF38BDF8)),        // Soft Sky Blue
+    NoteColorOption("INDIGO", Color(0xFFC7D2FE), Color(0xFF818CF8)),     // Soft Periwinkle
+    NoteColorOption("PURPLE", Color(0xFFE9D5FF), Color(0xFFA855F7)),     // Soft Lavender
+    NoteColorOption("ROSE", Color(0xFFFCE7F3), Color(0xFFF43F5E)),       // Soft Blush Rose
+    NoteColorOption("SAND", Color(0xFFF5E6D3), Color(0xFFD97706))        // Soft Warm Sand
+)
+
 /** Color helpers for notes accent dots & highlights */
 fun getNoteDotColor(colorTag: String, fallbackIndex: Int = 0): Color {
-    return when (colorTag.uppercase()) {
-        "PINK" -> Color(0xFFD85A8A)
-        "YELLOW" -> Color(0xFFE5A823)
-        "BLUE" -> Color(0xFF3B82F6)
-        "GREEN" -> Color(0xFF5E9C47)
-        "PURPLE" -> Color(0xFF8E44AD)
-        "ORANGE" -> Color(0xFFF97316)
-        "TEAL" -> Color(0xFF0D9488)
-        else -> {
-            val palette = listOf(
-                Color(0xFFD85A8A), // Pink/Rose
-                Color(0xFFE5A823), // Warm Yellow
-                Color(0xFF3B82F6), // Blue
-                Color(0xFF5E9C47), // Green
-                Color(0xFF8E44AD), // Purple
-                Color(0xFFF97316), // Orange
-                Color(0xFF0D9488)  // Teal
-            )
-            palette[fallbackIndex % palette.size]
-        }
+    val upper = colorTag.uppercase()
+    val match = NoteColorPalette.firstOrNull {
+        it.tag == upper ||
+        (it.tag == "SKY" && upper == "BLUE") ||
+        (it.tag == "PEACH" && upper == "ORANGE")
     }
+    return match?.dotColor ?: NoteColorPalette[fallbackIndex % NoteColorPalette.size].dotColor
 }
 
 fun getNoteHighlightPillColor(colorTag: String, fallbackIndex: Int = 0): Color {
-    return when (colorTag.uppercase()) {
-        "PINK" -> HighlighterPink.copy(alpha = 0.40f)
-        "YELLOW" -> HighlighterYellow.copy(alpha = 0.45f)
-        "BLUE" -> HighlighterBlue.copy(alpha = 0.40f)
-        "GREEN" -> Color(0xFFC8E6C9).copy(alpha = 0.65f)
-        "PURPLE" -> Color(0xFFE1BEE7).copy(alpha = 0.55f)
-        "ORANGE" -> Color(0xFFFFE0B2).copy(alpha = 0.65f)
-        "TEAL" -> Color(0xFFB2DFDB).copy(alpha = 0.60f)
-        else -> {
-            val palette = listOf(
-                HighlighterPink.copy(alpha = 0.40f),
-                HighlighterYellow.copy(alpha = 0.45f),
-                HighlighterBlue.copy(alpha = 0.40f),
-                Color(0xFFC8E6C9).copy(alpha = 0.65f),
-                Color(0xFFE1BEE7).copy(alpha = 0.55f),
-                Color(0xFFFFE0B2).copy(alpha = 0.65f),
-                Color(0xFFB2DFDB).copy(alpha = 0.60f)
-            )
-            palette[fallbackIndex % palette.size]
-        }
+    val upper = colorTag.uppercase()
+    val match = NoteColorPalette.firstOrNull {
+        it.tag == upper ||
+        (it.tag == "SKY" && upper == "BLUE") ||
+        (it.tag == "PEACH" && upper == "ORANGE")
     }
+    return match?.lightColor ?: NoteColorPalette[fallbackIndex % NoteColorPalette.size].lightColor
 }
 
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -681,10 +675,11 @@ private fun NoteRowItem(
                 )
 
                 if (note.isPinned) {
-                    Text(
-                        text = "📌",
-                        fontSize = 12.5.sp,
-                        style = TextStyle(platformStyle = NoFontPadding)
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.PinFilled,
+                        contentDescription = "Épinglé",
+                        tint = JournalInk.copy(alpha = 0.85f),
+                        size = 13.dp
                     )
                 }
             }
@@ -727,9 +722,9 @@ private fun NoteRowItem(
                         text = {
                             Text(
                                 text = if (note.isPinned) {
-                                    if (isRtl) "إلغاء التثبيت 📌" else "Désépingler 📌"
+                                    if (isRtl) "إلغاء التثبيت" else "Désépingler"
                                 } else {
-                                    if (isRtl) "تثبيت الملاحظة 📌" else "Épingler 📌"
+                                    if (isRtl) "تثبيت الملاحظة" else "Épingler"
                                 },
                                 fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
                                 color = JournalWritingInk
@@ -741,33 +736,32 @@ private fun NoteRowItem(
                         }
                     )
 
-                    // Color tag picker row
+                    // Color tag picker row (12 soft pastel colors in 2 rows)
                     DropdownMenuItem(
                         text = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                val colors = listOf(
-                                    "PINK" to Color(0xFFD85A8A),
-                                    "YELLOW" to Color(0xFFE5A823),
-                                    "BLUE" to Color(0xFF3B82F6),
-                                    "GREEN" to Color(0xFF5E9C47),
-                                    "PURPLE" to Color(0xFF8E44AD),
-                                    "ORANGE" to Color(0xFFF97316),
-                                    "TEAL" to Color(0xFF0D9488)
-                                )
-                                colors.forEach { (name, col) ->
-                                    Box(
-                                        modifier = Modifier
-                                            .size(16.dp)
-                                            .clip(CircleShape)
-                                            .background(col)
-                                            .clickable {
-                                                menuExpanded = false
-                                                onSetColor(name)
-                                            }
-                                    )
+                                val rows = NoteColorPalette.chunked(6)
+                                rows.forEach { rowColors ->
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        rowColors.forEach { opt ->
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(18.dp)
+                                                    .clip(CircleShape)
+                                                    .background(opt.lightColor)
+                                                    .border(0.8.dp, JournalInk.copy(alpha = 0.25f), CircleShape)
+                                                    .clickable {
+                                                        menuExpanded = false
+                                                        onSetColor(opt.tag)
+                                                    }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         },

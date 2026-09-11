@@ -41,6 +41,7 @@ enum class HisabiSymbol {
     Copy,
     Calendar,
     Pin,
+    PinFilled,
     Smile,
     Folder,
     Share,
@@ -360,6 +361,28 @@ fun HisabiSketchIcon(
                     size = Size(u(5f), u(4.5f)),
                     cornerRadius = CornerRadius(u(2f)),
                     style = pen
+                )
+            }
+            HisabiSymbol.PinFilled -> {
+                // Pin needle pointing down
+                drawLine(tint, point(12f, 15f), point(12f, 21.5f), u(1.5f), StrokeCap.Round)
+                // Bottom flange / base of pin head
+                drawLine(tint, point(8f, 15f), point(16f, 15f), u(1.6f), StrokeCap.Round)
+                // Pin body tapered sides (solid filled)
+                val bodyPath = Path().apply {
+                    moveTo(u(8.5f), u(8.5f))
+                    lineTo(u(15.5f), u(8.5f))
+                    lineTo(u(16f), u(15f))
+                    lineTo(u(8f), u(15f))
+                    close()
+                }
+                drawPath(bodyPath, tint)
+                // Top knob of pin (solid filled)
+                drawRoundRect(
+                    tint,
+                    topLeft = point(9.5f, 4f),
+                    size = Size(u(5f), u(4.5f)),
+                    cornerRadius = CornerRadius(u(2f))
                 )
             }
             HisabiSymbol.Smile -> {

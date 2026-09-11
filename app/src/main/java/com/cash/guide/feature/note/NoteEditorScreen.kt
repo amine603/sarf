@@ -283,7 +283,7 @@ fun NoteEditorScreen(
                             // Pin Button next to Title (toggles pin/unpin directly)
                             Box(
                                 modifier = Modifier
-                                    .size(40.dp)
+                                    .size(36.dp)
                                     .clip(CircleShape)
                                     .clickable(role = Role.Button) {
                                         viewModel.togglePin()
@@ -291,16 +291,18 @@ fun NoteEditorScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (uiState.isPinned) {
-                                    Text(
-                                        text = "📌",
-                                        fontSize = 18.sp
+                                    HisabiSketchIcon(
+                                        symbol = HisabiSymbol.PinFilled,
+                                        contentDescription = "Épinglé",
+                                        tint = JournalInk,
+                                        size = 20.dp
                                     )
                                 } else {
                                     HisabiSketchIcon(
                                         symbol = HisabiSymbol.Pin,
                                         contentDescription = "Épingler",
-                                        tint = JournalMutedInk.copy(alpha = 0.40f),
-                                        size = 19.dp
+                                        tint = JournalInk.copy(alpha = 0.35f),
+                                        size = 20.dp
                                     )
                                 }
                             }
@@ -317,52 +319,57 @@ fun NoteEditorScreen(
                             modifier = Modifier.fillMaxSize(),
                             clearFocusOnTap = false
                         ) {
-                            // Rule 1 (29dp): Metadata & Actions Row
-                            // Far Left: Date & Time
-                            // Right: Color circle with palette, Share, Trash (black)
+                            val noteLightColor = getNoteHighlightPillColor(uiState.colorTag)
+
+                            // Rule 1 (29dp): Metadata & Actions Row sitting directly on the blue line
+                            // Far Left: Date & Time resting on the blue line
+                            // Right: Color circle with palette, Share, Trash (resting on the blue line)
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(JournalRuleSpacing)
-                                    .padding(horizontal = 18.dp),
-                                verticalAlignment = Alignment.CenterVertically,
+                                    .padding(start = 18.dp, end = 8.dp),
+                                verticalAlignment = Alignment.Bottom,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                // Far Left: Date & Time
+                                // Far Left: Date & Time resting on the blue line
                                 Text(
                                     text = formattedDate,
                                     fontFamily = PatrickHandFamily,
-                                    fontSize = 13.sp,
+                                    fontSize = 13.5.sp,
                                     color = JournalMutedInk.copy(alpha = 0.75f),
-                                    style = TextStyle(platformStyle = NoFontPadding)
+                                    style = TextStyle(platformStyle = NoFontPadding),
+                                    modifier = Modifier.padding(bottom = 2.dp)
                                 )
 
                                 // Right: Color circle with palette, Share icon, Trash icon (in black)
                                 Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    modifier = Modifier.padding(bottom = 1.dp)
                                 ) {
                                     // Color Picker Circle Button with Dropdown Palette
                                     var showColorPalette by remember { mutableStateOf(false) }
 
                                     Box(
-                                        contentAlignment = Alignment.Center
+                                        contentAlignment = Alignment.BottomCenter
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(30.dp)
+                                                .size(28.dp)
                                                 .clip(CircleShape)
                                                 .clickable(role = Role.Button) {
-                                                showColorPalette = true
-                                            },
-                                            contentAlignment = Alignment.Center
+                                                    showColorPalette = true
+                                                },
+                                            contentAlignment = Alignment.BottomCenter
                                         ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(15.dp)
+                                                    .padding(bottom = 2.dp)
+                                                    .size(16.dp)
                                                     .clip(CircleShape)
-                                                    .background(getNoteDotColor(uiState.colorTag))
-                                                    .border(1.dp, JournalInk.copy(alpha = 0.25f), CircleShape)
+                                                    .background(noteLightColor)
+                                                    .border(1.2.dp, JournalInk.copy(alpha = 0.35f), CircleShape)
                                             )
                                         }
 
@@ -371,47 +378,47 @@ fun NoteEditorScreen(
                                             onDismissRequest = { showColorPalette = false },
                                             modifier = Modifier
                                                 .background(JournalPaper)
-                                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                                                .padding(horizontal = 8.dp, vertical = 6.dp)
                                         ) {
-                                            Row(
+                                            Column(
                                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                verticalAlignment = Alignment.CenterVertically
+                                                verticalArrangement = Arrangement.spacedBy(8.dp)
                                             ) {
-                                                val paletteColors = listOf(
-                                                    "PINK" to Color(0xFFD85A8A),
-                                                    "YELLOW" to Color(0xFFE5A823),
-                                                    "BLUE" to Color(0xFF3B82F6),
-                                                    "GREEN" to Color(0xFF5E9C47),
-                                                    "PURPLE" to Color(0xFF8E44AD),
-                                                    "ORANGE" to Color(0xFFF97316),
-                                                    "TEAL" to Color(0xFF0D9488)
-                                                )
-                                                paletteColors.forEach { (tag, color) ->
-                                                    val isSelected = uiState.colorTag.equals(tag, ignoreCase = true)
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(28.dp)
-                                                            .clip(CircleShape)
-                                                            .clickable {
-                                                                showColorPalette = false
-                                                                viewModel.setColorTag(tag)
-                                                            },
-                                                        contentAlignment = Alignment.Center
+                                                val rows = NoteColorPalette.chunked(6)
+                                                rows.forEach { rowOptions ->
+                                                    Row(
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
                                                     ) {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .size(if (isSelected) 20.dp else 16.dp)
-                                                                .clip(CircleShape)
-                                                                .background(color)
-                                                                .then(
-                                                                    if (isSelected) {
-                                                                        Modifier.border(2.dp, JournalInk, CircleShape)
-                                                                    } else {
-                                                                        Modifier.border(0.8.dp, JournalInk.copy(alpha = 0.25f), CircleShape)
-                                                                    }
+                                                        rowOptions.forEach { option ->
+                                                            val isSelected = uiState.colorTag.equals(option.tag, ignoreCase = true) ||
+                                                                    (option.tag == "PEACH" && uiState.colorTag.equals("ORANGE", ignoreCase = true)) ||
+                                                                    (option.tag == "SKY" && uiState.colorTag.equals("BLUE", ignoreCase = true))
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(28.dp)
+                                                                    .clip(CircleShape)
+                                                                    .clickable {
+                                                                        showColorPalette = false
+                                                                        viewModel.setColorTag(option.tag)
+                                                                    },
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                Box(
+                                                                    modifier = Modifier
+                                                                        .size(if (isSelected) 22.dp else 18.dp)
+                                                                        .clip(CircleShape)
+                                                                        .background(option.lightColor)
+                                                                        .then(
+                                                                            if (isSelected) {
+                                                                                Modifier.border(2.dp, JournalInk, CircleShape)
+                                                                            } else {
+                                                                                Modifier.border(1.dp, JournalInk.copy(alpha = 0.25f), CircleShape)
+                                                                            }
+                                                                        )
                                                                 )
-                                                        )
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -421,7 +428,7 @@ fun NoteEditorScreen(
                                     // Share Button
                                     Box(
                                         modifier = Modifier
-                                            .size(30.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
                                             .clickable(role = Role.Button) {
                                                 viewModel.closeKeyboard()
@@ -433,31 +440,33 @@ fun NoteEditorScreen(
                                                     coroutineScope = coroutineScope
                                                 )
                                             },
-                                        contentAlignment = Alignment.Center
+                                        contentAlignment = Alignment.BottomCenter
                                     ) {
                                         HisabiSketchIcon(
                                             symbol = HisabiSymbol.Share,
                                             contentDescription = "Partager",
                                             tint = JournalInk,
-                                            size = 19.dp
+                                            size = 18.dp,
+                                            modifier = Modifier.padding(bottom = 1.dp)
                                         )
                                     }
 
                                     // Trash / Poubelle Button (Black sketch ink, triggers delete confirmation)
                                     Box(
                                         modifier = Modifier
-                                            .size(30.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
                                             .clickable(role = Role.Button) {
                                                 showDeleteDialog = true
                                             },
-                                        contentAlignment = Alignment.Center
+                                        contentAlignment = Alignment.BottomCenter
                                     ) {
                                         HisabiSketchIcon(
                                             symbol = HisabiSymbol.Trash,
                                             contentDescription = "Supprimer",
                                             tint = JournalInk,
-                                            size = 19.dp
+                                            size = 18.dp,
+                                            modifier = Modifier.padding(bottom = 1.dp)
                                         )
                                     }
                                 }
