@@ -4406,22 +4406,22 @@ fun NotebookActivityRow(
         }
     }
 
-    // Determine colors and badge for the activity
-    val (dotColor, badgeBgColor, badgeBorderColor) = remember(activity) {
+    // Determine colors and badge for the activity (soft uniform pastel background without harsh borders)
+    val (dotColor, badgeBgColor) = remember(activity) {
         when (activity) {
             is RecentActivityItem.CalculationActivity -> {
                 val tLower = activity.calculationWithItems.calculation.title.lowercase()
                 if (tLower.contains("caisse") || tLower.contains("rendu") || tLower.contains("صرف")) {
-                    Triple(Color(0xFF3B82F6), Color(0xFFDBEAFE), Color(0xFF93C5FD)) // Soft Blue
+                    Pair(Color(0xFF3B82F6), Color(0xFFDBEAFE)) // Soft Blue
                 } else {
-                    Triple(Color(0xFFEF4444), Color(0xFFFCE7F3), Color(0xFFF472B6)) // Soft Rose Pink
+                    Pair(Color(0xFFEF4444), Color(0xFFFCE7F3)) // Soft Rose Pink
                 }
             }
             is RecentActivityItem.ChecklistActivity -> {
-                Triple(Color(0xFF10B981), Color(0xFFDCFCE7), Color(0xFF86EFAC)) // Soft Sage/Emerald Green
+                Pair(Color(0xFF10B981), Color(0xFFDCFCE7)) // Soft Sage/Emerald Green
             }
             is RecentActivityItem.NoteActivity -> {
-                Triple(Color(0xFFF59E0B), Color(0xFFFEF3C7), Color(0xFFFCD34D)) // Soft Amber Yellow
+                Pair(Color(0xFFF59E0B), Color(0xFFFEF3C7)) // Soft Amber Yellow
             }
         }
     }
@@ -4452,20 +4452,19 @@ fun NotebookActivityRow(
             // Dot
             Canvas(
                 modifier = Modifier
-                    .size(7.dp)
-                    .offset(y = (-4.5).dp)
+                    .size(6.dp)
+                    .offset(y = (-1.5).dp)
             ) {
                 drawCircle(color = dotColor)
             }
 
-            // Small rounded icon badge
+            // Small rounded icon badge - light pastel background without outline, sitting directly on the blue line
             Box(
                 modifier = Modifier
-                    .size(21.dp)
-                    .offset(y = (-3).dp)
+                    .size(20.dp)
+                    .offset(y = (-0.5).dp)
                     .clip(RoundedCornerShape(5.dp))
-                    .background(badgeBgColor)
-                    .border(0.7.dp, badgeBorderColor.copy(alpha = 0.55f), RoundedCornerShape(5.dp)),
+                    .background(badgeBgColor),
                 contentAlignment = Alignment.Center
             ) {
                 when (activity) {
@@ -4474,21 +4473,21 @@ fun NotebookActivityRow(
                             symbol = HisabiSymbol.Calculator,
                             contentDescription = null,
                             tint = JournalWritingInk,
-                            size = 12.dp
+                            size = 14.dp
                         )
                     }
                     is RecentActivityItem.ChecklistActivity -> {
-                        Canvas(modifier = Modifier.size(10.dp)) {
+                        Canvas(modifier = Modifier.size(13.dp)) {
                             val strokeW = 1.35.dp.toPx()
                             drawRoundRect(
                                 color = JournalWritingInk,
                                 style = Stroke(width = strokeW),
-                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx())
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.2.dp.toPx())
                             )
                             val p = androidx.compose.ui.graphics.Path().apply {
                                 moveTo(size.width * 0.22f, size.height * 0.50f)
                                 lineTo(size.width * 0.44f, size.height * 0.74f)
-                                lineTo(size.width * 0.82f, size.height * 0.26f)
+                                lineTo(size.width * 0.80f, size.height * 0.26f)
                             }
                             drawPath(
                                 path = p,
@@ -4502,7 +4501,7 @@ fun NotebookActivityRow(
                             symbol = HisabiSymbol.Page,
                             contentDescription = null,
                             tint = JournalWritingInk,
-                            size = 11.dp
+                            size = 14.dp
                         )
                     }
                 }
@@ -4562,7 +4561,7 @@ fun NotebookActivityRow(
                         text = totalFormatted,
                         fontFamily = PatrickHandFamily,
                         fontSize = 17.5.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Normal,
                         color = JournalWritingInk,
                         style = TextStyle(platformStyle = NoFontPadding),
                         modifier = Modifier.journalBaselineOnRule()
@@ -4838,18 +4837,13 @@ fun NotebookSpeedDialFab(
             modifier = Modifier
                 .size(52.dp)
                 .shadow(
-                    elevation = 4.dp,
+                    elevation = 3.dp,
                     shape = CircleShape,
-                    ambientColor = JournalInk.copy(alpha = 0.25f),
-                    spotColor = JournalInk.copy(alpha = 0.35f)
+                    ambientColor = HighlighterPink.copy(alpha = 0.40f),
+                    spotColor = Color.Black.copy(alpha = 0.15f)
                 )
                 .clip(CircleShape)
-                .background(HighlighterPink.copy(alpha = 0.85f))
-                .border(
-                    width = 1.1.dp,
-                    color = JournalInk.copy(alpha = 0.35f),
-                    shape = CircleShape
-                )
+                .background(HighlighterPink.copy(alpha = 0.88f))
                 .clickable(
                     role = Role.Button,
                     onClickLabel = "Ajouter",
