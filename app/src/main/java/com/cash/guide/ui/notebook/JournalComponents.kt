@@ -4406,23 +4406,19 @@ fun NotebookActivityRow(
         }
     }
 
-    // Determine colors and badge for the activity (soft uniform pastel background without harsh borders)
-    val (dotColor, badgeBgColor) = remember(activity) {
+    // Determine dot color for the timeline on the left
+    val dotColor = remember(activity) {
         when (activity) {
             is RecentActivityItem.CalculationActivity -> {
                 val tLower = activity.calculationWithItems.calculation.title.lowercase()
                 if (tLower.contains("caisse") || tLower.contains("rendu") || tLower.contains("صرف")) {
-                    Pair(Color(0xFF3B82F6), Color(0xFFDBEAFE)) // Soft Blue
+                    Color(0xFF3B82F6) // Soft Blue
                 } else {
-                    Pair(Color(0xFFEF4444), Color(0xFFFCE7F3)) // Soft Rose Pink
+                    Color(0xFFEF4444) // Soft Rose Pink
                 }
             }
-            is RecentActivityItem.ChecklistActivity -> {
-                Pair(Color(0xFF10B981), Color(0xFFDCFCE7)) // Soft Sage/Emerald Green
-            }
-            is RecentActivityItem.NoteActivity -> {
-                Pair(Color(0xFFF59E0B), Color(0xFFFEF3C7)) // Soft Amber Yellow
-            }
+            is RecentActivityItem.ChecklistActivity -> Color(0xFF10B981) // Soft Sage/Emerald Green
+            is RecentActivityItem.NoteActivity -> Color(0xFFF59E0B) // Soft Amber Yellow
         }
     }
 
@@ -4443,10 +4439,10 @@ fun NotebookActivityRow(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Start side: Dot + Badge Icon + Title
+        // Start side: Dot + Icon + Title
         Row(
             verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
             modifier = Modifier.widthIn(max = 240.dp)
         ) {
             // Dot
@@ -4458,52 +4454,58 @@ fun NotebookActivityRow(
                 drawCircle(color = dotColor)
             }
 
-            // Small rounded icon badge - light pastel background without outline, sitting directly on the blue line
-            Box(
-                modifier = Modifier
-                    .size(20.dp)
-                    .offset(y = (-0.5).dp)
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(badgeBgColor),
-                contentAlignment = Alignment.Center
-            ) {
-                when (activity) {
-                    is RecentActivityItem.CalculationActivity -> {
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Calculator,
-                            contentDescription = null,
-                            tint = JournalWritingInk,
-                            size = 14.dp
+            // Pure sketched icons without colored background, identical size (17dp) sitting directly on the blue line
+            when (activity) {
+                is RecentActivityItem.CalculationActivity -> {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Calculator,
+                        contentDescription = null,
+                        tint = JournalWritingInk,
+                        size = 17.dp,
+                        modifier = Modifier.offset(y = 1.8.dp)
+                    )
+                }
+                is RecentActivityItem.ChecklistActivity -> {
+                    Canvas(
+                        modifier = Modifier
+                            .size(17.dp)
+                            .offset(y = 1.8.dp)
+                    ) {
+                        val u = size.width / 24f
+                        val strokeW = 1.35.dp.toPx()
+                        val box = androidx.compose.ui.geometry.Rect(
+                            left = 4.5f * u,
+                            top = 3.5f * u,
+                            right = 19.5f * u,
+                            bottom = 21f * u
                         )
-                    }
-                    is RecentActivityItem.ChecklistActivity -> {
-                        Canvas(modifier = Modifier.size(13.dp)) {
-                            val strokeW = 1.35.dp.toPx()
-                            drawRoundRect(
-                                color = JournalWritingInk,
-                                style = Stroke(width = strokeW),
-                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.2.dp.toPx())
-                            )
-                            val p = androidx.compose.ui.graphics.Path().apply {
-                                moveTo(size.width * 0.22f, size.height * 0.50f)
-                                lineTo(size.width * 0.44f, size.height * 0.74f)
-                                lineTo(size.width * 0.80f, size.height * 0.26f)
-                            }
-                            drawPath(
-                                path = p,
-                                color = JournalWritingInk,
-                                style = Stroke(width = strokeW, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
-                            )
+                        drawRoundRect(
+                            color = JournalWritingInk,
+                            topLeft = Offset(box.left, box.top),
+                            size = Size(box.width, box.height),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.2f * u),
+                            style = Stroke(width = strokeW)
+                        )
+                        val p = androidx.compose.ui.graphics.Path().apply {
+                            moveTo(7.5f * u, 12f * u)
+                            lineTo(11.5f * u, 16.5f * u)
+                            lineTo(17f * u, 7.5f * u)
                         }
-                    }
-                    is RecentActivityItem.NoteActivity -> {
-                        HisabiSketchIcon(
-                            symbol = HisabiSymbol.Page,
-                            contentDescription = null,
-                            tint = JournalWritingInk,
-                            size = 14.dp
+                        drawPath(
+                            path = p,
+                            color = JournalWritingInk,
+                            style = Stroke(width = strokeW, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round)
                         )
                     }
+                }
+                is RecentActivityItem.NoteActivity -> {
+                    HisabiSketchIcon(
+                        symbol = HisabiSymbol.Page,
+                        contentDescription = null,
+                        tint = JournalWritingInk,
+                        size = 17.dp,
+                        modifier = Modifier.offset(y = 1.8.dp)
+                    )
                 }
             }
 
