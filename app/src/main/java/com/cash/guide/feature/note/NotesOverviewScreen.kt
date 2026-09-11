@@ -3,7 +3,6 @@ package com.cash.guide.feature.note
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,20 +42,16 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cash.guide.data.db.NoteEntity
-import com.cash.guide.ui.notebook.DeleteConfirmationDialog
 import com.cash.guide.ui.notebook.HighlighterPink
 import com.cash.guide.ui.notebook.HighlighterYellow
 import com.cash.guide.ui.notebook.HisabiSketchIcon
 import com.cash.guide.ui.notebook.HisabiSymbol
-import com.cash.guide.ui.notebook.JournalActionDelete
 import com.cash.guide.ui.notebook.JournalInk
 import com.cash.guide.ui.notebook.JournalMutedInk
 import com.cash.guide.ui.notebook.JournalPaper
@@ -91,19 +86,19 @@ fun NotesOverviewScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
 
-    var noteToDelete by remember { mutableStateOf<NoteEntity?>(null) }
     var showMonthPicker by remember { mutableStateOf(false) }
 
     val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) }
 
+    // Soft palette matching the app highlighter & notebook tones (Red, Blue, Olive, Amber, Violet, Rose)
     val cardAccentColors = remember {
         listOf(
-            Color(0xFF3B82B6), // Soft Blue
-            Color(0xFFE26D8B), // Soft Rose
-            Color(0xFF5E8C3B), // Olive Sage
-            Color(0xFFD97706), // Warm Amber
-            Color(0xFF7E5AA8), // Soft Purple
-            Color(0xFFCC673B)  // Terracotta Coral
+            Color(0xFFE26D6D), // Soft Red
+            Color(0xFF4A89DC), // Soft Blue
+            Color(0xFF6B9E48), // Olive Sage
+            Color(0xFFE59834), // Warm Amber
+            Color(0xFF8E5EA2), // Soft Violet
+            Color(0xFFE26D8B)  // Soft Rose
         )
     }
 
@@ -118,7 +113,7 @@ fun NotesOverviewScreen(
             .background(JournalPaper)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header Top Bar (Back button on start, centered Title in Pink Pill, symmetry spacer on end)
+            // Header Top Bar: Back button on start, centered Title in Pink Pill, symmetrical spacer on end
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -171,7 +166,7 @@ fun NotesOverviewScreen(
                         )
                     }
 
-                    // Symmetrical Spacer to guarantee dead-center alignment of the Title
+                    // Symmetrical Spacer to guarantee dead-center title alignment
                     Spacer(modifier = Modifier.size(42.dp))
                 }
             }
@@ -183,10 +178,10 @@ fun NotesOverviewScreen(
                     .fillMaxWidth(),
                 clearFocusOnTap = true
             ) {
-                // Line 1: Spacer after header
-                Spacer(modifier = Modifier.height(4.dp))
+                // Step 1: 1-rule blank space between header and search bar (moving search bar down by 1 step)
+                Spacer(modifier = Modifier.height(JournalRuleSpacing))
 
-                // Line 2: Search Bar exactly matching Homepage (Capsule with calendar icon on the right)
+                // Step 2: Search Bar + Calendar icon on the right (matching Homepage exactly)
                 NotebookSearchField(
                     query = uiState.searchQuery,
                     onQueryChange = { viewModel.updateSearchQuery(it) },
@@ -195,10 +190,10 @@ fun NotesOverviewScreen(
                     placeholder = if (isRtl) "بحث في الملاحظات..." else "Rechercher une note..."
                 )
 
-                // Line 3: Small spacer
+                // Step 3: Small spacer
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Line 4: Info Row directly below Search Bar (Note count on start, Active month tag on end)
+                // Step 4: Info Row directly below Search Bar (Note count on start, Active month tag on end)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -222,8 +217,8 @@ fun NotesOverviewScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(HighlighterYellow.copy(alpha = 0.50f))
-                                .clickable { viewModel.selectMonth(null) }
-                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                            .clickable { viewModel.selectMonth(null) }
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -238,7 +233,7 @@ fun NotesOverviewScreen(
                     }
                 }
 
-                // Line 5: Spacer before cards list
+                // Step 5: Spacer before cards list
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // Empty State
@@ -280,7 +275,7 @@ fun NotesOverviewScreen(
                     }
 
                     uiState.monthGroups.forEach { monthGroup ->
-                        // Month Header Divider if multiple months exist and no month filter
+                        // Month Header Divider if multiple months exist and no month filter active
                         if (uiState.monthGroups.size > 1 && uiState.selectedMonthKey == null) {
                             Row(
                                 modifier = Modifier
@@ -306,200 +301,110 @@ fun NotesOverviewScreen(
                             }
                         }
 
-                        // Creative Note Cards List
+                        // Creamy Cards (Height = 64dp: exactly 2 rule lines with generous breathing room)
                         monthGroup.notes.forEach { note ->
                             val globalIndex = allNotes.indexOf(note).coerceAtLeast(0)
                             val accentColor = cardAccentColors[globalIndex % cardAccentColors.size]
                             val dateStr = dateFormatter.format(Date(note.updatedAtEpochMs))
                             val displayTitle = note.title.ifBlank { if (isRtl) "ملاحظة بدون عنوان" else "Note sans titre" }
                             val snippet = note.content.replace('\n', ' ').trim()
-                            val titleIsArabic = isArabicScript(displayTitle)
-                            val snippetIsArabic = isArabicScript(snippet)
 
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 5.dp)
+                                    .height(66.dp)
+                                    .padding(horizontal = 14.dp, vertical = 3.5.dp)
                                     .shadow(
-                                        elevation = 2.dp,
-                                        shape = RoundedCornerShape(14.dp),
-                                        ambientColor = Color(0x18000000),
-                                        spotColor = Color(0x10000000)
+                                        elevation = 1.5.dp,
+                                        shape = RoundedCornerShape(10.dp),
+                                        ambientColor = Color(0x12000000),
+                                        spotColor = Color(0x0A000000)
                                     )
-                                    .clip(RoundedCornerShape(14.dp))
+                                    .clip(RoundedCornerShape(10.dp))
                                     .clickable(role = Role.Button) { onOpenNote(note.id) },
-                                shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFDF9)),
-                                border = BorderStroke(0.9.dp, Color(0xFFE8E2D6))
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFCFAF4)),
+                                border = BorderStroke(0.8.dp, Color(0xFFE8E2D6))
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
+                                        .fillMaxSize()
                                         .drawBehind {
-                                            // Decorative colored marker strip on the leading edge
-                                            val barWidth = 4.5.dp.toPx()
-                                            if (isRtl) {
-                                                drawRoundRect(
-                                                    color = accentColor,
-                                                    topLeft = Offset(size.width - barWidth, 0f),
-                                                    size = Size(barWidth, size.height),
-                                                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
-                                                )
-                                            } else {
-                                                drawRoundRect(
-                                                    color = accentColor,
-                                                    topLeft = Offset(0f, 0f),
-                                                    size = Size(barWidth, size.height),
-                                                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
-                                                )
-                                            }
+                                            // Slender colored arc / capsule on the left edge
+                                            val arcWidth = 4.dp.toPx()
+                                            val insetY = 7.dp.toPx()
+                                            drawRoundRect(
+                                                color = accentColor,
+                                                topLeft = Offset(0f, insetY),
+                                                size = Size(arcWidth, size.height - insetY * 2),
+                                                cornerRadius = CornerRadius(arcWidth / 2, arcWidth / 2)
+                                            )
                                         }
-                                        .padding(
-                                            start = if (isRtl) 14.dp else 16.dp,
-                                            end = if (isRtl) 16.dp else 14.dp,
-                                            top = 11.dp,
-                                            bottom = 10.dp
-                                        )
+                                        .padding(start = 14.dp, end = 12.dp, top = 6.dp, bottom = 6.dp)
                                 ) {
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        // Card Header: Badge + Title + Trash
+                                    Column(
+                                        modifier = Modifier.fillMaxSize(),
+                                        verticalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        // Line 1: Note Title + Right Arrow
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Row(
-                                                modifier = Modifier.weight(1f),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                            ) {
-                                                // Number badge pill
-                                                Box(
-                                                    modifier = Modifier
-                                                        .clip(RoundedCornerShape(6.dp))
-                                                        .background(accentColor.copy(alpha = 0.15f))
-                                                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Text(
-                                                        text = "#${globalIndex + 1}",
-                                                        fontFamily = PatrickHandFamily,
-                                                        fontSize = 12.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = accentColor
-                                                    )
-                                                }
-
-                                                // Note Title
-                                                Text(
-                                                    text = displayTitle,
-                                                    fontFamily = resolveJournalFont(displayTitle, isRtl),
-                                                    fontSize = if (titleIsArabic) 16.5.sp else 17.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = JournalWritingInk,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                    textAlign = if (titleIsArabic) TextAlign.Right else TextAlign.Left,
-                                                    style = TextStyle(platformStyle = NoFontPadding),
-                                                    modifier = Modifier.weight(1f)
-                                                )
-                                            }
+                                            Text(
+                                                text = displayTitle,
+                                                fontFamily = resolveJournalFont(displayTitle, isRtl),
+                                                fontSize = if (isArabicScript(displayTitle)) 16.sp else 16.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = JournalWritingInk,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                textAlign = TextAlign.Start,
+                                                style = TextStyle(platformStyle = NoFontPadding),
+                                                modifier = Modifier.weight(1f)
+                                            )
 
                                             Spacer(modifier = Modifier.width(8.dp))
 
-                                            // Trash Button
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(30.dp)
-                                                    .clip(CircleShape)
-                                                    .clickable(
-                                                        role = Role.Button,
-                                                        onClickLabel = "Supprimer",
-                                                        onClick = { noteToDelete = note }
-                                                    ),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                HisabiSketchIcon(
-                                                    symbol = HisabiSymbol.Trash,
-                                                    contentDescription = "Supprimer",
-                                                    tint = JournalActionDelete.copy(alpha = 0.65f),
-                                                    size = 16.dp
-                                                )
-                                            }
-                                        }
-
-                                        // Card Body: Snippet Preview
-                                        Spacer(modifier = Modifier.height(6.dp))
-                                        if (snippet.isNotBlank()) {
+                                            // Sleek right entry arrow on the far right
                                             Text(
-                                                text = snippet,
-                                                fontFamily = resolveJournalFont(snippet, isRtl),
-                                                fontSize = if (snippetIsArabic) 13.5.sp else 14.sp,
-                                                color = JournalInk.copy(alpha = 0.75f),
-                                                maxLines = 2,
-                                                overflow = TextOverflow.Ellipsis,
-                                                lineHeight = 19.sp,
-                                                textAlign = if (snippetIsArabic) TextAlign.Right else TextAlign.Left,
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                        } else {
-                                            Text(
-                                                text = if (isRtl) "لا يوجد نص إضافي..." else "Aucun contenu écrit...",
-                                                fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                                fontSize = 13.sp,
-                                                fontStyle = FontStyle.Italic,
-                                                color = JournalMutedInk.copy(alpha = 0.50f)
+                                                text = "→",
+                                                fontFamily = PatrickHandFamily,
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = JournalMutedInk.copy(alpha = 0.55f)
                                             )
                                         }
 
-                                        // Card Footer: Subtle Divider & Meta Info
-                                        Spacer(modifier = Modifier.height(9.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(0.6.dp)
-                                                .background(Color(0xFFEDE7DB))
-                                        )
-                                        Spacer(modifier = Modifier.height(6.dp))
+                                        // Line 2: Snippet preview + Tiny Date
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.SpaceBetween
                                         ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                            ) {
-                                                HisabiSketchIcon(
-                                                    symbol = HisabiSymbol.Clock,
-                                                    contentDescription = null,
-                                                    tint = JournalMutedInk.copy(alpha = 0.60f),
-                                                    size = 12.dp
-                                                )
+                                            if (snippet.isNotBlank()) {
                                                 Text(
-                                                    text = dateStr,
-                                                    fontFamily = PatrickHandFamily,
-                                                    fontSize = 12.sp,
-                                                    color = JournalMutedInk.copy(alpha = 0.70f)
+                                                    text = snippet,
+                                                    fontFamily = resolveJournalFont(snippet, isRtl),
+                                                    fontSize = 12.5.sp,
+                                                    color = JournalMutedInk.copy(alpha = 0.80f),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    textAlign = TextAlign.Start,
+                                                    modifier = Modifier.weight(1f, fill = false)
                                                 )
+                                            } else {
+                                                Spacer(modifier = Modifier.weight(1f))
                                             }
 
-                                            Row(
-                                                modifier = Modifier
-                                                    .clip(RoundedCornerShape(6.dp))
-                                                    .background(Color(0xFFF6F3EC))
-                                                    .padding(horizontal = 7.dp, vertical = 2.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                            ) {
-                                                Text(
-                                                    text = if (isRtl) "فتح ←" else "Ouvrir →",
-                                                    fontFamily = if (isRtl) TajawalFamily else PatrickHandFamily,
-                                                    fontSize = 11.5.sp,
-                                                    fontWeight = FontWeight.Medium,
-                                                    color = JournalWritingInk.copy(alpha = 0.70f)
-                                                )
-                                            }
+                                            Text(
+                                                text = dateStr,
+                                                fontFamily = PatrickHandFamily,
+                                                fontSize = 11.sp,
+                                                color = JournalMutedInk.copy(alpha = 0.50f),
+                                                modifier = Modifier.padding(start = 6.dp)
+                                            )
                                         }
                                     }
                                 }
@@ -545,19 +450,6 @@ fun NotesOverviewScreen(
                     val key = String.format(Locale.US, "%04d-%02d", year, month)
                     viewModel.selectMonth(key)
                 }
-            )
-        }
-
-        // Delete Confirmation Dialog matching Notebook style
-        if (noteToDelete != null) {
-            DeleteConfirmationDialog(
-                onConfirmDelete = {
-                    coroutineScope.launch {
-                        noteToDelete?.let { viewModel.deleteNote(it.id) }
-                        noteToDelete = null
-                    }
-                },
-                onDismiss = { noteToDelete = null }
             )
         }
     }
