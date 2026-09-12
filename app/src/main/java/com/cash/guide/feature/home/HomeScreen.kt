@@ -986,13 +986,19 @@ private fun HomeWeekRemindersCarousel(
                 val calcTitle = item.calculation.title.ifBlank {
                     stringResource(R.string.home_quick_calculation)
                 }
-                val dueDateStr = item.calculation.dueDateEpochMs?.let { dateFormat.format(Date(it)) }
-                val totalCentimes = item.totalCentimes
-                val totalFormatted = if (totalCentimes % 100 == 0L) {
-                    "${totalCentimes / 100} ${item.calculation.currency}"
-                } else {
-                    String.format(Locale.US, "%.2f %s", totalCentimes / 100.0, item.calculation.currency)
+                val reminderEpoch = item.calculation.dueDateEpochMs
+                    ?: item.calculation.reminderTimeEpochMs
+                    ?: item.calculation.updatedAtEpochMs
+                val reminderDateStr = dateFormat.format(Date(reminderEpoch))
+
+                val currencyUnit = runCatching { MoneyUnit.valueOf(item.calculation.currency) }.getOrDefault(MoneyUnit.DIRHAM)
+                val totalNumber = JournalLedgerManager.formatTotal(item.totalCentimes, currencyUnit)
+                val currencySuffix = when {
+                    isRtl -> if (currencyUnit == MoneyUnit.DIRHAM) stringResource(R.string.currency_dirham) else stringResource(R.string.currency_rial)
+                    currencyUnit == MoneyUnit.DIRHAM -> "DH"
+                    else -> "Rial"
                 }
+                val totalFormatted = "$totalNumber $currencySuffix"
 
                 Column(
                     modifier = Modifier
@@ -1075,31 +1081,24 @@ private fun HomeWeekRemindersCarousel(
                         }
                     }
 
-                    // Row 3 (Bottom): Due date (if any) on start, Amount on end
+                    // Row 3 (Bottom): Reminder date on start, Amount on end
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        if (dueDateStr != null) {
-                            Text(
-                                text = "📅 $dueDateStr",
-                                fontFamily = PatrickHandFamily,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = Color(0xFFC2410C),
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        } else {
-                            Text(
-                                text = stringResource(R.string.home_category_rappels),
-                                fontFamily = resolveJournalFont(stringResource(R.string.home_category_rappels), isRtl),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = JournalMutedInk,
-                                style = TextStyle(platformStyle = NoFontPadding)
-                            )
-                        }
+                        Text(
+                            text = "📅 $reminderDateStr",
+                            fontFamily = PatrickHandFamily,
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = if (item.calculation.dueDateEpochMs != null && item.calculation.dueDateEpochMs <= System.currentTimeMillis() && item.calculation.paymentStatus == "UNPAID") {
+                                Color(0xFFDC2626)
+                            } else {
+                                Color(0xFFC2410C)
+                            },
+                            style = TextStyle(platformStyle = NoFontPadding)
+                        )
 
                         Text(
                             text = totalFormatted,
